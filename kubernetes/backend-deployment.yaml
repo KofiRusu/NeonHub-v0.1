@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: neonhub-backend
+  labels:
+    app: neonhub
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: neonhub
+      tier: backend
+  template:
+    metadata:
+      labels:
+        app: neonhub
+        tier: backend
+    spec:
+      containers:
+      - name: backend
+        image: neonhub-backend:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5000
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "5000"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: neonhub-secrets
+              key: database-url
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: neonhub-secrets
+              key: jwt-secret
+        - name: JWT_EXPIRE
+          value: "24h"
+        - name: CLIENT_URL
+          value: "https://neonhub.example.com"
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: uploads
+          mountPath: /app/uploads
+      volumes:
+      - name: uploads
+        persistentVolumeClaim:
+          claimName: neonhub-uploads-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: neonhub-backend
+  labels:
+    app: neonhub
+    tier: backend
+spec:
+  selector:
+    app: neonhub
+    tier: backend
+  ports:
+  - port: 80
+    targetPort: 5000
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: neonhub-uploads-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard 
