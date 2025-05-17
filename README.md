@@ -1,6 +1,6 @@
 # NeonHub
 
-A modern real-time collaboration platform for teams.
+A modern real-time collaboration platform for teams with AI-powered marketing features.
 
 ## Features
 
@@ -9,6 +9,8 @@ A modern real-time collaboration platform for teams.
 - 💬 Real-time messaging and notifications
 - 📁 Document sharing and collaboration
 - 👥 Team management and permissions
+- 🤖 AI agents for marketing automation
+- 📈 Trend analysis and content generation
 
 ## Tech Stack
 
@@ -16,17 +18,17 @@ A modern real-time collaboration platform for teams.
 - **Backend**: Node.js, Express, TypeScript
 - **Database**: PostgreSQL with Prisma ORM
 - **Real-time**: Socket.io
-- **Deployment**: Docker, Kubernetes (optional)
+- **Deployment**: Docker, Kubernetes, GitHub Actions
 
-## Getting Started
+## Quick Start
 
 ### Prerequisites
 
-- Node.js (v16+)
-- npm or yarn
-- PostgreSQL database
+- Docker and Docker Compose
+- Node.js (v18+)
+- npm
 
-### Installation
+### First Run Setup
 
 1. Clone the repository:
    ```bash
@@ -34,112 +36,206 @@ A modern real-time collaboration platform for teams.
    cd neonhub
    ```
 
-2. Install dependencies:
+2. Copy example environment files:
    ```bash
-   # Install frontend dependencies
-   cd frontend
-   npm install
-   
-   # Install backend dependencies
-   cd ../backend
-   npm install
+   cp .env.example .env
    ```
 
-3. Configure environment variables:
-   - Copy `.env.example` to `.env` in both frontend and backend directories
-   - Update the values with your own configuration
+3. Start the development environment with Docker:
+   ```bash
+   docker-compose up
+   ```
 
-4. Set up the database:
+4. The application will be available at:
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:5000
+
+### Manual Development Setup
+
+If you prefer to run the services directly on your machine:
+
+1. Install backend dependencies:
    ```bash
    cd backend
-   npx prisma migrate dev
+   npm install
    ```
 
-5. Start the development servers:
+2. Generate Prisma client and run migrations:
    ```bash
-   # Start backend server
-   cd backend
-   npm run dev
-   
-   # In a new terminal, start frontend server
-   cd frontend
+   npm run prisma:generate
+   npm run prisma:migrate:dev
+   ```
+
+3. Start the backend in development mode:
+   ```bash
    npm run dev
    ```
 
-6. Open your browser and navigate to `http://localhost:3000`
+4. In a new terminal, install frontend dependencies:
+   ```bash
+   cd frontend
+   npm install
+   ```
 
-## Development
-
-### Project Structure
-
-```
-neonhub/
-├── frontend/          # Next.js React application
-│   ├── components/    # React components
-│   ├── context/       # React context for state management
-│   ├── hooks/         # Custom React hooks
-│   ├── pages/         # Next.js pages
-│   ├── public/        # Static assets
-│   ├── styles/        # CSS styles
-│   └── utils/         # Utility functions
-├── backend/           # Express API server
-│   ├── config/        # Configuration files
-│   ├── controllers/   # Request handlers
-│   ├── middleware/    # Express middleware
-│   ├── models/        # Prisma models
-│   ├── routes/        # API routes
-│   ├── services/      # Business logic
-│   ├── utils/         # Utility functions
-│   └── prisma/        # Prisma schema and migrations
-└── docs/              # Documentation
-```
-
-### Scripts
-
-Frontend:
-- `npm run dev`: Start development server
-- `npm run build`: Build production version
-- `npm run start`: Start production server
-- `npm run lint`: Run ESLint
-- `npm run test`: Run tests
-
-Backend:
-- `npm run dev`: Start development server
-- `npm run build`: Compile TypeScript to JavaScript
-- `npm run start`: Start production server
-- `npm run lint`: Run ESLint
-- `npm run test`: Run tests
-
-## Testing
-
-```bash
-# Run frontend tests
-cd frontend
-npm run test
-
-# Run backend tests
-cd backend
-npm run test
-```
+5. Start the frontend in development mode:
+   ```bash
+   npm run dev
+   ```
 
 ## Deployment
 
-The project includes Docker configuration for easy deployment.
+### Production Setup with Docker Compose
 
-```bash
-# Build and run Docker containers
-docker-compose up -d
-```
+1. Copy the production environment example:
+   ```bash
+   cp .env.prod.example .env.prod
+   ```
 
-See the [deployment documentation](./docs/deployment.md) for more details.
+2. Edit `.env.prod` with your production settings:
+   - Update database credentials
+   - Set secure JWT secret
+   - Add your OpenAI API key
+   - Configure domain names
 
-## Contributing
+3. Build and start the production containers:
+   ```bash
+   docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d
+   ```
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+### Deployment to Cloud Providers
+
+#### Railway
+
+1. Install the Railway CLI:
+   ```bash
+   npm install -g @railway/cli
+   ```
+
+2. Login and link your project:
+   ```bash
+   railway login
+   railway link
+   ```
+
+3. Deploy the application:
+   ```bash
+   railway up
+   ```
+
+#### Render
+
+1. Connect your GitHub repository to Render.
+2. Create a new Web Service for the backend:
+   - Build command: `npm install && npm run prisma:generate && npm run build`
+   - Start command: `npm run prisma:migrate:deploy && npm run start`
+3. Create a new Web Service for the frontend:
+   - Build command: `npm install && npm run build`
+   - Start command: `npm run start`
+4. Set up environment variables in the Render dashboard.
+
+#### AWS ECS
+
+1. Build and push your Docker images:
+   ```bash
+   docker-compose -f docker-compose.prod.yml build
+   docker-compose -f docker-compose.prod.yml push
+   ```
+
+2. Configure AWS resources with Infrastructure as Code (Terraform/CloudFormation).
+3. Update the ECS task definitions and services to use your Docker images.
+
+### CI/CD Pipeline
+
+The repository includes GitHub Actions workflows that:
+
+1. Run linting and tests on pull requests
+2. Build and push Docker images on merges to main
+3. Deploy to your chosen cloud provider automatically
+
+## Real-time Agent Execution Monitor
+
+NeonHub implements a WebSocket-based real-time feedback system for AI agent runs using Socket.io. This feature enables:
+
+- Live monitoring of AI agent execution
+- Observation of agent logs as they occur
+- Human-in-the-loop review of agent output
+- Debugging during development or runtime errors
+
+## Autonomous Agent Scheduler
+
+NeonHub's agent system includes a persistent scheduler for autonomous execution with the following capabilities:
+
+- **Recurring Execution**: Configure agents to run on an automatic schedule
+- **Flexible Timing**: Schedule using either simple intervals or cron expressions
+- **Persistent Scheduling**: Schedules survive server restarts
+- **Missed Run Detection**: Automatically runs agents that were scheduled during downtime 
+- **Error Recovery**: Built-in retry mechanism for failed agent runs
+- **Execution History**: All runs are recorded in the database with full logs and metrics
+
+## Launch Preparation
+
+NeonHub includes a comprehensive launch preparation module that ensures the system is ready for immediate demonstration with realistic data and scheduled agent behavior:
+
+### Preparation Features
+
+- **Automated Setup**: Single command to prepare the entire system for launch
+- **Data Validation**: Ensures seed data exists and is properly structured
+- **Agent Scheduling**: Configures agents with realistic schedules
+- **Sample Output Generation**: Creates demonstration output for immediate viewing
+- **System Validation**: Comprehensive tests of all critical components
+- **Environment Verification**: Confirms all required settings are in place
+
+### Using Launch Preparation
+
+1. Run the launch preparation script:
+   ```bash
+   cd backend
+   npm run launch-prep
+   ```
+
+2. Validate the system (optional but recommended):
+   ```bash
+   npm run validate
+   ```
+
+3. Access the detailed launch documentation:
+   ```bash
+   open docs/LAUNCH_PREPARATION.md
+   ```
+
+### Demo Data
+
+The launch preparation creates realistic data including:
+- Pre-configured users with different roles
+- Projects with sample tasks and documents
+- Marketing campaigns with generated content
+- Trend analysis with actionable insights
+- Agents scheduled to run at realistic intervals
+- Execution history with sample output
+
+See `docs/LAUNCH_PREPARATION.md` for complete details on demo accounts and features.
+
+## Environment Variables
+
+### Backend Variables
+
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| DATABASE_URL | PostgreSQL connection string | Yes | - |
+| PORT | Backend server port | No | 5000 |
+| NODE_ENV | Environment (development/production) | No | development |
+| JWT_SECRET | Secret for JWT tokens | Yes | - |
+| JWT_EXPIRE | JWT token expiration time | No | 24h |
+| OPENAI_API_KEY | OpenAI API key for AI agents | Yes | - |
+| CLIENT_URL | URL of the frontend client | Yes | http://localhost:3000 |
+| CORS_ORIGIN | Allowed CORS origins | Yes | http://localhost:3000 |
+
+### Frontend Variables
+
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| NEXT_PUBLIC_API_URL | URL of the backend API | Yes | http://localhost:5000 |
+| NEXT_PUBLIC_ENABLE_ANALYTICS | Enable analytics tracking | No | false |
 
 ## License
 

@@ -21,6 +21,13 @@ import { errorHandler } from './middleware/error.middleware';
 // Controllers
 import { setIo } from './controllers/message.controller';
 
+// Socket.io configuration
+import { configureAgentSocket, setSocketIO } from './socket/agentOutput';
+
+// Agent scheduler
+import { AgentScheduler } from './agents/scheduler/AgentScheduler';
+import { getAgentManager } from './agents';
+
 // Initialize environment variables
 dotenv.config();
 
@@ -43,6 +50,21 @@ const io = new Server(httpServer, {
 // Pass Socket.io instance to message controller
 setIo(io);
 
+// Configure agent socket and store the instance globally
+const agentIo = configureAgentSocket(httpServer, prisma);
+setSocketIO(agentIo);
+
+// Initialize agent scheduler
+const agentManager = getAgentManager(prisma);
+const agentScheduler = new AgentScheduler(prisma, agentManager, {
+  runMissedOnStartup: true,
+  autoStart: true,
+  checkInterval: 30000 // Check every 30 seconds
+});
+
+// Export agent scheduler for use in routes
+export { agentScheduler };
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -50,6 +72,7 @@ app.use(morgan('dev'));
 
 // Static files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/public', express.static(path.join(__dirname, 'public')));
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -61,7 +84,26 @@ app.use('/api/documents', documentRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
+  // Check database connection
+  prisma.$queryRaw`SELECT 1`
+    .then(() => {
+      res.status(200).json({
+        status: 'ok',
+        timestamp: new Date(),
+        uptime: process.uptime(),
+        databaseConnected: true
+      });
+    })
+    .catch(err => {
+      console.error('Health check database error:', err);
+      res.status(500).json({
+        status: 'error',
+        timestamp: new Date(),
+        uptime: process.uptime(),
+        databaseConnected: false,
+        error: 'Database connection failed'
+      });
+    });
 });
 
 // Error handling middleware

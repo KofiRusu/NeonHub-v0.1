@@ -1,27 +1,39 @@
 FROM node:18-alpine
 
+# Set working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json
-COPY package*.json ./
+# Copy package files
+COPY package.json package-lock.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm ci
 
-# Copy Prisma schema
-COPY prisma ./prisma/
+# Copy required files only
+COPY tsconfig.json ./
+COPY prisma/ ./prisma/
+COPY src/ ./src/
+COPY controllers/ ./controllers/
+COPY services/ ./services/
+COPY routes/ ./routes/
+COPY utils/ ./utils/
+COPY middleware/ ./middleware/
+COPY config/ ./config/
 
 # Generate Prisma client
 RUN npx prisma generate
 
-# Copy the rest of the code
-COPY . .
-
-# Build the app
+# Build TypeScript
 RUN npm run build
 
-# Expose the port
-EXPOSE 5000
+# Remove development dependencies
+RUN npm prune --production
 
-# Set up the command to run the app
-CMD ["npm", "run", "start"] 
+# Expose API port
+EXPOSE 3001
+
+# Set production environment
+ENV NODE_ENV=production
+
+# Start the application
+CMD ["node", "dist/src/server.js"] 
