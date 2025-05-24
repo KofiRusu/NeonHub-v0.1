@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  # Agent Scheduler Service
+  agent-scheduler:
+    build:
+      context: ./backend
+      target: ${NODE_ENV:-development}
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-neonhub}?schema=public
+      - AGENT_SCHEDULER_ENABLED=true
+      - AGENT_SCHEDULER_INTERVAL=30000
+      - AGENT_RUN_MISSED_ON_STARTUP=true
+      - MAX_CONCURRENT_AGENTS=5
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    networks:
+      - neonhub_network
+    restart: unless-stopped
+    command: sh -c "npm run prisma:migrate:deploy && node scripts/run_scheduler.js"
+
+networks:
+  neonhub_network:
+    external: true 

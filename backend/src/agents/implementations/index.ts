@@ -7,6 +7,7 @@ import { PerformanceOptimizerAgent } from './PerformanceOptimizerAgent';
 import { AudienceResearchAgent } from './AudienceResearchAgent';
 import { SEOAgent } from './SEOAgent';
 import { CustomerSupportAgent } from './CustomerSupportAgent';
+import { EngineeringConversationAgent } from './EngineeringConversationAgent';
 
 /**
  * Factory function to get the appropriate agent implementation based on type
@@ -36,6 +37,8 @@ export function getAgentImplementation(
       return new SEOAgent(prisma, agentData);
     case 'CUSTOMER_SUPPORT':
       return new CustomerSupportAgent(prisma, agentData);
+    case 'ENGINEERING_CONVERSATION':
+      return new EngineeringConversationAgent(prisma, agentData);
     default:
       throw new Error(`Unknown agent type: ${agentType}`);
   }
@@ -49,5 +52,6 @@ export {
   PerformanceOptimizerAgent,
   AudienceResearchAgent,
   SEOAgent,
-  CustomerSupportAgent
+  CustomerSupportAgent,
+  EngineeringConversationAgent
 }; 
