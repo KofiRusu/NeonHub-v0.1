@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login, getMe } from '../controllers/auth.controller';
+import { register, login, getMe, oauthLogin } from '../controllers/auth.controller';
 import { protect } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -17,6 +17,13 @@ router.post('/register', register);
  * @access Public
  */
 router.post('/login', login);
+
+/**
+ * @route POST /api/auth/oauth/:provider
+ * @desc Authenticate with OAuth provider
+ * @access Public
+ */
+router.post('/oauth/:provider', oauthLogin);
 
 /**
  * @route GET /api/auth/me

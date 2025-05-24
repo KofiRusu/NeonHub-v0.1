@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { verifyToken } from '../utils/jwt';
+import { verifyJWT, extractTokenFromHeader } from '../utils/jwt';
 import { prisma } from '../index';
+import { getAuthService } from '../services';
 
 // Extend Express Request interface to include user
 declare global {
@@ -26,19 +27,17 @@ export const protect = async (
   try {
     // Get token from header
     const authHeader = req.headers.authorization;
+    const token = extractTokenFromHeader(authHeader);
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!token) {
       return res.status(401).json({
         success: false,
         message: 'Not authorized to access this route',
       });
     }
 
-    // Get token
-    const token = authHeader.split(' ')[1];
-
     // Verify token
-    const decoded = verifyToken(token);
+    const decoded = verifyJWT(token);
 
     if (!decoded) {
       return res.status(401).json({
@@ -48,9 +47,8 @@ export const protect = async (
     }
 
     // Check if user still exists
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
-    });
+    const authService = getAuthService(prisma);
+    const user = await authService.getUserById(decoded.id);
 
     if (!user) {
       return res.status(401).json({
@@ -68,6 +66,7 @@ export const protect = async (
 
     next();
   } catch (error) {
+    console.error('Authentication error:', error);
     return res.status(401).json({
       success: false,
       message: 'Not authorized to access this route',

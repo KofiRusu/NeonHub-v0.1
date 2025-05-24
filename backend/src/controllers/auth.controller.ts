@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
-import bcrypt from 'bcryptjs';
 import { prisma } from '../index';
-import { generateToken } from '../utils/jwt';
+import { getAuthService, OAuthProvider } from '../services';
 
 /**
  * Register a new user
@@ -12,46 +11,35 @@ export const register = async (req: Request, res: Response) => {
   try {
     const { name, email, password } = req.body;
 
-    // Check if user already exists
-    const userExists = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (userExists) {
+    // Validate input
+    if (!name || !email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'User already exists',
+        message: 'Please provide name, email and password',
       });
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const authService = getAuthService(prisma);
 
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-      },
-    });
-
-    // Generate token
-    const token = generateToken(user);
+    // Register the user
+    const result = await authService.register({ name, email, password });
 
     res.status(201).json({
       success: true,
-      token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+      token: result.token,
+      user: result.user,
     });
   } catch (error) {
     console.error('Register error:', error);
+    
+    // Handle specific errors
+    if (error instanceof Error && error.message === 'User with this email already exists') {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Server error',
@@ -68,46 +56,83 @@ export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
-    // Check if user exists
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (!user) {
+    // Validate input
+    if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid credentials',
+        message: 'Please provide email and password',
       });
     }
 
-    // Check if password matches
-    const isMatch = await bcrypt.compare(password, user.password);
+    const authService = getAuthService(prisma);
 
-    if (!isMatch) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid credentials',
-      });
-    }
-
-    // Generate token
-    const token = generateToken(user);
+    // Login the user
+    const result = await authService.login({ email, password });
 
     res.status(200).json({
       success: true,
-      token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+      token: result.token,
+      user: result.user,
     });
   } catch (error) {
     console.error('Login error:', error);
+    
+    // Handle invalid credentials
+    if (error instanceof Error && error.message === 'Invalid credentials') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid credentials',
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Server error',
+    });
+  }
+};
+
+/**
+ * OAuth authentication
+ * @route POST /api/auth/oauth/:provider
+ * @access Public
+ */
+export const oauthLogin = async (req: Request, res: Response) => {
+  try {
+    const { provider } = req.params;
+    const { code } = req.body;
+
+    // Validate input
+    if (!code) {
+      return res.status(400).json({
+        success: false,
+        message: 'Authorization code is required',
+      });
+    }
+
+    // Validate provider
+    if (!Object.values(OAuthProvider).includes(provider as OAuthProvider)) {
+      return res.status(400).json({
+        success: false,
+        message: `Unsupported OAuth provider: ${provider}`,
+      });
+    }
+
+    const authService = getAuthService(prisma);
+
+    // Authenticate with OAuth
+    const result = await authService.authenticateWithOAuth(provider as OAuthProvider, code);
+
+    res.status(200).json({
+      success: true,
+      token: result.token,
+      user: result.user,
+    });
+  } catch (error) {
+    console.error('OAuth login error:', error);
+    res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Server error',
     });
   }
 };
@@ -119,17 +144,15 @@ export const login = async (req: Request, res: Response) => {
  */
 export const getMe = async (req: Request, res: Response) => {
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: req.user?.id },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        avatar: true,
-        createdAt: true,
-      },
-    });
+    if (!req.user?.id) {
+      return res.status(401).json({
+        success: false,
+        message: 'Not authorized',
+      });
+    }
+
+    const authService = getAuthService(prisma);
+    const user = await authService.getUserById(req.user.id);
 
     if (!user) {
       return res.status(404).json({

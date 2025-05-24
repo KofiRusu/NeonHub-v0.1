@@ -37,6 +37,11 @@ module.exports = {
       model: 'gpt-4',
       temperature: 0.2,
       maxTokens: 1024,
+    },
+    ENGINEERING_CONVERSATION: {
+      model: 'gpt-4',
+      temperature: 0.7,
+      maxTokens: 2048,
     }
   }
 };

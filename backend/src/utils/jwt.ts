@@ -2,12 +2,12 @@ import jwt from 'jsonwebtoken';
 import { logger } from './logger';
 
 // Default JWT expiration time
-const DEFAULT_EXPIRY = '7d';
+const DEFAULT_EXPIRY = process.env.JWT_EXPIRE || '7d';
 
 /**
  * Generate a JWT token for a user
  * @param user User data to include in the token
- * @param expiresIn Token expiration time (default: 7 days)
+ * @param expiresIn Token expiration time (default: from env or 7 days)
  * @returns JWT token
  */
 export const generateJWT = (
@@ -15,7 +15,11 @@ export const generateJWT = (
   expiresIn = DEFAULT_EXPIRY
 ): string => {
   try {
-    const jwtSecret = process.env.JWT_SECRET || 'development-secret';
+    const jwtSecret = process.env.JWT_SECRET;
+    
+    if (!jwtSecret) {
+      logger.warn('JWT_SECRET is not set. Using development secret. This is not secure for production!');
+    }
     
     return jwt.sign(
       {
@@ -23,7 +27,7 @@ export const generateJWT = (
         email: user.email,
         role: user.role || 'USER',
       },
-      jwtSecret,
+      jwtSecret || 'development-secret',
       { expiresIn }
     );
   } catch (error) {
@@ -39,13 +43,21 @@ export const generateJWT = (
  */
 export const verifyJWT = (token: string): any | null => {
   try {
-    const jwtSecret = process.env.JWT_SECRET || 'development-secret';
-    return jwt.verify(token, jwtSecret);
+    const jwtSecret = process.env.JWT_SECRET;
+    
+    if (!jwtSecret) {
+      logger.warn('JWT_SECRET is not set. Using development secret. This is not secure for production!');
+    }
+    
+    return jwt.verify(token, jwtSecret || 'development-secret');
   } catch (error) {
     logger.error('Error verifying JWT:', error);
     return null;
   }
 };
+
+// Alias for backward compatibility
+export const verifyToken = verifyJWT;
 
 /**
  * Extract a token from the Authorization header

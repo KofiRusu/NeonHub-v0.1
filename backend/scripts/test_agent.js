@@ -16,6 +16,13 @@ async function testAgent() {
     process.exit(1);
   }
   
+  // Verify OpenAI API key is set
+  if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your_openai_api_key_here') {
+    console.error('Error: OpenAI API key is not properly configured');
+    console.error('Please update your .env file with a valid API key');
+    process.exit(1);
+  }
+  
   console.log(`Testing agent with ID: ${agentId}`);
   
   // Initialize Prisma client
