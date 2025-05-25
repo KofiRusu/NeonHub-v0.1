@@ -330,7 +330,7 @@ export class CustomerSupportAgent extends BaseAgent {
       mainResponse = 'Thank you for your feature suggestion! We appreciate your feedback and have logged this request for our product team to review. ' +
         'We regularly evaluate new feature requests as part of our product roadmap planning.';
     } else {
-      mainResponse = 'I've reviewed your question and can help you with this. ' +
+      mainResponse = 'I\'ve reviewed your question and can help you with this. ' +
         'Our team is dedicated to providing the best possible experience and solution for our customers.';
     }
     

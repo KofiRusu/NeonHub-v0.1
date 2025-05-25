@@ -73,7 +73,7 @@ interface SchedulerOptions {
 export class AgentScheduler {
   private prisma: PrismaClient;
   private agentManager: AgentManager;
-  private isRunning: boolean = false;
+  private isRunning = false;
   private intervalId: NodeJS.Timeout | null = null;
   private options: Required<SchedulerOptions>;
   private scheduledTasks: Map<string, ScheduledTask> = new Map();
@@ -169,7 +169,7 @@ export class AgentScheduler {
     agentId: string, 
     cronExpression: string, 
     priority: AgentPriority = AgentPriority.NORMAL,
-    enabled: boolean = true
+    enabled = true
   ): Promise<void> {
     try {
       // Validate cron expression

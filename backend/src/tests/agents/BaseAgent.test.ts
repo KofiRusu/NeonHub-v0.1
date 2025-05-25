@@ -4,15 +4,15 @@ import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
 
 // Mock implementation of BaseAgent for testing
 class TestAgent extends BaseAgent {
-  private shouldFail: boolean = false;
-  private failureCount: number = 0;
-  private maxFailures: number = 0;
+  private shouldFail = false;
+  private failureCount = 0;
+  private maxFailures = 0;
 
   constructor(prisma: PrismaClient, agentData: AIAgent) {
     super(prisma, agentData);
   }
 
-  setFailureMode(shouldFail: boolean, maxFailures: number = 1): void {
+  setFailureMode(shouldFail: boolean, maxFailures = 1): void {
     this.shouldFail = shouldFail;
     this.maxFailures = maxFailures;
     this.failureCount = 0;

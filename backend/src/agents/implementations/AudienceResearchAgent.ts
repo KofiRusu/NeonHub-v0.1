@@ -410,7 +410,7 @@ ${competitorData ? `
         distribution[4].percentage = 15;
         distribution[5].percentage = 5;
         break;
-      default:
+      default: {
         // Default distribution with random variation
         let remaining = 100;
         for (let i = 0; i < distribution.length - 1; i++) {
@@ -422,6 +422,7 @@ ${competitorData ? `
           remaining -= distribution[i].percentage;
         }
         distribution[distribution.length - 1].percentage = remaining;
+      }
     }
     
     return distribution;

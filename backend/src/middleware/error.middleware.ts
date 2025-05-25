@@ -14,7 +14,7 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  let error = { ...err };
+  const error = { ...err };
   error.message = err.message;
 
   // Log error for server-side debugging

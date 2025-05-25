@@ -679,13 +679,14 @@ function processMetricsSummary(metrics: any[], groupBy: string): any {
       case 'day':
         key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
         break;
-      case 'week':
+      case 'week': {
         // Get the first day of the week (Sunday)
         const firstDayOfWeek = new Date(date);
         const dayOfWeek = date.getDay();
         firstDayOfWeek.setDate(date.getDate() - dayOfWeek);
         key = `${firstDayOfWeek.getFullYear()}-${String(firstDayOfWeek.getMonth() + 1).padStart(2, '0')}-${String(firstDayOfWeek.getDate()).padStart(2, '0')}`;
         break;
+      }
       case 'month':
         key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         break;

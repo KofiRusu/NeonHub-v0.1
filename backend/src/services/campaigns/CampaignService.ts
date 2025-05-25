@@ -72,7 +72,7 @@ export class CampaignService {
   async getCampaigns(
     userId: string,
     projectId?: string,
-    includeRelated: boolean = false
+    includeRelated = false
   ): Promise<Campaign[]> {
     const where: Prisma.CampaignWhereInput = {
       ownerId: userId
@@ -131,7 +131,7 @@ export class CampaignService {
    */
   async getCampaign(
     campaignId: string,
-    includeRelated: boolean = false
+    includeRelated = false
   ): Promise<Campaign | null> {
     return this.prisma.campaign.findUnique({
       where: { id: campaignId },

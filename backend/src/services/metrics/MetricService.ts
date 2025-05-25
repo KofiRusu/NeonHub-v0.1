@@ -29,7 +29,7 @@ export class MetricService {
     projectId: string,
     executionId: string,
     campaignId?: string,
-    success: boolean = true,
+    success = true,
     tokenUsage?: TokenUsage
   ): Promise<Metric> {
     // Create a new metric entry for the agent execution

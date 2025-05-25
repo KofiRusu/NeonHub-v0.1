@@ -5,7 +5,7 @@ import { generateJWT } from '../utils/jwt';
 
 // Mocking authentication
 jest.mock('../middleware/auth.middleware', () => ({
-  protect: (req, res, next) => {
+  protect: (req: any, res: any, next: any) => {
     req.user = { id: 'test-user-id' };
     next();
   }
@@ -23,11 +23,11 @@ describe('Metrics API Routes', () => {
       data: {
         name: 'Test User',
         email: 'metric-test@example.com',
-        passwordHash: 'hashed-password'
+        password: 'hashed-password'
       }
     });
 
-    authToken = generateJWT(testUser.id);
+    authToken = generateJWT({ id: testUser.id, email: testUser.email, role: testUser.role });
 
     testProject = await prisma.project.create({
       data: {

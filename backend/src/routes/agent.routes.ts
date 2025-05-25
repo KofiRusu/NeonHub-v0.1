@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient, AgentType } from '@prisma/client';
 import { body, validationResult } from 'express-validator';
-import { getAgentManager } from '../agents';
+import { getAgentManager, getAgentScheduler } from '../agents';
 import { AgentResult } from '../agents/base/types';
 import contentRoutes from './agents/content.routes';
 import trendRoutes from './agents/trend.routes';
@@ -388,7 +388,7 @@ router.post(
       }
       
       // Get the agent scheduler
-      const { agentScheduler } = require('../index');
+      const agentScheduler = getAgentScheduler(prisma);
       
       // Schedule the agent
       await agentScheduler.scheduleAgent(id, expression, enabled);
@@ -444,7 +444,7 @@ router.delete(
       }
       
       // Get the agent scheduler
-      const { agentScheduler } = require('../index');
+      const agentScheduler = getAgentScheduler(prisma);
       
       // Unschedule the agent
       agentScheduler.unscheduleAgent(id);
@@ -497,7 +497,7 @@ router.post(
       }
       
       // Get the agent scheduler
-      const { agentScheduler } = require('../index');
+      const agentScheduler = getAgentScheduler(prisma);
       
       // Start running the agent (don't wait for it to complete)
       agentScheduler.runAgentNow(id).catch(error => {

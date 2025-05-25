@@ -28,7 +28,7 @@ export const generateJWT = (
         role: user.role || 'USER',
       },
       jwtSecret || 'development-secret',
-      { expiresIn }
+      { expiresIn: expiresIn }
     );
   } catch (error) {
     logger.error('Error generating JWT:', error);

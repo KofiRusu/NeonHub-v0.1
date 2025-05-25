@@ -93,7 +93,7 @@ export class MetricService {
     projectId: string,
     sessionId: string,
     campaignId?: string,
-    success: boolean = true,
+    success = true,
     tokenUsage?: { input: number; output: number; total: number },
   ): Promise<Metric[]> {
     const metrics: Metric[] = [];

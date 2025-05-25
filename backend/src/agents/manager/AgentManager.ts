@@ -332,7 +332,7 @@ export class AgentManager {
    * @param limit Number of sessions to return
    * @returns Array of execution sessions
    */
-  async getAgentExecutionHistory(agentId: string, limit: number = 10): Promise<any[]> {
+  async getAgentExecutionHistory(agentId: string, limit = 10): Promise<any[]> {
     return await this.prisma.agentExecutionSession.findMany({
       where: { agentId },
       orderBy: { startedAt: 'desc' },

@@ -154,7 +154,7 @@ export class OutreachManagerAgent extends BaseAgent {
   /**
    * Generate a personal note based on contact info and personalization level
    */
-  private generatePersonalNote(contact: any, level: string = 'MEDIUM'): string {
+  private generatePersonalNote(contact: any, level = 'MEDIUM'): string {
     // TODO: In a real implementation, this would use an LLM to generate truly personalized notes
     // based on research about the contact, their recent activities, etc.
     

@@ -43,13 +43,13 @@ export interface AgentEvent {
 export abstract class BaseAgent {
   protected prisma: PrismaClient;
   protected agentData: AIAgent;
-  protected isRunning: boolean = false;
-  protected shouldStop: boolean = false;
-  protected executionStartTime: number = 0;
+  protected isRunning = false;
+  protected shouldStop = false;
+  protected executionStartTime = 0;
   protected currentSessionId: string | null = null;
   protected events: AgentEvent[] = [];
-  protected maxRetries: number = 3;
-  protected retryDelay: number = 1000; // 1 second
+  protected maxRetries = 3;
+  protected retryDelay = 1000; // 1 second
 
   /**
    * Constructor for the BaseAgent
