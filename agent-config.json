@@ -1,0 +1,212 @@
+{
+  "agents": {
+    "architecture": {
+      "name": "NeonHub Architecture Agent",
+      "description": "Continuously owns and evolves the high-level design of NeonHub",
+      "triggers": [
+        "on_push_to_main",
+        "on_architecture_file_change"
+      ],
+      "responsibilities": [
+        "Analyze changed files and update architecture.md",
+        "Validate consistency between data models and service boundaries",
+        "Break down feature requests into sub-tasks",
+        "Maintain sequence diagrams and component relationships"
+      ],
+      "files_monitored": [
+        "architecture.md",
+        "IMPLEMENTATION_PLAN.md", 
+        "PROJECT_OVERVIEW.md",
+        "backend/src/**/*.ts",
+        "frontend/src/**/*.tsx"
+      ],
+      "commit_prefix": "docs(arch):"
+    },
+    "backend": {
+      "name": "NeonHub Backend Agent",
+      "description": "Maintains backend code quality, API consistency, and test coverage",
+      "triggers": [
+        "on_backend_change",
+        "on_push_to_main"
+      ],
+      "responsibilities": [
+        "Scan for new or modified API endpoints and services",
+        "Scaffold missing routes with TypeScript and JSDoc",
+        "Generate or update Jest unit tests",
+        "Ensure strict typing and linting compliance"
+      ],
+      "files_monitored": [
+        "backend/**/*.ts",
+        "backend/prisma/**/*",
+        "backend/package.json"
+      ],
+      "commit_prefix": "fix(backend):|feat(backend):",
+      "quality_gates": {
+        "lint": "npm run lint",
+        "test": "npm test",
+        "type_check": "npx tsc --noEmit"
+      }
+    },
+    "frontend": {
+      "name": "NeonHub Frontend Agent", 
+      "description": "Maintains UI/UX consistency, component quality, and frontend tests",
+      "triggers": [
+        "on_frontend_change",
+        "on_push_to_main"
+      ],
+      "responsibilities": [
+        "Detect added or modified UI routes and components",
+        "Scaffold React + Next.js pages with shadcn/ui",
+        "Generate React Testing Library tests",
+        "Maintain styling consistency and accessibility"
+      ],
+      "files_monitored": [
+        "frontend/**/*.tsx",
+        "frontend/**/*.ts",
+        "frontend/src/components/**/*",
+        "frontend/package.json"
+      ],
+      "commit_prefix": "fix(frontend):|feat(frontend):",
+      "quality_gates": {
+        "lint": "npm run lint",
+        "test": "npm test",
+        "type_check": "npx tsc --noEmit",
+        "build": "npm run build"
+      }
+    },
+    "devops": {
+      "name": "NeonHub DevOps Agent",
+      "description": "Ensures CI/CD pipeline health and infrastructure reliability",
+      "triggers": [
+        "on_workflow_change",
+        "on_docker_change",
+        "schedule_hourly"
+      ],
+      "responsibilities": [
+        "Validate GitHub Actions workflows and Docker files",
+        "Simulate CI steps locally",
+        "Add caching and optimization strategies",
+        "Monitor deployment health and security"
+      ],
+      "files_monitored": [
+        ".github/workflows/**/*.yml",
+        "docker-compose*.yml",
+        "**/Dockerfile",
+        "kubernetes/**/*"
+      ],
+      "commit_prefix": "ci:|chore(devops):",
+      "quality_gates": {
+        "yaml_lint": "yamllint .github/workflows/",
+        "docker_validate": "docker-compose config",
+        "security_scan": "trivy fs ."
+      }
+    },
+    "qa": {
+      "name": "NeonHub QA Agent",
+      "description": "Maintains test coverage, quality metrics, and regression prevention",
+      "triggers": [
+        "on_push_to_main",
+        "on_test_change"
+      ],
+      "responsibilities": [
+        "Audit coverage diffs for backend and frontend",
+        "Auto-generate missing unit/integration tests",
+        "Run E2E tests against critical flows",
+        "Report regressions and edge cases"
+      ],
+      "files_monitored": [
+        "**/*.test.ts",
+        "**/*.spec.ts",
+        "**/*.test.tsx",
+        "backend/src/**/*.ts",
+        "frontend/src/**/*.tsx"
+      ],
+      "commit_prefix": "test:",
+      "quality_gates": {
+        "coverage_threshold": 90,
+        "e2e_tests": "npx playwright test",
+        "integration_tests": "npm run test:integration"
+      }
+    },
+    "docs": {
+      "name": "NeonHub Documentation Agent",
+      "description": "Keeps documentation synchronized with code and processes",
+      "triggers": [
+        "on_push_to_main",
+        "on_docs_change",
+        "on_api_change"
+      ],
+      "responsibilities": [
+        "Sync README.md and developer guides with code changes",
+        "Generate/update OpenAPI/Swagger docs",
+        "Verify markdown lint and link validity",
+        "Maintain API documentation consistency"
+      ],
+      "files_monitored": [
+        "**/*.md",
+        "docs/**/*",
+        "backend/src/routes/**/*.ts",
+        "README.md"
+      ],
+      "commit_prefix": "docs:|chore(docs):",
+      "quality_gates": {
+        "markdown_lint": "markdownlint **/*.md",
+        "link_check": "markdown-link-check **/*.md",
+        "api_docs": "swagger-jsdoc backend/src/routes/**/*.ts"
+      }
+    }
+  },
+  "global_settings": {
+    "git_config": {
+      "user_name": "NeonHub Agent",
+      "user_email": "agents@neonhub.com"
+    },
+    "notification_channels": [
+      "github_issues",
+      "slack_webhook"
+    ],
+    "quality_standards": {
+      "min_test_coverage": 90,
+      "max_complexity": 10,
+      "required_docs": ["README.md", "architecture.md", "API.md"]
+    },
+    "automation_rules": {
+      "auto_fix_lint": true,
+      "auto_generate_tests": true,
+      "auto_update_docs": true,
+      "require_approval_for": ["breaking_changes", "security_updates"]
+    }
+  },
+  "workflows": {
+    "on_push_to_main": {
+      "sequence": [
+        "architecture",
+        "backend",
+        "frontend", 
+        "qa",
+        "docs",
+        "devops"
+      ],
+      "parallel_execution": false,
+      "failure_strategy": "continue_on_error"
+    },
+    "on_pull_request": {
+      "sequence": [
+        "backend",
+        "frontend",
+        "qa"
+      ],
+      "parallel_execution": true,
+      "failure_strategy": "fail_fast"
+    },
+    "scheduled_maintenance": {
+      "cron": "0 2 * * *",
+      "sequence": [
+        "devops",
+        "qa",
+        "docs"
+      ],
+      "parallel_execution": false
+    }
+  }
+} 
