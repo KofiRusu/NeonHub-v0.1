@@ -24,6 +24,16 @@ export interface AgentExecutionConfig {
    * Token usage tracking for this execution
    */
   tokenUsage?: TokenUsage;
+
+  /**
+   * Maximum number of retry attempts
+   */
+  maxRetries?: number;
+
+  /**
+   * Delay between retry attempts in milliseconds
+   */
+  retryDelay?: number;
 }
 
 export { TokenUsage, ExecutionOptions }; 

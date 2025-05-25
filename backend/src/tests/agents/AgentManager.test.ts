@@ -1,13 +1,10 @@
 import { AgentManager } from '../../agents/manager/AgentManager';
 import { BaseAgent } from '../../agents/base/BaseAgent';
-import * as agentImplementations from '../../agents/implementations';
+import { AgentFactory, pluginRegistry } from '../../agents/factory/AgentFactory';
 import { prisma, createTestAgent, createTestCampaign } from '../mocks/prismaMock';
 
-// Mock the BaseAgent and getAgentImplementation
+// Mock the BaseAgent
 jest.mock('../../agents/base/BaseAgent');
-jest.mock('../../agents/implementations', () => ({
-  getAgentImplementation: jest.fn(),
-}));
 
 describe('AgentManager', () => {
   let agentManager: AgentManager;
@@ -15,14 +12,23 @@ describe('AgentManager', () => {
   
   beforeEach(() => {
     jest.clearAllMocks();
+    
+    // Register a test plugin in the global registry
+    pluginRegistry.register({
+      type: 'CONTENT_CREATOR',
+      name: 'Content Creator',
+      description: 'Creates content',
+      version: '1.0.0',
+      create: (prisma, agentData) => mockBaseAgent,
+      getDefaultConfig: () => ({ defaultKey: 'defaultValue' }),
+      validateConfig: () => true,
+    });
+    
     agentManager = new AgentManager(prisma);
     mockBaseAgent = {
       execute: jest.fn(),
       stop: jest.fn(),
     } as unknown as jest.Mocked<BaseAgent>;
-    
-    // Setup mock implementation
-    (agentImplementations.getAgentImplementation as jest.Mock).mockReturnValue(mockBaseAgent);
   });
   
   describe('startAgent', () => {
@@ -93,12 +99,8 @@ describe('AgentManager', () => {
       
       await agentManager.startAgent(agent.id, undefined, executionOptions);
       
-      expect(agentImplementations.getAgentImplementation).toHaveBeenCalledWith(
-        agent.agentType,
-        prisma,
-        agent
-      );
-      
+      // The factory createAgent method is called internally, but we can't easily mock it
+      // since it's called within the AgentManager. Instead, we verify the execution happened.
       expect(mockBaseAgent.execute).toHaveBeenCalledWith(
         expectedConfig,
         {

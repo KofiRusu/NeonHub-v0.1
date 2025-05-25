@@ -15,7 +15,7 @@ import taskRoutes from './routes/task.routes';
 import documentRoutes from './routes/document.routes';
 import messageRoutes from './routes/message.routes';
 import agentRoutes from './routes/agents/agent.routes';
-import campaignRoutes from './routes/campaign.routes';
+import campaignRoutes from './routes/campaigns.routes';
 import metricRoutes from './routes/metric.routes';
 import feedbackRoutes from './routes/feedback.routes';
 

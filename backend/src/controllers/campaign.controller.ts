@@ -1,524 +1,416 @@
 import { Request, Response } from 'express';
 import { prisma } from '../index';
-import { CampaignStatus, CampaignType } from '@prisma/client';
+import { getCampaignService } from '../services';
+import { CampaignType, CampaignStatus } from '@prisma/client';
 
 /**
- * Get all campaigns with filtering options
+ * Get all campaigns for the current user
  * @route GET /api/campaigns
  * @access Private
  */
 export const getCampaigns = async (req: Request, res: Response) => {
   try {
-    const { projectId, status, type, userId } = req.query;
-    const currentUserId = req.user?.id;
-
-    // Build where clause for filtering
-    const where: any = {};
-
-    // Filter by project
-    if (projectId) {
-      where.projectId = projectId as string;
-    }
-
-    // Filter by status
-    if (status) {
-      where.status = status as CampaignStatus;
-    }
-
-    // Filter by campaign type
-    if (type) {
-      where.campaignType = type as CampaignType;
-    }
-
-    // Filter by owner
-    if (userId) {
-      where.ownerId = userId as string;
-    }
-
-    // If no projectId specified, filter by projects the user has access to
-    if (!projectId) {
-      where.OR = [
-        { ownerId: currentUserId },
-        { project: { members: { some: { id: currentUserId } } } }
-      ];
-    } else {
-      // Check if user has access to the project
-      const project = await prisma.project.findFirst({
-        where: {
-          id: projectId as string,
-          OR: [
-            { ownerId: currentUserId },
-            { members: { some: { id: currentUserId } } }
-          ]
-        }
+    if (!req.user?.id) {
+      return res.status(401).json({
+        success: false,
+        message: 'Not authorized',
       });
-
-      if (!project) {
-        return res.status(403).json({
-          success: false,
-          message: 'Not authorized to access this project'
-        });
-      }
     }
 
-    // Get campaigns with filters
-    const campaigns = await prisma.campaign.findMany({
-      where,
-      include: {
-        owner: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true
-          }
-        },
-        project: {
-          select: {
-            id: true,
-            name: true
-          }
-        },
-        _count: {
-          select: {
-            metrics: true,
-            generatedContent: true
-          }
-        }
-      },
-      orderBy: {
-        updatedAt: 'desc'
-      }
-    });
+    const projectId = req.query.projectId as string | undefined;
+    const includeRelated = req.query.includeRelated === 'true';
+
+    const campaignService = getCampaignService(prisma);
+    const campaigns = await campaignService.getCampaigns(
+      req.user.id,
+      projectId,
+      includeRelated
+    );
 
     res.status(200).json({
       success: true,
-      count: campaigns.length,
-      data: campaigns
+      data: campaigns,
     });
   } catch (error) {
     console.error('Get campaigns error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: 'Server error',
     });
   }
 };
 
 /**
- * Get single campaign
+ * Get a campaign by ID
  * @route GET /api/campaigns/:id
  * @access Private
  */
 export const getCampaign = async (req: Request, res: Response) => {
   try {
-    const campaignId = req.params.id;
-    const userId = req.user?.id;
+    if (!req.user?.id) {
+      return res.status(401).json({
+        success: false,
+        message: 'Not authorized',
+      });
+    }
 
-    // Get campaign by ID with project info to check access rights
-    const campaign = await prisma.campaign.findUnique({
-      where: { id: campaignId },
-      include: {
-        owner: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true
-          }
-        },
-        project: {
-          include: {
-            owner: {
-              select: {
-                id: true
-              }
-            },
-            members: {
-              select: {
-                id: true
-              }
-            }
-          }
-        },
-        agents: {
-          select: {
-            id: true,
-            name: true,
-            agentType: true,
-            status: true
-          }
-        },
-        generatedContent: {
-          take: 5,
-          orderBy: {
-            createdAt: 'desc'
-          },
-          select: {
-            id: true,
-            title: true,
-            contentType: true,
-            status: true,
-            createdAt: true
-          }
-        }
-      }
-    });
+    const { id } = req.params;
+    const includeRelated = req.query.includeRelated === 'true';
+
+    const campaignService = getCampaignService(prisma);
+    const campaign = await campaignService.getCampaign(id, includeRelated);
 
     if (!campaign) {
       return res.status(404).json({
         success: false,
-        message: 'Campaign not found'
+        message: 'Campaign not found',
       });
     }
 
-    // Check if user has access to the project
-    const hasAccess =
-      campaign.project.owner.id === userId ||
-      campaign.project.members.some(member => member.id === userId);
-
-    if (!hasAccess) {
+    // Check if user has access to this campaign
+    if (campaign.ownerId !== req.user.id && req.user.role !== 'ADMIN') {
       return res.status(403).json({
         success: false,
-        message: 'Not authorized to access this campaign'
+        message: 'Not authorized to access this campaign',
       });
     }
-
-    // Simplify project data for response
-    const { project, ...campaignData } = campaign;
-    const simplifiedProject = {
-      id: project.id,
-      ownerId: project.owner.id
-    };
 
     res.status(200).json({
       success: true,
-      data: {
-        ...campaignData,
-        project: simplifiedProject
-      }
+      data: campaign,
     });
   } catch (error) {
     console.error('Get campaign error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: 'Server error',
     });
   }
 };
 
 /**
- * Create new campaign
+ * Create a new campaign
  * @route POST /api/campaigns
  * @access Private
  */
 export const createCampaign = async (req: Request, res: Response) => {
   try {
-    const { 
-      name, 
-      description, 
-      campaignType, 
-      goals, 
-      targeting, 
-      budget, 
-      startDate, 
-      endDate, 
-      projectId, 
-      status = 'DRAFT' 
-    } = req.body;
-    
-    const userId = req.user?.id;
-
-    // Validate required fields
-    if (!name || !campaignType || !projectId) {
-      return res.status(400).json({
+    if (!req.user?.id) {
+      return res.status(401).json({
         success: false,
-        message: 'Please provide name, campaign type, and project ID'
+        message: 'Not authorized',
       });
     }
 
-    // Check if user has access to the project
-    const project = await prisma.project.findFirst({
-      where: {
-        id: projectId,
-        OR: [
-          { ownerId: userId },
-          { members: { some: { id: userId } } }
-        ]
-      }
-    });
+    const {
+      name,
+      description,
+      campaignType,
+      targetAudience,
+      budget,
+      goals,
+      startDate,
+      endDate,
+      projectId,
+      agentIds,
+    } = req.body;
 
-    if (!project) {
-      return res.status(403).json({
+    // Validate required fields
+    if (!name || !description || !campaignType || !projectId) {
+      return res.status(400).json({
         success: false,
-        message: 'Not authorized to create campaigns in this project'
+        message: 'Please provide name, description, campaign type, and project ID',
+      });
+    }
+
+    // Validate campaign type
+    if (!Object.values(CampaignType).includes(campaignType as CampaignType)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid campaign type',
       });
     }
 
     // Create campaign
-    const campaign = await prisma.campaign.create({
-      data: {
-        name,
-        description,
-        campaignType,
-        goals: goals || {},
-        targeting: targeting || {},
-        budget,
-        startDate: startDate ? new Date(startDate) : undefined,
-        endDate: endDate ? new Date(endDate) : undefined,
-        status: status as CampaignStatus,
-        projectId,
-        ownerId: userId as string
-      },
-      include: {
-        owner: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true
-          }
-        },
-        project: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      }
+    const campaignService = getCampaignService(prisma);
+    const campaign = await campaignService.createCampaign({
+      name,
+      description,
+      campaignType: campaignType as CampaignType,
+      targetAudience,
+      budget,
+      goals,
+      startDate: startDate ? new Date(startDate) : null,
+      endDate: endDate ? new Date(endDate) : null,
+      ownerId: req.user.id,
+      projectId,
+      agentIds,
     });
 
     res.status(201).json({
       success: true,
-      data: campaign
+      data: campaign,
     });
   } catch (error) {
     console.error('Create campaign error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: 'Server error',
     });
   }
 };
 
 /**
- * Update campaign
+ * Update a campaign
  * @route PUT /api/campaigns/:id
  * @access Private
  */
 export const updateCampaign = async (req: Request, res: Response) => {
   try {
-    const { 
-      name, 
-      description, 
-      status, 
-      campaignType, 
-      goals, 
-      targeting, 
-      budget, 
-      startDate, 
-      endDate 
-    } = req.body;
-    
-    const campaignId = req.params.id;
-    const userId = req.user?.id;
+    if (!req.user?.id) {
+      return res.status(401).json({
+        success: false,
+        message: 'Not authorized',
+      });
+    }
 
-    // Find the campaign to check ownership
-    const existingCampaign = await prisma.campaign.findUnique({
-      where: { id: campaignId },
-      include: {
-        project: {
-          select: {
-            ownerId: true,
-            members: {
-              select: {
-                id: true
-              }
-            }
-          }
-        }
-      }
-    });
+    const { id } = req.params;
+    const {
+      name,
+      description,
+      campaignType,
+      targetAudience,
+      budget,
+      goals,
+      startDate,
+      endDate,
+      status,
+      agentIds,
+    } = req.body;
+
+    // Validate campaign type if provided
+    if (
+      campaignType &&
+      !Object.values(CampaignType).includes(campaignType as CampaignType)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid campaign type',
+      });
+    }
+
+    // Validate status if provided
+    if (
+      status &&
+      !Object.values(CampaignStatus).includes(status as CampaignStatus)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid campaign status',
+      });
+    }
+
+    // Check if campaign exists and belongs to user
+    const campaignService = getCampaignService(prisma);
+    const existingCampaign = await campaignService.getCampaign(id);
 
     if (!existingCampaign) {
       return res.status(404).json({
         success: false,
-        message: 'Campaign not found'
+        message: 'Campaign not found',
       });
     }
 
-    // Check if user is owner of the campaign or project owner
-    const isOwner = existingCampaign.ownerId === userId;
-    const isProjectOwner = existingCampaign.project.ownerId === userId;
-    const isProjectMember = existingCampaign.project.members.some(member => member.id === userId);
-
-    if (!isOwner && !isProjectOwner && !isProjectMember) {
+    if (existingCampaign.ownerId !== req.user.id && req.user.role !== 'ADMIN') {
       return res.status(403).json({
         success: false,
-        message: 'Not authorized to update this campaign'
+        message: 'Not authorized to update this campaign',
       });
     }
 
     // Update campaign
-    const campaign = await prisma.campaign.update({
-      where: { id: campaignId },
-      data: {
-        name,
-        description,
-        status: status as CampaignStatus,
-        campaignType: campaignType as CampaignType,
-        goals: goals,
-        targeting: targeting,
-        budget,
-        startDate: startDate ? new Date(startDate) : undefined,
-        endDate: endDate ? new Date(endDate) : undefined
-      },
-      include: {
-        owner: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true
-          }
-        }
-      }
+    const campaign = await campaignService.updateCampaign(id, {
+      name,
+      description,
+      campaignType: campaignType as CampaignType,
+      targetAudience,
+      budget,
+      goals,
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate: endDate ? new Date(endDate) : undefined,
+      status: status as CampaignStatus,
+      agentIds,
     });
 
     res.status(200).json({
       success: true,
-      data: campaign
+      data: campaign,
     });
   } catch (error) {
     console.error('Update campaign error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: 'Server error',
     });
   }
 };
 
 /**
- * Delete campaign
+ * Delete a campaign
  * @route DELETE /api/campaigns/:id
  * @access Private
  */
 export const deleteCampaign = async (req: Request, res: Response) => {
   try {
-    const campaignId = req.params.id;
-    const userId = req.user?.id;
-
-    // Find the campaign to check ownership
-    const campaign = await prisma.campaign.findUnique({
-      where: { id: campaignId },
-      include: {
-        project: {
-          select: {
-            ownerId: true
-          }
-        }
-      }
-    });
-
-    if (!campaign) {
-      return res.status(404).json({
+    if (!req.user?.id) {
+      return res.status(401).json({
         success: false,
-        message: 'Campaign not found'
+        message: 'Not authorized',
       });
     }
 
-    // Check if user is owner of the campaign or project owner
-    const isOwner = campaign.ownerId === userId;
-    const isProjectOwner = campaign.project.ownerId === userId;
+    const { id } = req.params;
 
-    if (!isOwner && !isProjectOwner) {
+    // Check if campaign exists and belongs to user
+    const campaignService = getCampaignService(prisma);
+    const existingCampaign = await campaignService.getCampaign(id);
+
+    if (!existingCampaign) {
+      return res.status(404).json({
+        success: false,
+        message: 'Campaign not found',
+      });
+    }
+
+    if (existingCampaign.ownerId !== req.user.id && req.user.role !== 'ADMIN') {
       return res.status(403).json({
         success: false,
-        message: 'Not authorized to delete this campaign'
+        message: 'Not authorized to delete this campaign',
       });
     }
 
     // Delete campaign
-    await prisma.campaign.delete({
-      where: { id: campaignId }
-    });
+    await campaignService.deleteCampaign(id);
 
-    res.status(200).json({
-      success: true,
-      data: {}
-    });
+    res.status(204).send();
   } catch (error) {
     console.error('Delete campaign error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: 'Server error',
     });
   }
 };
 
 /**
- * Get campaign metrics
- * @route GET /api/campaigns/:id/metrics
+ * Get campaign analytics
+ * @route GET /api/campaigns/:id/analytics
  * @access Private
  */
-export const getCampaignMetrics = async (req: Request, res: Response) => {
+export const getCampaignAnalytics = async (req: Request, res: Response) => {
   try {
-    const campaignId = req.params.id;
-    const userId = req.user?.id;
+    if (!req.user?.id) {
+      return res.status(401).json({
+        success: false,
+        message: 'Not authorized',
+      });
+    }
 
-    // Find the campaign to check access rights
-    const campaign = await prisma.campaign.findUnique({
-      where: { id: campaignId },
-      include: {
-        project: {
-          select: {
-            ownerId: true,
-            members: {
-              select: {
-                id: true
-              }
-            }
-          }
-        }
-      }
-    });
+    const { id } = req.params;
 
-    if (!campaign) {
+    // Check if campaign exists and belongs to user
+    const campaignService = getCampaignService(prisma);
+    const existingCampaign = await campaignService.getCampaign(id);
+
+    if (!existingCampaign) {
       return res.status(404).json({
         success: false,
-        message: 'Campaign not found'
+        message: 'Campaign not found',
       });
     }
 
-    // Check if user has access to the campaign
-    const hasAccess =
-      campaign.ownerId === userId ||
-      campaign.project.ownerId === userId ||
-      campaign.project.members.some(member => member.id === userId);
-
-    if (!hasAccess) {
+    if (existingCampaign.ownerId !== req.user.id && req.user.role !== 'ADMIN') {
       return res.status(403).json({
         success: false,
-        message: 'Not authorized to access this campaign'
+        message: 'Not authorized to access this campaign',
       });
     }
 
-    // Get campaign metrics
-    const metrics = await prisma.metric.findMany({
-      where: { campaignId },
-      orderBy: { timestamp: 'desc' }
-    });
+    // Get analytics
+    const analytics = await campaignService.getCampaignAnalytics(id);
 
     res.status(200).json({
       success: true,
-      count: metrics.length,
-      data: metrics
+      data: analytics,
     });
   } catch (error) {
-    console.error('Get campaign metrics error:', error);
+    console.error('Get campaign analytics error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: error instanceof Error ? error.message : 'Server error',
+    });
+  }
+};
+
+/**
+ * Schedule a campaign
+ * @route POST /api/campaigns/:id/schedule
+ * @access Private
+ */
+export const scheduleCampaign = async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({
+        success: false,
+        message: 'Not authorized',
+      });
+    }
+
+    const { id } = req.params;
+    const { startDate, endDate } = req.body;
+
+    // Validate dates
+    if (!startDate && !endDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide at least one of startDate or endDate',
+      });
+    }
+
+    // Check if campaign exists and belongs to user
+    const campaignService = getCampaignService(prisma);
+    const existingCampaign = await campaignService.getCampaign(id);
+
+    if (!existingCampaign) {
+      return res.status(404).json({
+        success: false,
+        message: 'Campaign not found',
+      });
+    }
+
+    if (existingCampaign.ownerId !== req.user.id && req.user.role !== 'ADMIN') {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to schedule this campaign',
+      });
+    }
+
+    // Schedule campaign
+    const campaign = await campaignService.scheduleCampaign(
+      id,
+      startDate ? new Date(startDate) : undefined,
+      endDate ? new Date(endDate) : undefined
+    );
+
+    res.status(200).json({
+      success: true,
+      data: campaign,
+    });
+  } catch (error) {
+    console.error('Schedule campaign error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
     });
   }
 }; 

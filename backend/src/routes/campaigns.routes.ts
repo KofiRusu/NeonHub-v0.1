@@ -5,7 +5,8 @@ import {
   createCampaign,
   updateCampaign,
   deleteCampaign,
-  getCampaignMetrics
+  getCampaignAnalytics,
+  scheduleCampaign,
 } from '../controllers/campaign.controller';
 import { protect } from '../middleware/auth.middleware';
 
@@ -13,14 +14,14 @@ const router = Router();
 
 /**
  * @route GET /api/campaigns
- * @desc Get all campaigns with filtering options
+ * @desc Get all campaigns for the current user
  * @access Private
  */
 router.get('/', protect, getCampaigns);
 
 /**
  * @route GET /api/campaigns/:id
- * @desc Get single campaign by ID
+ * @desc Get a campaign by ID
  * @access Private
  */
 router.get('/:id', protect, getCampaign);
@@ -47,10 +48,17 @@ router.put('/:id', protect, updateCampaign);
 router.delete('/:id', protect, deleteCampaign);
 
 /**
- * @route GET /api/campaigns/:id/metrics
- * @desc Get metrics for a specific campaign
+ * @route GET /api/campaigns/:id/analytics
+ * @desc Get campaign analytics
  * @access Private
  */
-router.get('/:id/metrics', protect, getCampaignMetrics);
+router.get('/:id/analytics', protect, getCampaignAnalytics);
+
+/**
+ * @route POST /api/campaigns/:id/schedule
+ * @desc Schedule a campaign
+ * @access Private
+ */
+router.post('/:id/schedule', protect, scheduleCampaign);
 
 export default router; 

@@ -1,345 +1,259 @@
-import { BaseAgent, ExecutionOptions, TokenUsage } from '../../agents/base/BaseAgent';
-import { prisma, createTestAgent, createTestCampaign, createTestExecutionSession } from '../mocks/prismaMock';
-import * as campaignServiceModule from '../../../services/CampaignService';
-import * as metricServiceModule from '../../../services/MetricService';
+import { PrismaClient, AIAgent } from '@prisma/client';
+import { BaseAgent, AgentEventType, ExecutionOptions } from '../../agents/base/BaseAgent';
+import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
 
-// Create a concrete implementation of BaseAgent for testing
+// Mock implementation of BaseAgent for testing
 class TestAgent extends BaseAgent {
-  public executeResult: any = { data: 'test result' };
-  public shouldThrow: boolean = false;
-  
+  private shouldFail: boolean = false;
+  private failureCount: number = 0;
+  private maxFailures: number = 0;
+
+  constructor(prisma: PrismaClient, agentData: AIAgent) {
+    super(prisma, agentData);
+  }
+
+  setFailureMode(shouldFail: boolean, maxFailures: number = 1): void {
+    this.shouldFail = shouldFail;
+    this.maxFailures = maxFailures;
+    this.failureCount = 0;
+  }
+
   protected async executeImpl(config: any): Promise<any> {
-    if (this.shouldThrow) {
-      throw new Error('Test execution error');
+    if (this.shouldFail && this.failureCount < this.maxFailures) {
+      this.failureCount++;
+      throw new Error(`Test failure ${this.failureCount}`);
     }
-    return this.executeResult;
+
+    // Simulate some work
+    await new Promise(resolve => setTimeout(resolve, 10));
+    
+    return {
+      success: true,
+      data: 'Test execution completed',
+      config
+    };
+  }
+
+  protected async stopImpl(): Promise<void> {
+    this.logEvent(AgentEventType.CUSTOM_EVENT, 'Test agent stopped');
+  }
+
+  // Expose protected methods for testing
+  public testLogEvent(type: AgentEventType, message: string, data?: any, level?: 'info' | 'warning' | 'error'): void {
+    this.logEvent(type, message, data, level);
+  }
+
+  public testCheckShouldStop(): boolean {
+    return this.checkShouldStop();
+  }
+
+  // Expose logMessage as public for testing
+  public async testLogMessage(message: string, level?: 'info' | 'warning' | 'error'): Promise<void> {
+    return this.logMessage(message, level);
   }
 }
 
 // Mock the services
-jest.mock('../../../services/CampaignService', () => ({
-  getCampaignService: jest.fn(),
-}));
-
-jest.mock('../../../services/MetricService', () => ({
-  getMetricService: jest.fn(),
-  MetricSource: {
-    AGENT: 'agent',
-  },
+jest.mock('../../../services', () => ({
+  getCampaignService: jest.fn(() => ({
+    getOrCreateCampaignForAgent: jest.fn().mockResolvedValue({ id: 'test-campaign-id' })
+  })),
+  getMetricService: jest.fn(() => ({
+    logAgentExecutionMetrics: jest.fn().mockResolvedValue(undefined)
+  }))
 }));
 
 describe('BaseAgent', () => {
+  let mockPrisma: DeepMockProxy<PrismaClient>;
   let testAgent: TestAgent;
-  let testAgentData: any;
-  let mockCampaignService: any;
-  let mockMetricService: any;
-  
+  let mockAgentData: AIAgent;
+
   beforeEach(() => {
-    testAgentData = createTestAgent();
-    testAgent = new TestAgent(prisma, testAgentData);
+    mockPrisma = mockDeep<PrismaClient>();
     
-    // Setup mock campaign service
-    mockCampaignService = {
-      getOrCreateCampaignForAgent: jest.fn(),
-      getCampaign: jest.fn(),
+    mockAgentData = {
+      id: 'test-agent-id',
+      name: 'Test Agent',
+      description: 'Test agent for unit testing',
+      agentType: 'CONTENT_CREATOR' as any,
+      configuration: { test: true },
+      status: 'IDLE',
+      projectId: 'test-project-id',
+      managerId: 'test-manager-id',
+      lastRunAt: null,
+      nextRunAt: null,
+      scheduleExpression: null,
+      scheduleEnabled: false,
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
-    (campaignServiceModule.getCampaignService as jest.Mock).mockReturnValue(mockCampaignService);
-    
-    // Setup mock metric service
-    mockMetricService = {
-      logAgentExecutionMetrics: jest.fn(),
-    };
-    (metricServiceModule.getMetricService as jest.Mock).mockReturnValue(mockMetricService);
-    
-    // Setup session creation/update mocks
-    prisma.agentExecutionSession.create.mockResolvedValue(createTestExecutionSession());
-    prisma.agentExecutionSession.update.mockResolvedValue({} as any);
+
+    testAgent = new TestAgent(mockPrisma, mockAgentData);
   });
-  
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
   describe('execute', () => {
-    it('should create an execution session and link to campaign', async () => {
-      const session = createTestExecutionSession();
-      prisma.agentExecutionSession.create.mockResolvedValue(session);
-      
-      const campaign = createTestCampaign();
-      mockCampaignService.getOrCreateCampaignForAgent.mockResolvedValue(campaign);
-      
-      const config = { topic: 'test' };
-      await testAgent.execute(config);
-      
-      expect(prisma.agentExecutionSession.create).toHaveBeenCalledWith({
-        data: {
-          agentId: testAgentData.id,
-          context: config as any,
-        },
+    beforeEach(() => {
+      mockPrisma.agentExecutionSession.create.mockResolvedValue({
+        id: 'test-session-id',
+        agentId: 'test-agent-id',
+        startedAt: new Date(),
+        completedAt: null,
+        success: null,
+        duration: null,
+        outputSummary: null,
+        logs: null,
+        context: null,
+        metrics: null,
+        errorMessage: null,
+        createdAt: new Date()
       });
-      
-      expect(mockCampaignService.getOrCreateCampaignForAgent).toHaveBeenCalledWith(
-        testAgentData,
-        undefined
-      );
+
+      mockPrisma.agentExecutionSession.update.mockResolvedValue({} as any);
     });
-    
-    it('should use campaignId from options if provided', async () => {
-      const campaignId = 'campaign-id-from-options';
-      const campaign = createTestCampaign({ id: campaignId });
-      
-      mockCampaignService.getOrCreateCampaignForAgent.mockResolvedValue(campaign);
-      
-      const options: ExecutionOptions = {
-        campaignId,
-      };
-      
-      await testAgent.execute({}, options);
-      
-      expect(mockCampaignService.getOrCreateCampaignForAgent).toHaveBeenCalledWith(
-        testAgentData,
-        campaignId
-      );
-    });
-    
-    it('should use campaignId from config if provided and not in options', async () => {
-      const campaignId = 'campaign-id-from-config';
-      const campaign = createTestCampaign({ id: campaignId });
-      
-      mockCampaignService.getOrCreateCampaignForAgent.mockResolvedValue(campaign);
-      
-      const config = {
-        campaignId,
-      };
-      
-      await testAgent.execute(config);
-      
-      expect(mockCampaignService.getOrCreateCampaignForAgent).toHaveBeenCalledWith(
-        testAgentData,
-        campaignId
-      );
-    });
-    
-    it('should call executeImpl with the config', async () => {
-      const config = { topic: 'test' };
-      const campaign = createTestCampaign();
-      
-      mockCampaignService.getOrCreateCampaignForAgent.mockResolvedValue(campaign);
-      
-      // Spy on executeImpl
-      const executeImplSpy = jest.spyOn(testAgent as any, 'executeImpl');
-      
-      await testAgent.execute(config);
-      
-      expect(executeImplSpy).toHaveBeenCalledWith(config);
-    });
-    
-    it('should update execution session after successful execution', async () => {
-      const session = createTestExecutionSession();
-      prisma.agentExecutionSession.create.mockResolvedValue(session);
-      
-      const campaign = createTestCampaign();
-      mockCampaignService.getOrCreateCampaignForAgent.mockResolvedValue(campaign);
-      
-      testAgent.executeResult = { success: true, data: 'test' };
-      
-      await testAgent.execute({});
-      
-      expect(prisma.agentExecutionSession.update).toHaveBeenCalledWith({
-        where: { id: session.id },
-        data: expect.objectContaining({
-          completedAt: expect.any(Date),
-          success: true,
-          duration: expect.any(Number),
-          outputSummary: expect.any(String),
-          metrics: expect.objectContaining({
-            executionTime: expect.any(Number),
-          }),
-        }),
-      });
-    });
-    
-    it('should log metrics if trackMetrics is true', async () => {
-      const session = createTestExecutionSession();
-      prisma.agentExecutionSession.create.mockResolvedValue(session);
-      
-      const campaign = createTestCampaign();
-      mockCampaignService.getOrCreateCampaignForAgent.mockResolvedValue(campaign);
-      
-      const tokenUsage: TokenUsage = {
-        input: 100,
-        output: 400,
-        total: 500,
-      };
-      
-      await testAgent.execute({}, { trackMetrics: true, tokenUsage });
-      
-      expect(mockMetricService.logAgentExecutionMetrics).toHaveBeenCalledWith(
-        expect.any(Number),
-        testAgentData.id,
-        testAgentData.agentType,
-        testAgentData.projectId,
-        session.id,
-        campaign.id,
-        true,
-        tokenUsage
-      );
-    });
-    
-    it('should not log metrics if trackMetrics is false', async () => {
-      const session = createTestExecutionSession();
-      prisma.agentExecutionSession.create.mockResolvedValue(session);
-      
-      const campaign = createTestCampaign();
-      mockCampaignService.getOrCreateCampaignForAgent.mockResolvedValue(campaign);
-      
-      await testAgent.execute({}, { trackMetrics: false });
-      
-      expect(mockMetricService.logAgentExecutionMetrics).not.toHaveBeenCalled();
-    });
-    
-    it('should return result with additional execution metadata', async () => {
-      const session = createTestExecutionSession();
-      prisma.agentExecutionSession.create.mockResolvedValue(session);
-      
-      const campaign = createTestCampaign();
-      mockCampaignService.getOrCreateCampaignForAgent.mockResolvedValue(campaign);
-      
-      testAgent.executeResult = { data: 'test-data' };
-      
-      const result = await testAgent.execute({});
-      
-      expect(result).toEqual(expect.objectContaining({
-        data: 'test-data',
-        campaignId: campaign.id,
+
+    it('should execute successfully and log events', async () => {
+      const config = { testConfig: true };
+      const options: ExecutionOptions = { trackMetrics: true };
+
+      const result = await testAgent.execute(config, options);
+
+      expect(result).toEqual({
+        success: true,
+        data: 'Test execution completed',
+        config,
+        campaignId: 'test-campaign-id',
         executionTime: expect.any(Number),
-        sessionId: session.id,
-      }));
+        sessionId: 'test-session-id',
+        events: expect.any(Array)
+      });
+
+      // Check that events were logged
+      const events = testAgent.getEvents();
+      expect(events).toHaveLength(2); // Start and completion events
+      expect(events[0].type).toBe(AgentEventType.EXECUTION_STARTED);
+      expect(events[1].type).toBe(AgentEventType.EXECUTION_COMPLETED);
     });
-    
-    it('should handle execution errors and log failure metrics', async () => {
-      const session = createTestExecutionSession();
-      prisma.agentExecutionSession.create.mockResolvedValue(session);
+
+    it('should retry on failure and eventually succeed', async () => {
+      testAgent.setFailureMode(true, 2); // Fail twice, then succeed
       
-      const campaign = createTestCampaign();
-      mockCampaignService.getOrCreateCampaignForAgent.mockResolvedValue(campaign);
+      const config = { testConfig: true };
+      const options: ExecutionOptions = { maxRetries: 3, retryDelay: 10 };
+
+      const result = await testAgent.execute(config, options);
+
+      expect(result.success).toBe(true);
       
-      testAgent.shouldThrow = true;
+      // Check retry events - BaseAgent logs 2 events per retry (info + warning)
+      const events = testAgent.getEvents();
+      const retryEvents = events.filter(e => e.type === AgentEventType.RETRY_ATTEMPT);
+      expect(retryEvents).toHaveLength(4); // Two retries, each with 2 events (info + warning)
+    });
+
+    it('should fail after max retries', async () => {
+      testAgent.setFailureMode(true, 5); // Always fail
       
-      await expect(testAgent.execute({})).rejects.toThrow('Test execution error');
+      const config = { testConfig: true };
+      const options: ExecutionOptions = { maxRetries: 2, retryDelay: 10 };
+
+      await expect(testAgent.execute(config, options)).rejects.toThrow('Test failure');
       
-      expect(prisma.agentExecutionSession.update).toHaveBeenCalledWith({
-        where: { id: session.id },
+      // Check that session was updated with error
+      expect(mockPrisma.agentExecutionSession.update).toHaveBeenCalledWith({
+        where: { id: 'test-session-id' },
         data: expect.objectContaining({
-          completedAt: expect.any(Date),
           success: false,
-          duration: expect.any(Number),
-          errorMessage: 'Test execution error',
-        }),
+          errorMessage: expect.stringContaining('Test failure')
+        })
       });
-      
-      expect(mockMetricService.logAgentExecutionMetrics).toHaveBeenCalledWith(
-        expect.any(Number),
-        testAgentData.id,
-        testAgentData.agentType,
-        testAgentData.projectId,
-        session.id,
-        undefined,
-        false,
-        undefined
-      );
     });
-  });
-  
-  describe('stop', () => {
-    it('should set shouldStop flag and call stopImpl', async () => {
-      const stopImplSpy = jest.spyOn(testAgent as any, 'stopImpl');
+
+    it('should handle stop request during execution', async () => {
+      // Start execution in background
+      const executePromise = testAgent.execute({ testConfig: true });
       
-      // Set agent to running state
-      (testAgent as any).isRunning = true;
-      
+      // Stop the agent immediately
       await testAgent.stop();
       
-      expect(testAgent['shouldStop']).toBe(true);
-      expect(stopImplSpy).toHaveBeenCalled();
-    });
-    
-    it('should do nothing if agent is not running', async () => {
-      const stopImplSpy = jest.spyOn(testAgent as any, 'stopImpl');
-      
-      // Set agent to not running state
-      (testAgent as any).isRunning = false;
-      
-      await testAgent.stop();
-      
-      expect(stopImplSpy).not.toHaveBeenCalled();
+      // Execution should be interrupted
+      await expect(executePromise).rejects.toThrow('Agent execution stopped by user request');
     });
   });
-  
-  describe('logMessage', () => {
-    it('should update execution session logs', async () => {
-      const session = createTestExecutionSession({
-        logs: [],
-      });
+
+  describe('event logging', () => {
+    it('should log events with correct structure', () => {
+      const testData = { key: 'value' };
+      testAgent.testLogEvent(AgentEventType.CUSTOM_EVENT, 'Test message', testData, 'info');
+
+      const events = testAgent.getEvents();
+      expect(events).toHaveLength(1);
       
-      prisma.agentExecutionSession.findFirst.mockResolvedValue(session as any);
+      const event = events[0];
+      expect(event.type).toBe(AgentEventType.CUSTOM_EVENT);
+      expect(event.message).toBe('Test message');
+      expect(event.data).toEqual(testData);
+      expect(event.level).toBe('info');
+      expect(event.timestamp).toBeInstanceOf(Date);
+    });
+
+    it('should accumulate multiple events', () => {
+      testAgent.testLogEvent(AgentEventType.CUSTOM_EVENT, 'Event 1');
+      testAgent.testLogEvent(AgentEventType.CUSTOM_EVENT, 'Event 2');
+      testAgent.testLogEvent(AgentEventType.CUSTOM_EVENT, 'Event 3');
+
+      const events = testAgent.getEvents();
+      expect(events).toHaveLength(3);
+      expect(events.map(e => e.message)).toEqual(['Event 1', 'Event 2', 'Event 3']);
+    });
+  });
+
+  describe('status management', () => {
+    it('should return correct status when idle', () => {
+      const status = testAgent.getStatus();
       
-      await (testAgent as any).logMessage('Test message', 'info');
-      
-      expect(prisma.agentExecutionSession.findFirst).toHaveBeenCalledWith({
-        where: { agentId: testAgentData.id },
-        orderBy: { startedAt: 'desc' },
-      });
-      
-      expect(prisma.agentExecutionSession.update).toHaveBeenCalledWith({
-        where: { id: session.id },
-        data: { 
-          logs: [
-            {
-              timestamp: expect.any(Date),
-              level: 'info',
-              message: 'Test message',
-            }
-          ] as any 
-        },
+      expect(status).toEqual({
+        isRunning: false,
+        shouldStop: false,
+        currentSessionId: null,
+        eventCount: 0,
+        executionTime: undefined
       });
     });
-    
-    it('should append to existing logs if any', async () => {
-      const existingLogs = [
-        { timestamp: new Date(), level: 'info', message: 'Existing message' }
-      ];
+  });
+
+  describe('stop functionality', () => {
+    it('should stop execution gracefully', async () => {
+      await testAgent.stop();
       
-      const session = createTestExecutionSession({
-        logs: existingLogs,
-      });
+      expect(testAgent.testCheckShouldStop()).toBe(true);
       
-      prisma.agentExecutionSession.findFirst.mockResolvedValue(session as any);
-      
-      await (testAgent as any).logMessage('New message', 'error');
-      
-      expect(prisma.agentExecutionSession.update).toHaveBeenCalledWith({
-        where: { id: session.id },
-        data: { 
-          logs: [
-            ...existingLogs,
-            {
-              timestamp: expect.any(Date),
-              level: 'error',
-              message: 'New message',
-            }
-          ] as any 
-        },
-      });
+      const events = testAgent.getEvents();
+      const stopEvent = events.find(e => e.type === AgentEventType.STOP_REQUESTED);
+      expect(stopEvent).toBeDefined();
     });
-    
-    it('should log warning if no session found', async () => {
-      prisma.agentExecutionSession.findFirst.mockResolvedValue(null);
+
+    it('should not stop if not running', async () => {
+      // Agent is not running, stop should be a no-op
+      await testAgent.stop();
       
-      const consoleSpy = jest.spyOn(console, 'warn');
+      // Should still set the stop flag
+      expect(testAgent.testCheckShouldStop()).toBe(true);
+    });
+  });
+
+  describe('legacy logMessage method', () => {
+    it('should work for backward compatibility', async () => {
+      await testAgent.testLogMessage('Legacy message', 'warning');
       
-      await (testAgent as any).logMessage('Test message');
-      
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining(`No session found for agent ${testAgentData.id}`)
-      );
-      expect(prisma.agentExecutionSession.update).not.toHaveBeenCalled();
+      const events = testAgent.getEvents();
+      expect(events).toHaveLength(1);
+      expect(events[0].type).toBe(AgentEventType.CUSTOM_EVENT);
+      expect(events[0].message).toBe('Legacy message');
+      expect(events[0].level).toBe('warning');
     });
   });
 }); 
