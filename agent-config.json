@@ -129,6 +129,7 @@
       "name": "NeonHub DevOps Agent",
       "description": "Ensures CI/CD pipeline health and infrastructure reliability",
       "triggers": [
+        "on_push_to_main",
         "on_workflow_change",
         "on_docker_change",
         "schedule=\"*/5 * * * *\""
