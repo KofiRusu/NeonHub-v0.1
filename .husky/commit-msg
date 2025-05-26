@@ -1,7 +1,4 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-# Skip commitlint for auto-generated commits
-if [[ "$1" =~ ^auto: ]]; then exit 0; fi
-
-npx --no-install commitlint --edit "$1" npx commitlint --edit $1
+npx --no-install commitlint --edit "$1"

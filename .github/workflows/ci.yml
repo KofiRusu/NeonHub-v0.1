@@ -364,9 +364,7 @@ jobs:
     needs: [security-scan, coverage-check, e2e-tests]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
-    environment:
-      name: production
-      url: https://neonhub.app
+    environment: production
 
     steps:
       - name: 📥 Checkout code
