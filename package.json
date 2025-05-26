@@ -60,11 +60,11 @@
     "wait-on": "^8.0.3"
   },
   "lint-staged": {
-    "**/*.{ts,js,tsx}": [
-      "npm run lint:fix",
-      "npm run format:check"
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
     ],
-    "**/*.{json,md,yml,yaml}": [
+    "*.{json,md,yml,yaml}": [
       "prettier --write"
     ]
   },

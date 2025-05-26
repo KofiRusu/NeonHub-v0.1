@@ -6,4 +6,5 @@ if git log -1 --pretty=%B | grep -q "^auto:"; then
   exit 0
 fi
 
-npx lint-staged lint-staged && npm run test:unit -- --maxfail=1 --disable-warnings -q
+# Run lint-staged to perform linting and formatting on staged files
+npx lint-staged

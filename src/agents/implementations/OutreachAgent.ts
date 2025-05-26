@@ -13,7 +13,7 @@ export interface OutreachAgentConfig extends AgentConfig {
   /** Outreach templates to use */
   templates?: Record<string, string>;
   /** Target audience characteristics */
-  targetAudience?: Record<string, any>;
+  targeting?: Record<string, any>;
   /** Personalization level */
   personalizationLevel?: 'low' | 'medium' | 'high';
   /** Response style */
@@ -65,7 +65,7 @@ export class OutreachAgent extends AIAgent<
   ): Promise<OutreachAgentOutput> {
     // Log execution start with context
     this.log('info', 'Starting outreach generation', {
-      targetAudience: this.config.targetAudience,
+      targeting: this.config.targeting,
       personalizationLevel: this.config.personalizationLevel,
       context: options.context,
     });
@@ -251,5 +251,18 @@ We'd love to discuss how our solution could help you achieve your marketing goal
 
 Best regards,
 The NeonHub Team`;
+  }
+
+  async prepareOutreachTemplates() {
+    // ... existing code ...
+    
+    const outreachParams = {
+      campaign: this.campaignDetails,
+      outreachType: this.config.outreachType,
+      targeting: this.config.targeting,
+      // ... existing code ...
+    };
+    
+    // ... existing code ...
   }
 }

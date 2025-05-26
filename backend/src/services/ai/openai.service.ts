@@ -14,6 +14,17 @@ export interface OpenAIResponse {
   finishReason: string | null;
 }
 
+export interface ContentGenerationConfig {
+  contentType: string;
+  topic: string;
+  targeting: string;
+  tone?: string;
+  keywords?: string[];
+  length?: number;
+  campaignContext?: any;
+  promptTemplate?: string;
+}
+
 export class OpenAIService {
   private openai: OpenAI;
   private defaultModel = 'gpt-4';
@@ -165,7 +176,7 @@ Provide analysis in the specified JSON format.`;
       | 'ad_copy'
       | 'landing_page';
     topic: string;
-    targetAudience: string;
+    targeting: string;
     tone:
       | 'professional'
       | 'casual'
@@ -200,7 +211,7 @@ Provide analysis in the specified JSON format.`;
     const prompt = `Create ${config.contentType.replace('_', ' ')} content with these specifications:
 
 Topic: ${config.topic}
-Target Audience: ${config.targetAudience}
+Target Audience: ${config.targeting}
 Tone: ${config.tone}
 Length: ${config.length} (${lengthGuide[config.length].words} words)
 ${config.keywords ? `Keywords to include: ${config.keywords.join(', ')}` : ''}
@@ -211,7 +222,7 @@ Requirements:
 2. Clear value proposition
 3. Benefit-focused content
 4. ${config.tone} tone throughout
-5. Optimized for ${config.targetAudience}
+5. Optimized for ${config.targeting}
 ${config.callToAction ? '6. Strong call-to-action' : ''}
 
 Format the response as JSON:

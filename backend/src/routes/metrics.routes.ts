@@ -8,6 +8,7 @@ import {
   getMetricsSummary,
 } from '../controllers/metric.controller';
 import { protect } from '../middleware/auth.middleware';
+import { metricsHandler } from '../middleware/metrics';
 
 const router = Router();
 
@@ -52,5 +53,12 @@ router.put('/:id', protect, updateMetric);
  * @access Private
  */
 router.delete('/:id', protect, deleteMetric);
+
+/**
+ * @route   GET /api/metrics
+ * @desc    Get Prometheus metrics
+ * @access  Private (should be protected in production)
+ */
+router.get('/prometheus', metricsHandler);
 
 export default router;

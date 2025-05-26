@@ -22,6 +22,22 @@ services:
       retries: 5
     restart: unless-stopped
 
+  # Redis Cache & Message Broker
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    volumes:
+      - redis_data:/data
+    networks:
+      - neonhub_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   # Backend API Service
   backend:
     build:
@@ -33,11 +49,14 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     ports:
       - '${BACKEND_PORT:-5001}:${PORT:-5000}'
     environment:
       - NODE_ENV=${NODE_ENV:-development}
       - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-neonhub}?schema=public
+      - REDIS_URL=redis://redis:6379
       - PORT=${PORT:-5000}
       - JWT_SECRET=${JWT_SECRET:-dev_jwt_secret}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
@@ -47,6 +66,25 @@ services:
       - neonhub_network
     restart: unless-stopped
     command: sh -c "npm run prisma:migrate:deploy && npm run dev"
+
+  # Orchestrator Service
+  orchestrator:
+    build:
+      context: ./services/orchestrator
+      target: ${NODE_ENV:-development}
+    volumes:
+      - ./services/orchestrator:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+      - redis
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - REDIS_URL=redis://redis:6379
+      - BACKEND_URL=http://backend:${PORT:-5000}
+    networks:
+      - neonhub_network
+    restart: unless-stopped
 
   # Frontend Service
   frontend:
@@ -74,3 +112,4 @@ networks:
 
 volumes:
   postgres_data: {}
+  redis_data: {}

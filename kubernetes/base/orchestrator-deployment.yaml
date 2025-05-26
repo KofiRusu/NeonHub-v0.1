@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: neonhub-orchestrator
+  labels:
+    app: neonhub
+    component: orchestrator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: neonhub
+      component: orchestrator
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: neonhub
+        component: orchestrator
+    spec:
+      containers:
+      - name: orchestrator
+        image: ${DOCKER_REGISTRY}/neonhub-orchestrator:${IMAGE_TAG}
+        imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: neonhub-secrets
+              key: redis-url
+        - name: BACKEND_URL
+          value: "http://neonhub-backend"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 5 

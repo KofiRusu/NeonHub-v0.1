@@ -11,7 +11,7 @@ interface OutreachConfig {
   campaignId: string;
   outreachType: OutreachType;
   contactMethod: ContactMethod;
-  targetAudience: string;
+  targeting: string;
   messageTemplate?: string;
   personalizationLevel?: 'LOW' | 'MEDIUM' | 'HIGH';
   sendSchedule?: string; // Cron expression for scheduling
@@ -48,7 +48,7 @@ export class OutreachManagerAgent extends BaseAgent {
     if (!config.contactMethod) {
       throw new Error('Contact method is required');
     }
-    if (!config.targetAudience) {
+    if (!config.targeting) {
       throw new Error('Target audience is required');
     }
 
@@ -105,7 +105,7 @@ export class OutreachManagerAgent extends BaseAgent {
     }
 
     await this.logMessage(
-      `Preparing outreach templates for ${config.targetAudience}...`,
+      `Preparing outreach templates for ${config.targeting}...`,
     );
 
     // Simulate API call and processing time
@@ -113,7 +113,7 @@ export class OutreachManagerAgent extends BaseAgent {
 
     // Generate mock data for audience segments
     const audienceSegments = this.generateAudienceSegments(
-      config.targetAudience,
+      config.targeting,
     );
     const outreachTasks = [];
 
@@ -248,7 +248,7 @@ Would you like to learn more?`;
   /**
    * Generate audience segments for simulation
    */
-  private generateAudienceSegments(targetAudience: string): any[] {
+  private generateAudienceSegments(targeting: string): any[] {
     // In a real implementation, this would come from a database or CRM
     const segments = [];
     const industries = [
@@ -276,7 +276,7 @@ Would you like to learn more?`;
         phone: `+1555${String(i).padStart(7, '0')}`,
         socialProfile: `linkedin.com/in/contact${i + 1}`,
         company: `${industry} Corp ${i + 1}`,
-        segment: targetAudience,
+        segment: targeting,
         role: role,
         interests: [
           'marketing automation',
@@ -301,7 +301,7 @@ Would you like to learn more?`;
 ## Overview
 - Campaign Type: ${config.outreachType}
 - Contact Method: ${config.contactMethod}
-- Target Audience: ${config.targetAudience}
+- Target Audience: ${config.targeting}
 - Personalization Level: ${config.personalizationLevel || 'MEDIUM'}
 
 ## Statistics

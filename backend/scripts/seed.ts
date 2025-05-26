@@ -412,6 +412,19 @@ async function createCampaigns(projects: any[], users: any[], agents: any[]) {
         connect: [{ id: agents[1].id }],
       },
     },
+    {
+      name: 'Q4 Product Launch',
+      description: 'Launch campaign for our new product line',
+      campaignType: 'PRODUCT_LAUNCH',
+      targeting: 'professionals aged 30-45',
+      budget: 5000,
+      goals: 'Increase awareness and generate 500 qualified leads',
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+      status: 'ACTIVE',
+      ownerId: users[0].id,
+      projectId: projects[0].id,
+    },
   ];
 
   const createdCampaigns = [];

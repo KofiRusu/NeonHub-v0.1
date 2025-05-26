@@ -69,7 +69,7 @@ const contentSchema = z.object({
       'OTHER',
     ])
     .optional(),
-  targetAudience: z.string().min(5, {
+  targeting: z.string().min(5, {
     message: 'Target audience must be at least 5 characters.',
   }),
   keyPoints: z.string().min(10, {
@@ -101,7 +101,7 @@ export default function GenerateContent() {
       title: '',
       contentType: 'BLOG_POST',
       platform: 'WEBSITE',
-      targetAudience: '',
+      targeting: '',
       keyPoints: '',
       tone: 'PROFESSIONAL',
       length: 'MEDIUM',
@@ -341,18 +341,19 @@ export default function GenerateContent() {
 
                 <FormField
                   control={form.control}
-                  name="targetAudience"
+                  name="targeting"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Target Audience</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="Marketing professionals aged 25-45"
+                        <Textarea
+                          placeholder="Describe the target audience for this content"
+                          className="resize-none"
                           {...field}
                         />
                       </FormControl>
                       <FormDescription>
-                        Who is the primary audience for this content?
+                        Who is this content for? Be specific.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
