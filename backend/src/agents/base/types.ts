@@ -1,6 +1,6 @@
 export interface AgentLogEntry {
   timestamp: Date;
-  level: 'info' | 'warn' | 'error' | 'debug';
+  level: 'info' | 'warning' | 'error';
   message: string;
 }
 

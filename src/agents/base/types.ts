@@ -64,7 +64,7 @@ export interface AgentLogEntry {
   /** Log timestamp */
   timestamp: Date;
   /** Log level */
-  level: 'info' | 'warning' | 'error' | 'debug';
+  level: 'info' | 'warning' | 'error';
   /** Log message */
   message: string;
   /** Additional context */
@@ -148,9 +148,7 @@ export function isSuccessfulResult<T>(
 /**
  * Type guard to check if an agent result is a failure
  */
-export function isFailedResult(
-  result: AgentResult,
-): result is AgentResult & {
+export function isFailedResult(result: AgentResult): result is AgentResult & {
   success: false;
   error: NonNullable<AgentResult['error']>;
 } {

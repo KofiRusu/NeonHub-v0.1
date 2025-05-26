@@ -268,7 +268,7 @@ export abstract class AIAgent<
       */
 
       // For now, just log that we would save this
-      this.log('debug', 'Would save agent result to database', { result });
+      this.log('info', 'Would save agent result to database', { result });
     } catch (error) {
       this.log(
         'warning',
