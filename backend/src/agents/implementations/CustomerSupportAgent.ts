@@ -382,8 +382,8 @@ export class CustomerSupportAgent extends BaseAgent {
 
     // Closing message
     const closing =
-      "If you have any further questions, please don't hesitate to ask. " +
-      "We're always here to help!\n\nBest regards,\nSupport Team";
+      "If you have any further questions, please don\'t hesitate to ask. " +
+      "We\'re always here to help!\n\nBest regards,\nSupport Team";
 
     // Assemble full response
     const fullResponse = `${greeting}\n\n${mainResponse}${articleReferences}${escalationMessage}\n\n${closing}`;

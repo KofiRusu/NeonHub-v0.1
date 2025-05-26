@@ -276,14 +276,14 @@ async function createAgents(projects: any[], users: any[]) {
         retryDelay: 60000,
         templates: {
           welcome:
-            "Welcome to our community! We're thrilled to have you join us.",
+            "Welcome to our community! We\'re thrilled to have you join us.",
           promo: 'Limited time offer: {{offer_details}}',
-          newsletter: "Here's what's new this month: {{content}}",
+          newsletter: "Here\'s what\'s new this month: {{content}}",
         },
         personalization: true,
         subjectLineOptions: [
           'Check this out!',
-          "You don't want to miss this",
+          "You don\'t want to miss this",
           'Important update',
         ],
         testPercentage: 10,
