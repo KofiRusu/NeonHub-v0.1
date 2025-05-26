@@ -10,6 +10,16 @@ export interface OpenAIResponse {
     model: string;
     finishReason: string | null;
 }
+export interface ContentGenerationConfig {
+    contentType: string;
+    topic: string;
+    targeting: string;
+    tone?: string;
+    keywords?: string[];
+    length?: number;
+    campaignContext?: any;
+    promptTemplate?: string;
+}
 export declare class OpenAIService {
     private openai;
     private defaultModel;
@@ -28,7 +38,7 @@ export declare class OpenAIService {
     generateMarketingContent(config: {
         contentType: 'blog_post' | 'social_post' | 'email' | 'ad_copy' | 'landing_page';
         topic: string;
-        targetAudience: string;
+        targeting: string;
         tone: 'professional' | 'casual' | 'friendly' | 'authoritative' | 'conversational';
         length: 'short' | 'medium' | 'long';
         keywords?: string[];

@@ -175,19 +175,20 @@ export class CampaignService {
   async createCampaign(data: CreateCampaignData): Promise<Campaign> {
     const { agentIds, ...campaignData } = data;
 
-    // Parse budget to float if it's a string
-    let budget = campaignData.budget;
-    if (typeof budget === 'string' && budget.trim() !== '') {
+    // Create a new object with parsed budget
+    const parsedData = { ...campaignData };
+    
+    // Parse budget to number if it's a string
+    if (typeof parsedData.budget === 'string' && parsedData.budget.trim() !== '') {
       // Remove any currency symbols and commas
-      const cleanedBudget = budget.replace(/[$,]/g, '');
-      budget = parseFloat(cleanedBudget);
+      const cleanedBudget = parsedData.budget.replace(/[$,]/g, '');
+      parsedData.budget = parseFloat(cleanedBudget);
     }
 
-    // Create campaign
+    // Create campaign with properly typed budget
     const campaign = await this.prisma.campaign.create({
       data: {
-        ...campaignData,
-        budget,
+        ...parsedData,
         status: data.status || 'DRAFT',
         agents:
           agentIds && agentIds.length > 0
@@ -212,6 +213,16 @@ export class CampaignService {
     data: UpdateCampaignData,
   ): Promise<Campaign> {
     const { agentIds, ...campaignData } = data;
+
+    // Create a new object with parsed budget
+    const parsedData = { ...campaignData };
+    
+    // Parse budget to number if it's a string
+    if (typeof parsedData.budget === 'string' && parsedData.budget.trim() !== '') {
+      // Remove any currency symbols and commas
+      const cleanedBudget = parsedData.budget.replace(/[$,]/g, '');
+      parsedData.budget = parseFloat(cleanedBudget);
+    }
 
     // First, get current agents to determine what needs to be connected/disconnected
     if (agentIds) {
@@ -239,7 +250,7 @@ export class CampaignService {
         return this.prisma.campaign.update({
           where: { id: campaignId },
           data: {
-            ...campaignData,
+            ...parsedData,
             agents: {
               disconnect: agentsToDisconnect.map((id) => ({ id })),
               connect: agentsToConnect.map((id) => ({ id })),
@@ -252,7 +263,7 @@ export class CampaignService {
     // If no agent changes or campaign not found, just update the campaign data
     return this.prisma.campaign.update({
       where: { id: campaignId },
-      data: campaignData,
+      data: parsedData,
     });
   }
 

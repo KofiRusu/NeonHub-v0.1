@@ -6,7 +6,7 @@ export interface CreateCampaignData {
     name: string;
     description: string;
     campaignType: CampaignType;
-    targetAudience?: string;
+    targeting?: string;
     budget?: string | null;
     goals?: string | Record<string, any>;
     startDate?: Date | null;
@@ -23,7 +23,7 @@ export interface UpdateCampaignData {
     name?: string;
     description?: string;
     campaignType?: CampaignType;
-    targetAudience?: string;
+    targeting?: string;
     budget?: string | null;
     goals?: string | Record<string, any>;
     startDate?: Date | null;

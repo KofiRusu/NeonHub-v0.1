@@ -4,7 +4,7 @@ interface OutreachConfig {
     campaignId: string;
     outreachType: OutreachType;
     contactMethod: ContactMethod;
-    targetAudience: string;
+    targeting: string;
     messageTemplate?: string;
     personalizationLevel?: 'LOW' | 'MEDIUM' | 'HIGH';
     sendSchedule?: string;

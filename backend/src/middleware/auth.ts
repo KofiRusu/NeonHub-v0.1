@@ -2,15 +2,21 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import { logger } from '../utils/logger';
+import { verifyToken } from '../utils/jwt';
 
 const prisma = new PrismaClient();
 
-export interface AuthRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-    role: string;
-  };
+// Extend Express Request interface to include user property
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: string;
+        email: string;
+        role: string;
+      };
+    }
+  }
 }
 
 /**
@@ -99,4 +105,70 @@ export const generateJWT = (
     jwtSecret,
     { expiresIn },
   );
+};
+
+/**
+ * Middleware to protect routes that require authentication
+ */
+export const protect = (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Get token from header
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        message: 'Not authorized to access this route',
+      });
+    }
+    
+    // Get token from Bearer header
+    const token = authHeader.split(' ')[1];
+    
+    // Verify token
+    const decoded = verifyToken(token);
+    
+    if (!decoded) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token',
+      });
+    }
+    
+    // Add user to request
+    req.user = decoded as { id: string; email: string; role: string };
+    
+    next();
+  } catch (error) {
+    logger.error('Auth middleware error:', error);
+    return res.status(401).json({
+      success: false,
+      message: 'Not authorized to access this route',
+    });
+  }
+};
+
+/**
+ * Middleware to restrict access to specific roles
+ */
+export const restrictTo = (...roles: string[]) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    // Check if user exists and has a role
+    if (!req.user || !req.user.role) {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden: Insufficient permissions',
+      });
+    }
+    
+    // Check if user role is allowed
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden: Insufficient permissions for this role',
+      });
+    }
+    
+    next();
+  };
 };

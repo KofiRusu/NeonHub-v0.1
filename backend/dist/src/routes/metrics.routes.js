@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const metric_controller_1 = require("../controllers/metric.controller");
 const auth_middleware_1 = require("../middleware/auth.middleware");
+const metrics_1 = require("../middleware/metrics");
 const router = (0, express_1.Router)();
 /**
  * @route GET /api/metrics
@@ -40,5 +41,11 @@ router.put('/:id', auth_middleware_1.protect, metric_controller_1.updateMetric);
  * @access Private
  */
 router.delete('/:id', auth_middleware_1.protect, metric_controller_1.deleteMetric);
+/**
+ * @route   GET /api/metrics
+ * @desc    Get Prometheus metrics
+ * @access  Private (should be protected in production)
+ */
+router.get('/prometheus', metrics_1.metricsHandler);
 exports.default = router;
 //# sourceMappingURL=metrics.routes.js.map

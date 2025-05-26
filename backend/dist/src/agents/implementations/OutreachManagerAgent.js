@@ -27,7 +27,7 @@ class OutreachManagerAgent extends BaseAgent_1.BaseAgent {
         if (!config.contactMethod) {
             throw new Error('Contact method is required');
         }
-        if (!config.targetAudience) {
+        if (!config.targeting) {
             throw new Error('Target audience is required');
         }
         try {
@@ -66,11 +66,11 @@ class OutreachManagerAgent extends BaseAgent_1.BaseAgent {
         if (this.checkShouldStop()) {
             throw new Error('Outreach task creation was stopped');
         }
-        await this.logMessage(`Preparing outreach templates for ${config.targetAudience}...`);
+        await this.logMessage(`Preparing outreach templates for ${config.targeting}...`);
         // Simulate API call and processing time
         await new Promise((resolve) => setTimeout(resolve, 1500));
         // Generate mock data for audience segments
-        const audienceSegments = this.generateAudienceSegments(config.targetAudience);
+        const audienceSegments = this.generateAudienceSegments(config.targeting);
         const outreachTasks = [];
         // Create an outreach task for each audience segment
         for (const segment of audienceSegments) {
@@ -179,7 +179,7 @@ Would you like to learn more?`;
     /**
      * Generate audience segments for simulation
      */
-    generateAudienceSegments(targetAudience) {
+    generateAudienceSegments(targeting) {
         // In a real implementation, this would come from a database or CRM
         const segments = [];
         const industries = [
@@ -205,7 +205,7 @@ Would you like to learn more?`;
                 phone: `+1555${String(i).padStart(7, '0')}`,
                 socialProfile: `linkedin.com/in/contact${i + 1}`,
                 company: `${industry} Corp ${i + 1}`,
-                segment: targetAudience,
+                segment: targeting,
                 role: role,
                 interests: [
                     'marketing automation',
@@ -225,7 +225,7 @@ Would you like to learn more?`;
 ## Overview
 - Campaign Type: ${config.outreachType}
 - Contact Method: ${config.contactMethod}
-- Target Audience: ${config.targetAudience}
+- Target Audience: ${config.targeting}
 - Personalization Level: ${config.personalizationLevel || 'MEDIUM'}
 
 ## Statistics

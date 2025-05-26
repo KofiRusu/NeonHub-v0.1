@@ -92,7 +92,7 @@ const createCampaign = async (req, res) => {
                 message: 'Not authorized',
             });
         }
-        const { name, description, campaignType, targetAudience, budget, goals, startDate, endDate, projectId, agentIds, } = req.body;
+        const { name, description, campaignType, targeting, budget, goals, startDate, endDate, projectId, agentIds, } = req.body;
         // Validate required fields
         if (!name || !description || !campaignType || !projectId) {
             return res.status(400).json({
@@ -113,7 +113,7 @@ const createCampaign = async (req, res) => {
             name,
             description,
             campaignType: campaignType,
-            targetAudience,
+            targeting,
             budget,
             goals,
             startDate: startDate ? new Date(startDate) : null,
@@ -150,7 +150,7 @@ const updateCampaign = async (req, res) => {
             });
         }
         const { id } = req.params;
-        const { name, description, campaignType, targetAudience, budget, goals, startDate, endDate, status, agentIds, } = req.body;
+        const { name, description, campaignType, targeting, budget, goals, startDate, endDate, status, agentIds, } = req.body;
         // Validate campaign type if provided
         if (campaignType &&
             !Object.values(client_1.CampaignType).includes(campaignType)) {
@@ -187,7 +187,7 @@ const updateCampaign = async (req, res) => {
             name,
             description,
             campaignType: campaignType,
-            targetAudience,
+            targeting,
             budget,
             goals,
             startDate: startDate ? new Date(startDate) : undefined,

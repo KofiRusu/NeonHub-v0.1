@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { ZodSchema } from 'zod';
+import { ZodSchema, ZodError } from 'zod';
 import { logger } from '../utils/logger';
 
 /**
@@ -26,10 +26,21 @@ export const validateRequest = (schema: ZodSchema) => {
       next();
     } catch (error) {
       logger.error('Validation error:', error);
+      
+      // Check if error is a ZodError
+      if (error instanceof ZodError) {
+        return res.status(400).json({
+          success: false,
+          message: 'Validation error',
+          errors: error.errors || [{ message: 'Invalid request data' }],
+        });
+      }
+      
+      // Handle other errors
       return res.status(400).json({
         success: false,
-        message: 'Validation failed',
-        errors: error.errors || [{ message: 'Invalid request data' }],
+        message: 'Invalid request data',
+        errors: [{ message: 'Request validation failed' }],
       });
     }
   };
