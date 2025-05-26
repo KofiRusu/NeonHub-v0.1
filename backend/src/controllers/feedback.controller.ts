@@ -152,7 +152,7 @@ export const getAllFeedback = async (req: Request, res: Response) => {
 export const getFeedback = async (req: Request, res: Response) => {
   try {
     const feedbackId = req.params.id;
-    const userId = req.user?.id;
+    const userId = req.user!.id;
 
     // Get feedback with details
     const feedback = await prisma.feedback.findUnique({
@@ -279,7 +279,7 @@ export const createFeedback = async (req: Request, res: Response) => {
       outreachTaskId,
     } = req.body;
 
-    const userId = req.user?.id;
+    const userId = req.user!.id;
 
     // Validate required fields
     if (!content || !sentiment || !sourceType || !sourceId || !channel) {
@@ -408,7 +408,7 @@ export const updateFeedback = async (req: Request, res: Response) => {
   try {
     const { content, sentiment } = req.body;
     const feedbackId = req.params.id;
-    const userId = req.user?.id;
+    const userId = req.user!.id;
 
     // Find the feedback to check ownership
     const existingFeedback = await prisma.feedback.findUnique({
@@ -469,7 +469,7 @@ export const updateFeedback = async (req: Request, res: Response) => {
 export const deleteFeedback = async (req: Request, res: Response) => {
   try {
     const feedbackId = req.params.id;
-    const userId = req.user?.id;
+    const userId = req.user!.id;
 
     // Find the feedback to check ownership
     const feedback = await prisma.feedback.findUnique({
@@ -556,7 +556,7 @@ export const getSentimentSummary = async (req: Request, res: Response) => {
   try {
     const { sourceType, sourceId, projectId, campaignId, startDate, endDate } =
       req.query;
-    const userId = req.user?.id;
+    const userId = req.user!.id;
 
     // Build where clause
     const where: any = {};

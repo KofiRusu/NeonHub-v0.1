@@ -13,6 +13,8 @@ export interface AgentExecutionResult {
   sessionId?: string;
 }
 
+export type AgentResult = AgentExecutionResult;
+
 export interface AgentExecutionOptions {
   config?: Record<string, any>;
   campaignId?: string;

@@ -333,6 +333,50 @@ export class AgentManager {
   }
 
   /**
+   * Run an agent with a given configuration
+   * @param agentId Agent ID to run
+   * @param config Configuration for the agent
+   * @param options Execution options
+   * @returns Result of the agent execution
+   */
+  async runAgent(
+    agentId: string,
+    config: any = {},
+    options: AgentExecutionConfig = {},
+  ): Promise<any> {
+    // Schedule agent to run immediately
+    await this.prisma.aIAgent.update({
+      where: { id: agentId },
+      data: { nextRunAt: new Date() },
+    });
+
+    // Start the agent
+    return this.startAgent(agentId, options.campaignId, {
+      config,
+      ...options,
+    });
+  }
+
+  /**
+   * Run an agent immediately without scheduling
+   * @param agentId Agent ID to run
+   * @param config Configuration for the agent
+   * @param options Execution options
+   * @returns Result of the agent execution
+   */
+  async runAgentNow(
+    agentId: string,
+    config: any = {},
+    options: AgentExecutionConfig = {},
+  ): Promise<any> {
+    // Start the agent directly
+    return this.startAgent(agentId, options.campaignId, {
+      config,
+      ...options,
+    });
+  }
+
+  /**
    * Check if an agent is currently running
    * @param agentId Agent ID
    * @returns Whether the agent is running

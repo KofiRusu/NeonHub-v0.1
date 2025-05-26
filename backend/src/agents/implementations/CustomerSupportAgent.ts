@@ -421,7 +421,7 @@ export class CustomerSupportAgent extends BaseAgent {
   /**
    * Stop any ongoing execution
    */
-  protected stopImpl(): void {
+  protected async stopImpl(): Promise<void> {
     this.logMessage('info', 'Stopping customer support agent execution');
   }
 

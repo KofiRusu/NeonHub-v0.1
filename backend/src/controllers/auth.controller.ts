@@ -150,15 +150,9 @@ export const oauthLogin = async (req: Request, res: Response) => {
  */
 export const getMe = async (req: Request, res: Response) => {
   try {
-    if (!req.user?.id) {
-      return res.status(401).json({
-        success: false,
-        message: 'Not authorized',
-      });
-    }
-
+    // Since this route is protected, req.user should always exist
     const authService = getAuthService(prisma);
-    const user = await authService.getUserById(req.user.id);
+    const user = await authService.getUserById(req.user!.id);
 
     if (!user) {
       return res.status(404).json({

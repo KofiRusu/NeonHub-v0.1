@@ -81,7 +81,7 @@ export const getUser = async (req: Request, res: Response) => {
 export const updateUser = async (req: Request, res: Response) => {
   try {
     // Only allow users to update their own profile, unless they're an admin
-    if (req.params.id !== req.user?.id && req.user?.role !== 'ADMIN') {
+    if (req.params.id !== req.user!.id && req.user!.role !== 'ADMIN') {
       return res.status(403).json({
         success: false,
         message: 'Not authorized to update this user',
