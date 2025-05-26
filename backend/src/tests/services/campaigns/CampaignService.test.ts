@@ -100,7 +100,7 @@ describe('CampaignService', () => {
         where: { ownerId: userId },
         orderBy: { createdAt: 'desc' },
         include: expect.objectContaining({
-          generatedContents: expect.any(Object),
+          generatedContent: expect.any(Object),
           outreachTasks: expect.any(Object),
           agents: expect.any(Object),
           _count: expect.any(Object),
@@ -143,7 +143,7 @@ describe('CampaignService', () => {
       expect(mockPrisma.campaign.findUnique).toHaveBeenCalledWith({
         where: { id: campaignId },
         include: expect.objectContaining({
-          generatedContents: expect.any(Object),
+          generatedContent: expect.any(Object),
           outreachTasks: expect.any(Object),
           metrics: expect.any(Object),
           agents: true,

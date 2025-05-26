@@ -47,15 +47,12 @@ router.get('/', async (req, res) => {
         createdAt: 'desc',
       },
       include: {
-        generatedContents: {
+        owner: {
           select: {
-            id: true,
-            title: true,
-            contentType: true,
-            status: true,
+            name: true,
           },
-          take: 3,
         },
+        generatedContent: true,
         outreachTasks: {
           select: {
             id: true,
@@ -66,7 +63,7 @@ router.get('/', async (req, res) => {
         },
         _count: {
           select: {
-            generatedContents: true,
+            generatedContent: true,
             outreachTasks: true,
           },
         },
@@ -92,10 +89,26 @@ router.get('/:id', async (req, res) => {
         userId,
       },
       include: {
-        generatedContents: {
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        generatedContent: {
+          select: {
+            id: true,
+            title: true,
+            contentType: true,
+            platform: true,
+            status: true,
+            createdAt: true,
+          },
           orderBy: {
             createdAt: 'desc',
           },
+          take: 5,
         },
         outreachTasks: {
           orderBy: {
@@ -141,8 +154,8 @@ router.post('/', validateRequest(createCampaignSchema), async (req, res) => {
         name,
         description,
         campaignType: type,
-        targetAudience: target,
-        budget: budget || null,
+        targeting: target,
+        budget: budget ? parseFloat(budget) : null,
         goals,
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
@@ -196,7 +209,7 @@ router.put('/:id', validateRequest(updateCampaignSchema), async (req, res) => {
         name,
         description,
         campaignType: type,
-        targetAudience: target,
+        targeting: target,
         budget,
         goals,
         startDate: startDate ? new Date(startDate) : undefined,

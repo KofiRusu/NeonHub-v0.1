@@ -4,7 +4,7 @@ import { BaseAgent } from '../base/BaseAgent';
 interface ContentCreationConfig {
   contentType: ContentType;
   topic: string;
-  targetAudience?: string;
+  targeting?: string;
   tone?: string;
   keywords?: string[];
   length?: number;
@@ -123,12 +123,12 @@ Learn more at our website! 🚀`;
     const {
       topic,
       tone = 'professional',
-      targetAudience = 'customers',
+      targeting = 'customers',
     } = config;
 
     return `Subject: Important Update: ${topic}
 
-Dear Valued ${targetAudience},
+Dear Valued ${targeting},
 
 I hope this email finds you well. 
 

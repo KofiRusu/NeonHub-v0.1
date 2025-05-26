@@ -33,7 +33,7 @@ const createContentSchema = z.object({
       'OTHER',
     ])
     .optional(),
-  targetAudience: z
+  targeting: z
     .string()
     .min(5, 'Target audience must be at least 5 characters'),
   keyPoints: z.string().min(10, 'Key points must be at least 10 characters'),
@@ -80,7 +80,7 @@ const updateContentSchema = z.object({
       'OTHER',
     ])
     .optional(),
-  targetAudience: z
+  targeting: z
     .string()
     .min(5, 'Target audience must be at least 5 characters')
     .optional(),
@@ -175,7 +175,7 @@ router.post('/', validateRequest(createContentSchema), async (req, res) => {
       contentType,
       campaignId,
       platform,
-      targetAudience,
+      targeting,
       keyPoints,
       tone,
       length,
@@ -203,7 +203,7 @@ router.post('/', validateRequest(createContentSchema), async (req, res) => {
         contentType,
         campaignId: campaignId || null,
         platform: platform || null,
-        targetAudience,
+        targeting,
         content,
         metadata: {
           keyPoints,
@@ -231,7 +231,7 @@ router.put('/:id', validateRequest(updateContentSchema), async (req, res) => {
       contentType,
       campaignId,
       platform,
-      targetAudience,
+      targeting,
       content,
       status,
       publishDate,
@@ -274,7 +274,7 @@ router.put('/:id', validateRequest(updateContentSchema), async (req, res) => {
         contentType,
         campaignId,
         platform,
-        targetAudience,
+        targeting,
         content,
         status,
         publishDate: publishDate ? new Date(publishDate) : undefined,

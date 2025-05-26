@@ -97,7 +97,7 @@ export class CampaignService {
       },
       include: includeRelated
         ? {
-            generatedContents: {
+            generatedContent: {
               select: {
                 id: true,
                 title: true,
@@ -123,7 +123,7 @@ export class CampaignService {
             },
             _count: {
               select: {
-                generatedContents: true,
+                generatedContent: true,
                 outreachTasks: true,
               },
             },
@@ -146,7 +146,7 @@ export class CampaignService {
       where: { id: campaignId },
       include: includeRelated
         ? {
-            generatedContents: {
+            generatedContent: {
               orderBy: {
                 createdAt: 'desc',
               },
@@ -175,10 +175,19 @@ export class CampaignService {
   async createCampaign(data: CreateCampaignData): Promise<Campaign> {
     const { agentIds, ...campaignData } = data;
 
+    // Parse budget to float if it's a string
+    let budget = campaignData.budget;
+    if (typeof budget === 'string' && budget.trim() !== '') {
+      // Remove any currency symbols and commas
+      const cleanedBudget = budget.replace(/[$,]/g, '');
+      budget = parseFloat(cleanedBudget);
+    }
+
     // Create campaign
     const campaign = await this.prisma.campaign.create({
       data: {
         ...campaignData,
+        budget,
         status: data.status || 'DRAFT',
         agents:
           agentIds && agentIds.length > 0
@@ -406,7 +415,7 @@ export class CampaignService {
     const campaign = await this.prisma.campaign.findUnique({
       where: { id: campaignId },
       include: {
-        generatedContents: true,
+        generatedContent: true,
         metrics: {
           orderBy: {
             timestamp: 'desc',
@@ -414,7 +423,7 @@ export class CampaignService {
         },
         _count: {
           select: {
-            generatedContents: true,
+            generatedContent: true,
             outreachTasks: true,
           },
         },
@@ -460,7 +469,7 @@ export class CampaignService {
 
     return {
       campaignId,
-      contentCount: campaign._count.generatedContents,
+      contentCount: campaign._count.generatedContent,
       impressions,
       clicks,
       conversions,
@@ -526,5 +535,83 @@ export class CampaignService {
     };
 
     return (typeMap[agentType] || 'INTEGRATED') as CampaignType;
+  }
+
+  // Method with relation references
+  async getCampaignDetails(campaignId: string): Promise<any> {
+    const campaign = await this.prisma.campaign.findUnique({
+      where: { id: campaignId },
+      include: {
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        generatedContent: {
+          select: {
+            id: true,
+            title: true,
+            contentType: true,
+            platform: true,
+            status: true,
+            createdAt: true,
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+          take: 5,
+        },
+        outreachTasks: true,
+        metrics: {
+          orderBy: {
+            timestamp: 'desc',
+          },
+          take: 1,
+        },
+        _count: {
+          select: {
+            generatedContent: true,
+            outreachTasks: true,
+          },
+        },
+      },
+    });
+
+    // ... existing code ...
+  }
+
+  // Another method using the relation
+  async getAllCampaigns(userId: string): Promise<any[]> {
+    const campaigns = await this.prisma.campaign.findMany({
+      where: { ownerId: userId },
+      include: {
+        owner: {
+          select: {
+            name: true,
+          },
+        },
+        generatedContent: true,
+        outreachTasks: true,
+        metrics: {
+          orderBy: {
+            timestamp: 'desc',
+          },
+          take: 1,
+        },
+        _count: {
+          select: {
+            generatedContent: true,
+            outreachTasks: true,
+          },
+        },
+      },
+      orderBy: {
+        updatedAt: 'desc',
+      },
+    });
+
+    // ... existing code ...
   }
 }

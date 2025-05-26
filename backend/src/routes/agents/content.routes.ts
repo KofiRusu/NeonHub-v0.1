@@ -19,7 +19,7 @@ router.post(
       .isString()
       .notEmpty()
       .withMessage('Content type is required'),
-    body('targetAudience')
+    body('targeting')
       .isString()
       .notEmpty()
       .withMessage('Target audience is required'),
@@ -47,7 +47,7 @@ router.post(
         contentType,
         campaignId,
         platform,
-        targetAudience,
+        targeting,
         keyPoints,
         tone,
         length,
@@ -93,7 +93,7 @@ router.post(
       const context = {
         title,
         contentType,
-        targetAudience,
+        targeting,
         keyPoints,
         tone,
         length,
@@ -114,7 +114,7 @@ router.post(
             contentType,
             tone,
             length,
-            targetAudience,
+            targeting,
           },
           message: 'Content generated successfully',
         });
