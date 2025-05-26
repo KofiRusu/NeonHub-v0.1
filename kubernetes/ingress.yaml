@@ -3,30 +3,30 @@ kind: Ingress
 metadata:
   name: neonhub-ingress
   annotations:
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/use-regex: "true"
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+    nginx.ingress.kubernetes.io/use-regex: 'true'
+    cert-manager.io/cluster-issuer: 'letsencrypt-prod'
 spec:
   ingressClassName: nginx
   tls:
-  - hosts:
-    - neonhub.example.com
-    secretName: neonhub-tls
+    - hosts:
+        - neonhub.example.com
+      secretName: neonhub-tls
   rules:
-  - host: neonhub.example.com
-    http:
-      paths:
-      - path: /api
-        pathType: Prefix
-        backend:
-          service:
-            name: neonhub-backend
-            port:
-              number: 80
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: neonhub-frontend
-            port:
-              number: 80 
+    - host: neonhub.example.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: neonhub-backend
+                port:
+                  number: 80
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: neonhub-frontend
+                port:
+                  number: 80

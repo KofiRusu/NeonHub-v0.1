@@ -32,4 +32,4 @@ export interface AgentMetrics {
     output: number;
     total: number;
   };
-} 
+}

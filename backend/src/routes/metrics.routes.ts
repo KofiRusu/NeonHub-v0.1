@@ -5,7 +5,7 @@ import {
   createMetric,
   updateMetric,
   deleteMetric,
-  getMetricsSummary
+  getMetricsSummary,
 } from '../controllers/metric.controller';
 import { protect } from '../middleware/auth.middleware';
 
@@ -53,4 +53,4 @@ router.put('/:id', protect, updateMetric);
  */
 router.delete('/:id', protect, deleteMetric);
 
-export default router; 
+export default router;

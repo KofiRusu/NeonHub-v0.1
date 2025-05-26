@@ -15,9 +15,18 @@ router.post(
   '/generate',
   [
     body('title').isString().notEmpty().withMessage('Title is required'),
-    body('contentType').isString().notEmpty().withMessage('Content type is required'),
-    body('targetAudience').isString().notEmpty().withMessage('Target audience is required'),
-    body('keyPoints').isString().notEmpty().withMessage('Key points are required'),
+    body('contentType')
+      .isString()
+      .notEmpty()
+      .withMessage('Content type is required'),
+    body('targetAudience')
+      .isString()
+      .notEmpty()
+      .withMessage('Target audience is required'),
+    body('keyPoints')
+      .isString()
+      .notEmpty()
+      .withMessage('Key points are required'),
     body('tone').isString().notEmpty().withMessage('Tone is required'),
     body('length').isString().notEmpty().withMessage('Length is required'),
   ],
@@ -69,7 +78,8 @@ router.post(
               topics: [title],
               length: {
                 min: length === 'SHORT' ? 100 : length === 'MEDIUM' ? 300 : 600,
-                max: length === 'SHORT' ? 300 : length === 'MEDIUM' ? 600 : 1200,
+                max:
+                  length === 'SHORT' ? 300 : length === 'MEDIUM' ? 600 : 1200,
               },
               tone: tone.toLowerCase(),
               platform: platform || 'WEBSITE',
@@ -119,11 +129,14 @@ router.post(
       console.error('Content generation error:', error);
       res.status(500).json({
         success: false,
-        message: error instanceof Error ? error.message : 'An unexpected error occurred',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred',
         error: error instanceof Error ? error.stack : null,
       });
     }
-  }
+  },
 );
 
 /**
@@ -209,11 +222,14 @@ router.post(
       console.error('Content improvement error:', error);
       res.status(500).json({
         success: false,
-        message: error instanceof Error ? error.message : 'An unexpected error occurred',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred',
         error: error instanceof Error ? error.stack : null,
       });
     }
-  }
+  },
 );
 
-export default router; 
+export default router;

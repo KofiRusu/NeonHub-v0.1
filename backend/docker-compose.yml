@@ -5,7 +5,7 @@ services:
     image: neonhub/backend
     build: .
     ports:
-      - "3001:3001"
+      - '3001:3001'
     depends_on:
       - neonhub-db
     networks:
@@ -21,7 +21,7 @@ services:
       POSTGRES_PASSWORD: secret
       POSTGRES_DB: neonhub
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - neonhub-data:/var/lib/postgresql/data
     networks:
@@ -34,4 +34,4 @@ networks:
 
 volumes:
   neonhub-data:
-    driver: local 
+    driver: local

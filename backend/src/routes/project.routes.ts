@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import { 
-  getProjects, 
-  getProject, 
-  createProject, 
-  updateProject, 
+import {
+  getProjects,
+  getProject,
+  createProject,
+  updateProject,
   deleteProject,
   addMember,
-  removeMember
+  removeMember,
 } from '../controllers/project.controller';
 import { protect } from '../middleware/auth.middleware';
 
@@ -61,4 +61,4 @@ router.post('/:id/members', protect, addMember);
  */
 router.delete('/:id/members/:userId', protect, removeMember);
 
-export default router; 
+export default router;

@@ -12,7 +12,7 @@ export const errorHandler = (
   err: ApiError,
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const error = { ...err };
   error.message = err.message;
@@ -33,7 +33,9 @@ export const errorHandler = (
 
   // Handle validation errors
   if (err.name === 'ValidationError') {
-    error.message = Object.values(err).map((val: any) => val.message).join(', ');
+    error.message = Object.values(err)
+      .map((val: any) => val.message)
+      .join(', ');
     error.statusCode = 400;
   }
 
@@ -45,4 +47,4 @@ export const errorHandler = (
     error: error.message || 'Server Error',
     stack: process.env.NODE_ENV === 'production' ? undefined : err.stack,
   });
-}; 
+};

@@ -24,17 +24,19 @@ export class TrendAnalyzerAgent extends BaseAgent {
    */
   protected async executeImpl(config: TrendAnalysisConfig): Promise<any> {
     // Log start of trend analysis
-    await this.logMessage(`Starting trend analysis for ${config.industry} industry`);
+    await this.logMessage(
+      `Starting trend analysis for ${config.industry} industry`,
+    );
 
     // Validate configuration
     if (!config.keywords || config.keywords.length === 0) {
-      throw new Error("Keywords are required");
+      throw new Error('Keywords are required');
     }
     if (!config.industry) {
-      throw new Error("Industry is required");
+      throw new Error('Industry is required');
     }
     if (!config.projectId) {
-      throw new Error("Project ID is required");
+      throw new Error('Project ID is required');
     }
 
     try {
@@ -44,25 +46,27 @@ export class TrendAnalyzerAgent extends BaseAgent {
 
       // Store each trend signal in the database
       const signals = await Promise.all(
-        trends.map(trend => this.prisma.trendSignal.create({
-          data: {
-            title: trend.title,
-            description: trend.description,
-            signalType: trend.signalType,
-            impact: trend.impact,
-            source: trend.source,
-            relevance: trend.relevance,
-            confidence: trend.confidence,
-            aiAgentId: this.agentData.id,
-            projectId: config.projectId,
-            metadata: {
-              keywords: config.keywords,
-              industry: config.industry,
-              timeframe: config.timeframe,
-              analysisTime: new Date().toISOString(),
-            } as any,
-          },
-        }))
+        trends.map((trend) =>
+          this.prisma.trendSignal.create({
+            data: {
+              title: trend.title,
+              description: trend.description,
+              signalType: trend.signalType,
+              impact: trend.impact,
+              source: trend.source,
+              relevance: trend.relevance,
+              confidence: trend.confidence,
+              aiAgentId: this.agentData.id,
+              projectId: config.projectId,
+              metadata: {
+                keywords: config.keywords,
+                industry: config.industry,
+                timeframe: config.timeframe,
+                analysisTime: new Date().toISOString(),
+              } as any,
+            },
+          }),
+        ),
       );
 
       await this.logMessage(`Created ${signals.length} trend signals`);
@@ -73,7 +77,10 @@ export class TrendAnalyzerAgent extends BaseAgent {
         summary: this.generateTrendSummary(trends),
       };
     } catch (error) {
-      await this.logMessage(`Error analyzing trends: ${error instanceof Error ? error.message : String(error)}`, 'error');
+      await this.logMessage(
+        `Error analyzing trends: ${error instanceof Error ? error.message : String(error)}`,
+        'error',
+      );
       throw error;
     }
   }
@@ -83,24 +90,26 @@ export class TrendAnalyzerAgent extends BaseAgent {
    * @param config Trend analysis configuration
    * @returns Generated trend signals
    */
-  private async analyzeTrends(config: TrendAnalysisConfig): Promise<Array<{
-    title: string;
-    description: string;
-    signalType: SignalType;
-    impact: TrendImpact;
-    source: string;
-    relevance: number;
-    confidence: number;
-  }>> {
+  private async analyzeTrends(config: TrendAnalysisConfig): Promise<
+    Array<{
+      title: string;
+      description: string;
+      signalType: SignalType;
+      impact: TrendImpact;
+      source: string;
+      relevance: number;
+      confidence: number;
+    }>
+  > {
     // Check if agent should stop
     if (this.checkShouldStop()) {
-      throw new Error("Trend analysis was stopped");
+      throw new Error('Trend analysis was stopped');
     }
 
-    await this.logMessage("Analyzing industry trends...");
+    await this.logMessage('Analyzing industry trends...');
 
     // Simulate API call and processing time
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // Generate different sample trends
     const trends = [];
@@ -109,7 +118,7 @@ export class TrendAnalyzerAgent extends BaseAgent {
     // Use a combination of industry and keywords to generate trends
     for (let i = 0; i < Math.min(keywords.length, 5); i++) {
       const keyword = keywords[i];
-      
+
       // Generate a trend based on the keyword
       trends.push({
         title: `Rising ${keyword} adoption in ${industry}`,
@@ -153,9 +162,9 @@ export class TrendAnalyzerAgent extends BaseAgent {
    * @returns A text summary
    */
   private generateTrendSummary(trends: any[]): string {
-    const highImpactTrends = trends.filter(t => t.impact === 'HIGH');
-    const opportunities = trends.filter(t => t.signalType === 'OPPORTUNITY');
-    const threats = trends.filter(t => t.signalType === 'THREAT');
+    const highImpactTrends = trends.filter((t) => t.impact === 'HIGH');
+    const opportunities = trends.filter((t) => t.signalType === 'OPPORTUNITY');
+    const threats = trends.filter((t) => t.signalType === 'THREAT');
 
     return `# Trend Analysis Summary
 
@@ -163,9 +172,11 @@ export class TrendAnalyzerAgent extends BaseAgent {
 Analyzed ${trends.length} market signals, identifying ${opportunities.length} opportunities and ${threats.length} potential threats.
 
 ## High Impact Trends
-${highImpactTrends.length > 0 
-  ? highImpactTrends.map(t => `- ${t.title}`).join('\n') 
-  : '- No high impact trends identified in this analysis.'}
+${
+  highImpactTrends.length > 0
+    ? highImpactTrends.map((t) => `- ${t.title}`).join('\n')
+    : '- No high impact trends identified in this analysis.'
+}
 
 ## Recommendations
 Based on the current analysis, focus on:
@@ -175,4 +186,4 @@ Based on the current analysis, focus on:
 
 This analysis should be refreshed regularly to capture new developments.`;
   }
-} 
+}

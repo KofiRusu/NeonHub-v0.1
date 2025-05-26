@@ -13,10 +13,10 @@ let currentType = null;
 let currentName = null;
 
 // Simple parsing to extract model and enum names
-schemaContent.split('\n').forEach(line => {
+schemaContent.split('\n').forEach((line) => {
   const modelMatch = line.match(/^model\s+(\w+)\s+{/);
   const enumMatch = line.match(/^enum\s+(\w+)\s+{/);
-  
+
   if (modelMatch) {
     currentType = 'model';
     currentName = modelMatch[1];
@@ -34,9 +34,9 @@ console.log('========================');
 console.log(`Total models: ${models.length}`);
 console.log(`Total enums: ${enums.length}`);
 console.log('\nModels defined:');
-models.forEach(model => console.log(`- ${model}`));
+models.forEach((model) => console.log(`- ${model}`));
 console.log('\nEnums defined:');
-enums.forEach(enumName => console.log(`- ${enumName}`));
+enums.forEach((enumName) => console.log(`- ${enumName}`));
 
 // Verify all required AI Marketing models are present
 const requiredModels = [
@@ -48,24 +48,30 @@ const requiredModels = [
   'IntegrationCredential',
   'Metric',
   'PersonalizationProfile',
-  'Feedback'
+  'Feedback',
 ];
 
-const missingModels = requiredModels.filter(model => !models.includes(model));
+const missingModels = requiredModels.filter((model) => !models.includes(model));
 
 if (missingModels.length === 0) {
-  console.log('\n✅ All required AI Marketing models are present in the schema');
+  console.log(
+    '\n✅ All required AI Marketing models are present in the schema',
+  );
 } else {
   console.log('\n❌ Some required AI Marketing models are missing:');
-  missingModels.forEach(model => console.log(`  - ${model}`));
+  missingModels.forEach((model) => console.log(`  - ${model}`));
 }
 
 // Summary
 console.log('\nSCHEMA MIGRATION SIMULATION');
 console.log('==========================');
-console.log('In a proper environment with database access, the migration would:');
+console.log(
+  'In a proper environment with database access, the migration would:',
+);
 console.log('1. Create tables for all models defined in the schema');
-console.log('2. Create relationships between tables based on defined relations');
+console.log(
+  '2. Create relationships between tables based on defined relations',
+);
 console.log('3. Create indexes for optimized querying');
 console.log('4. Generate TypeScript types for all models and enums');
-console.log('\nVerification complete!'); 
+console.log('\nVerification complete!');

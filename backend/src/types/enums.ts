@@ -5,14 +5,14 @@ export enum AgentType {
   PERFORMANCE_OPTIMIZER = 'PERFORMANCE_OPTIMIZER',
   AUDIENCE_RESEARCH = 'AUDIENCE_RESEARCH',
   SEO = 'SEO',
-  CUSTOMER_SUPPORT = 'CUSTOMER_SUPPORT'
+  CUSTOMER_SUPPORT = 'CUSTOMER_SUPPORT',
 }
 
 export enum AgentStatus {
   IDLE = 'IDLE',
   RUNNING = 'RUNNING',
   STOPPED = 'STOPPED',
-  ERROR = 'ERROR'
+  ERROR = 'ERROR',
 }
 
 export enum CampaignType {
@@ -20,7 +20,7 @@ export enum CampaignType {
   EMAIL_MARKETING = 'EMAIL_MARKETING',
   SOCIAL_MEDIA = 'SOCIAL_MEDIA',
   SEO = 'SEO',
-  PAID_ADVERTISING = 'PAID_ADVERTISING'
+  PAID_ADVERTISING = 'PAID_ADVERTISING',
 }
 
 export enum CampaignStatus {
@@ -28,5 +28,5 @@ export enum CampaignStatus {
   ACTIVE = 'ACTIVE',
   PAUSED = 'PAUSED',
   COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED'
-} 
+  FAILED = 'FAILED',
+}

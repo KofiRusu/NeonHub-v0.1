@@ -6,4 +6,4 @@ if git log -1 --pretty=%B | grep -q "^auto:"; then
   exit 0
 fi
 
-npx lint-staged 
+npx lint-staged lint-staged && npm run test:unit -- --maxfail=1 --disable-warnings -q

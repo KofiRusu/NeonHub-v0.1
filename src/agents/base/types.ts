@@ -139,13 +139,20 @@ export interface TrendPredictorOutput {
 /**
  * Type guard to check if an agent result is successful
  */
-export function isSuccessfulResult<T>(result: AgentResult<T>): result is AgentResult<T> & { success: true, data: T } {
+export function isSuccessfulResult<T>(
+  result: AgentResult<T>,
+): result is AgentResult<T> & { success: true; data: T } {
   return result.success === true;
 }
 
 /**
  * Type guard to check if an agent result is a failure
  */
-export function isFailedResult(result: AgentResult): result is AgentResult & { success: false, error: NonNullable<AgentResult['error']> } {
+export function isFailedResult(
+  result: AgentResult,
+): result is AgentResult & {
+  success: false;
+  error: NonNullable<AgentResult['error']>;
+} {
   return result.success === false;
-} 
+}

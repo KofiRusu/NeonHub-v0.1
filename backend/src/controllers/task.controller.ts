@@ -22,10 +22,7 @@ export const getTasks = async (req: Request, res: Response) => {
     const project = await prisma.project.findFirst({
       where: {
         id: projectId as string,
-        OR: [
-          { ownerId: userId },
-          { members: { some: { id: userId } } },
-        ],
+        OR: [{ ownerId: userId }, { members: { some: { id: userId } } }],
       },
     });
 
@@ -126,9 +123,9 @@ export const getTask = async (req: Request, res: Response) => {
     }
 
     // Check if user has access to the project
-    const hasAccess = 
-      task.project.ownerId === userId || 
-      task.project.members.some(member => member.id === userId);
+    const hasAccess =
+      task.project.ownerId === userId ||
+      task.project.members.some((member) => member.id === userId);
 
     if (!hasAccess) {
       return res.status(403).json({
@@ -160,17 +157,22 @@ export const getTask = async (req: Request, res: Response) => {
  */
 export const createTask = async (req: Request, res: Response) => {
   try {
-    const { title, description, status, priority, dueDate, projectId, assigneeId } = req.body;
+    const {
+      title,
+      description,
+      status,
+      priority,
+      dueDate,
+      projectId,
+      assigneeId,
+    } = req.body;
     const userId = req.user?.id;
 
     // Check if user has access to the project
     const project = await prisma.project.findFirst({
       where: {
         id: projectId,
-        OR: [
-          { ownerId: userId },
-          { members: { some: { id: userId } } },
-        ],
+        OR: [{ ownerId: userId }, { members: { some: { id: userId } } }],
       },
     });
 
@@ -233,7 +235,8 @@ export const createTask = async (req: Request, res: Response) => {
  */
 export const updateTask = async (req: Request, res: Response) => {
   try {
-    const { title, description, status, priority, dueDate, assigneeId } = req.body;
+    const { title, description, status, priority, dueDate, assigneeId } =
+      req.body;
     const taskId = req.params.id;
     const userId = req.user?.id;
 
@@ -261,9 +264,9 @@ export const updateTask = async (req: Request, res: Response) => {
     }
 
     // Check if user has access to the project
-    const hasAccess = 
-      task.project.ownerId === userId || 
-      task.project.members.some(member => member.id === userId);
+    const hasAccess =
+      task.project.ownerId === userId ||
+      task.project.members.some((member) => member.id === userId);
 
     if (!hasAccess) {
       return res.status(403).json({
@@ -342,7 +345,8 @@ export const deleteTask = async (req: Request, res: Response) => {
     }
 
     // Check if user has access to delete the task (project owner or task creator)
-    const canDelete = task.project.ownerId === userId || task.creatorId === userId;
+    const canDelete =
+      task.project.ownerId === userId || task.creatorId === userId;
 
     if (!canDelete) {
       return res.status(403).json({
@@ -367,4 +371,4 @@ export const deleteTask = async (req: Request, res: Response) => {
       message: 'Server error',
     });
   }
-}; 
+};

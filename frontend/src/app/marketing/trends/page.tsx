@@ -1,16 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
-import { 
+import {
   Table,
   TableBody,
   TableCaption,
@@ -19,12 +19,12 @@ import {
   TableHeader,
   TableRow,
 } from '../../../components/ui/table';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '../../../components/ui/select';
 import {
   Dialog,
@@ -36,7 +36,13 @@ import {
   DialogTrigger,
 } from '../../../components/ui/dialog';
 import { Badge } from '../../../components/ui/badge';
-import { Loader2, Trending, ArrowUpRight, Search, RefreshCw } from 'lucide-react';
+import {
+  Loader2,
+  Trending,
+  ArrowUpRight,
+  Search,
+  RefreshCw,
+} from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 
 // Types
@@ -60,17 +66,17 @@ export default function TrendAnalysis() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [impactFilter, setImpactFilter] = useState('all');
   const [selectedTrend, setSelectedTrend] = useState<TrendSignal | null>(null);
-  
+
   useEffect(() => {
     fetchTrends();
   }, []);
-  
+
   const fetchTrends = async () => {
     try {
       setLoading(true);
       // This would be replaced with an actual API call
       const response = await fetch('/api/trends');
-      
+
       if (response.ok) {
         const data = await response.json();
         setTrends(data);
@@ -91,7 +97,7 @@ export default function TrendAnalysis() {
       const response = await fetch('/api/agents/trend/predict', {
         method: 'POST',
       });
-      
+
       if (response.ok) {
         // After the agent runs, fetch the updated trends
         await fetchTrends();
@@ -107,49 +113,66 @@ export default function TrendAnalysis() {
 
   // Filter and sort trends
   const filteredTrends = trends
-    .filter(trend => {
-      const matchesSearch = searchQuery === '' || 
+    .filter((trend) => {
+      const matchesSearch =
+        searchQuery === '' ||
         trend.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         trend.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
         trend.source.toLowerCase().includes(searchQuery.toLowerCase());
-        
-      const matchesType = typeFilter === 'all' || trend.signalType === typeFilter;
-      const matchesImpact = impactFilter === 'all' || trend.impact === impactFilter;
-      
+
+      const matchesType =
+        typeFilter === 'all' || trend.signalType === typeFilter;
+      const matchesImpact =
+        impactFilter === 'all' || trend.impact === impactFilter;
+
       return matchesSearch && matchesType && matchesImpact;
     })
     .sort((a, b) => {
       // Sort by date (newest first) and then by impact (higher impact first)
       const dateA = new Date(a.createdAt).getTime();
       const dateB = new Date(b.createdAt).getTime();
-      
+
       if (dateA !== dateB) return dateB - dateA;
-      
-      const impactOrder = { 'CRITICAL': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3 };
+
+      const impactOrder = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
       return impactOrder[a.impact] - impactOrder[b.impact];
     });
 
   const getImpactColor = (impact: string) => {
     switch (impact) {
-      case 'CRITICAL': return 'bg-red-500 text-white hover:bg-red-600';
-      case 'HIGH': return 'bg-orange-500 text-white hover:bg-orange-600';
-      case 'MEDIUM': return 'bg-yellow-500 text-white hover:bg-yellow-600';
-      case 'LOW': return 'bg-blue-500 text-white hover:bg-blue-600';
-      default: return 'bg-gray-500 text-white hover:bg-gray-600';
+      case 'CRITICAL':
+        return 'bg-red-500 text-white hover:bg-red-600';
+      case 'HIGH':
+        return 'bg-orange-500 text-white hover:bg-orange-600';
+      case 'MEDIUM':
+        return 'bg-yellow-500 text-white hover:bg-yellow-600';
+      case 'LOW':
+        return 'bg-blue-500 text-white hover:bg-blue-600';
+      default:
+        return 'bg-gray-500 text-white hover:bg-gray-600';
     }
   };
 
   const getSignalTypeLabel = (type: string) => {
     switch (type) {
-      case 'KEYWORD_TREND': return 'Keyword Trend';
-      case 'TOPIC_EMERGENCE': return 'Emerging Topic';
-      case 'SENTIMENT_SHIFT': return 'Sentiment Shift';
-      case 'COMPETITION_MOVE': return 'Competitor Move';
-      case 'INDUSTRY_NEWS': return 'Industry News';
-      case 'REGULATORY_CHANGE': return 'Regulatory Change';
-      case 'VIRAL_CONTENT': return 'Viral Content';
-      case 'MARKET_OPPORTUNITY': return 'Market Opportunity';
-      default: return type;
+      case 'KEYWORD_TREND':
+        return 'Keyword Trend';
+      case 'TOPIC_EMERGENCE':
+        return 'Emerging Topic';
+      case 'SENTIMENT_SHIFT':
+        return 'Sentiment Shift';
+      case 'COMPETITION_MOVE':
+        return 'Competitor Move';
+      case 'INDUSTRY_NEWS':
+        return 'Industry News';
+      case 'REGULATORY_CHANGE':
+        return 'Regulatory Change';
+      case 'VIRAL_CONTENT':
+        return 'Viral Content';
+      case 'MARKET_OPPORTUNITY':
+        return 'Market Opportunity';
+      default:
+        return type;
     }
   };
 
@@ -158,7 +181,8 @@ export default function TrendAnalysis() {
     {
       id: '1',
       title: 'Rising interest in sustainable marketing',
-      description: 'There\'s a significant increase in searches and discussions around sustainable marketing practices and eco-friendly brand messaging.',
+      description:
+        "There's a significant increase in searches and discussions around sustainable marketing practices and eco-friendly brand messaging.",
       source: 'Google Trends Analysis',
       signalType: 'KEYWORD_TREND',
       confidence: 0.87,
@@ -168,7 +192,8 @@ export default function TrendAnalysis() {
     {
       id: '2',
       title: 'Competitor XYZ launching AI tool suite',
-      description: 'Major competitor XYZ is preparing to launch a comprehensive AI marketing tool suite next month, based on social media announcements and job postings.',
+      description:
+        'Major competitor XYZ is preparing to launch a comprehensive AI marketing tool suite next month, based on social media announcements and job postings.',
       source: 'Social Media Monitoring',
       signalType: 'COMPETITION_MOVE',
       confidence: 0.92,
@@ -178,7 +203,8 @@ export default function TrendAnalysis() {
     {
       id: '3',
       title: 'Shift toward video content on professional platforms',
-      description: 'Analysis shows a 43% increase in video content engagement on LinkedIn and other professional platforms compared to last quarter.',
+      description:
+        'Analysis shows a 43% increase in video content engagement on LinkedIn and other professional platforms compared to last quarter.',
       source: 'Platform Analytics',
       signalType: 'SENTIMENT_SHIFT',
       confidence: 0.78,
@@ -188,7 +214,8 @@ export default function TrendAnalysis() {
     {
       id: '4',
       title: 'New privacy regulations affecting digital marketing',
-      description: 'Upcoming changes to digital privacy regulations in EU markets will impact tracking and personalization capabilities starting next quarter.',
+      description:
+        'Upcoming changes to digital privacy regulations in EU markets will impact tracking and personalization capabilities starting next quarter.',
       source: 'Regulatory Monitoring',
       signalType: 'REGULATORY_CHANGE',
       confidence: 0.95,
@@ -198,7 +225,8 @@ export default function TrendAnalysis() {
     {
       id: '5',
       title: 'Micro-influencer marketing effectiveness increasing',
-      description: 'Data suggests micro-influencer campaigns (10k-50k followers) are showing 3.2x better ROI than celebrity endorsements in the current quarter.',
+      description:
+        'Data suggests micro-influencer campaigns (10k-50k followers) are showing 3.2x better ROI than celebrity endorsements in the current quarter.',
       source: 'Campaign Analysis',
       signalType: 'MARKET_OPPORTUNITY',
       confidence: 0.82,
@@ -220,10 +248,11 @@ export default function TrendAnalysis() {
         <div>
           <h1 className="text-3xl font-bold">Market Trend Analysis</h1>
           <p className="text-muted-foreground mt-1">
-            AI-detected market trends and signals to inform your marketing strategy
+            AI-detected market trends and signals to inform your marketing
+            strategy
           </p>
         </div>
-        
+
         <Button onClick={refreshTrends} disabled={refreshing}>
           {refreshing ? (
             <>
@@ -238,7 +267,7 @@ export default function TrendAnalysis() {
           )}
         </Button>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <Card className="col-span-1">
           <CardHeader className="pb-2">
@@ -247,42 +276,64 @@ export default function TrendAnalysis() {
           <CardContent>
             <div className="text-2xl font-bold">{trends.length}</div>
             <p className="text-xs text-muted-foreground">
-              {trends.filter(t => 
-                new Date(t.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-              ).length} new in the last 7 days
+              {
+                trends.filter(
+                  (t) =>
+                    new Date(t.createdAt) >
+                    new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+                ).length
+              }{' '}
+              new in the last 7 days
             </p>
           </CardContent>
         </Card>
-        
+
         <Card className="col-span-1">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">High Impact Signals</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              High Impact Signals
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{trends.filter(t => t.impact === 'HIGH' || t.impact === 'CRITICAL').length}</div>
+            <div className="text-2xl font-bold">
+              {
+                trends.filter(
+                  (t) => t.impact === 'HIGH' || t.impact === 'CRITICAL',
+                ).length
+              }
+            </div>
             <p className="text-xs text-muted-foreground">
               Requiring immediate attention
             </p>
           </CardContent>
         </Card>
-        
+
         <Card className="col-span-1">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Average Confidence</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Average Confidence
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {(trends.reduce((acc, trend) => acc + trend.confidence, 0) / (trends.length || 1) * 100).toFixed(1)}%
+              {(
+                (trends.reduce((acc, trend) => acc + trend.confidence, 0) /
+                  (trends.length || 1)) *
+                100
+              ).toFixed(1)}
+              %
             </div>
             <p className="text-xs text-muted-foreground">
               Trend reliability score
             </p>
           </CardContent>
         </Card>
-        
+
         <Card className="col-span-1">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Top Trend Type</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Top Trend Type
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -291,10 +342,14 @@ export default function TrendAnalysis() {
               <>
                 <div className="text-2xl font-bold">
                   {Object.entries(
-                    trends.reduce((acc, trend) => {
-                      acc[trend.signalType] = (acc[trend.signalType] || 0) + 1;
-                      return acc;
-                    }, {} as Record<string, number>)
+                    trends.reduce(
+                      (acc, trend) => {
+                        acc[trend.signalType] =
+                          (acc[trend.signalType] || 0) + 1;
+                        return acc;
+                      },
+                      {} as Record<string, number>,
+                    ),
                   ).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A'}
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -305,7 +360,7 @@ export default function TrendAnalysis() {
           </CardContent>
         </Card>
       </div>
-      
+
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-6">
         <div className="relative w-full md:w-96">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -316,7 +371,7 @@ export default function TrendAnalysis() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        
+
         <div className="flex gap-2 w-full md:w-auto">
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-[180px]">
@@ -329,12 +384,16 @@ export default function TrendAnalysis() {
               <SelectItem value="SENTIMENT_SHIFT">Sentiment Shifts</SelectItem>
               <SelectItem value="COMPETITION_MOVE">Competitor Moves</SelectItem>
               <SelectItem value="INDUSTRY_NEWS">Industry News</SelectItem>
-              <SelectItem value="REGULATORY_CHANGE">Regulatory Changes</SelectItem>
+              <SelectItem value="REGULATORY_CHANGE">
+                Regulatory Changes
+              </SelectItem>
               <SelectItem value="VIRAL_CONTENT">Viral Content</SelectItem>
-              <SelectItem value="MARKET_OPPORTUNITY">Market Opportunities</SelectItem>
+              <SelectItem value="MARKET_OPPORTUNITY">
+                Market Opportunities
+              </SelectItem>
             </SelectContent>
           </Select>
-          
+
           <Select value={impactFilter} onValueChange={setImpactFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by impact" />
@@ -349,7 +408,7 @@ export default function TrendAnalysis() {
           </Select>
         </div>
       </div>
-      
+
       <Card>
         <CardHeader>
           <CardTitle>Market Trend Signals</CardTitle>
@@ -377,8 +436,11 @@ export default function TrendAnalysis() {
               </TableHeader>
               <TableBody>
                 {filteredTrends.map((trend) => (
-                  <TableRow key={trend.id} className="cursor-pointer" 
-                    onClick={() => setSelectedTrend(trend)}>
+                  <TableRow
+                    key={trend.id}
+                    className="cursor-pointer"
+                    onClick={() => setSelectedTrend(trend)}
+                  >
                     <TableCell className="font-medium">{trend.title}</TableCell>
                     <TableCell>
                       <Badge variant="outline">
@@ -391,7 +453,9 @@ export default function TrendAnalysis() {
                         {trend.impact}
                       </Badge>
                     </TableCell>
-                    <TableCell>{(trend.confidence * 100).toFixed(0)}%</TableCell>
+                    <TableCell>
+                      {(trend.confidence * 100).toFixed(0)}%
+                    </TableCell>
                     <TableCell className="text-muted-foreground">
                       {format(parseISO(trend.createdAt), 'MMM d, yyyy')}
                     </TableCell>
@@ -409,19 +473,25 @@ export default function TrendAnalysis() {
               <Trending className="h-12 w-12 text-muted-foreground mb-4" />
               <p className="text-lg font-medium mb-1">No trends found</p>
               <p className="text-muted-foreground text-center max-w-md">
-                No trends match your current filters. Try adjusting your search or filters, or run a new trend detection.
+                No trends match your current filters. Try adjusting your search
+                or filters, or run a new trend detection.
               </p>
             </div>
           )}
         </CardContent>
       </Card>
-      
+
       {/* Detailed trend view dialog */}
       {selectedTrend && (
-        <Dialog open={!!selectedTrend} onOpenChange={(open) => !open && setSelectedTrend(null)}>
+        <Dialog
+          open={!!selectedTrend}
+          onOpenChange={(open) => !open && setSelectedTrend(null)}
+        >
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="text-xl">{selectedTrend.title}</DialogTitle>
+              <DialogTitle className="text-xl">
+                {selectedTrend.title}
+              </DialogTitle>
               <DialogDescription className="flex items-center gap-3 mt-2">
                 <Badge className={getImpactColor(selectedTrend.impact)}>
                   {selectedTrend.impact} Impact
@@ -434,13 +504,13 @@ export default function TrendAnalysis() {
                 </span>
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="space-y-4 my-4">
               <div>
                 <h3 className="text-sm font-medium mb-1">Description</h3>
                 <p className="text-sm">{selectedTrend.description}</p>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h3 className="text-sm font-medium mb-1">Source</h3>
@@ -448,42 +518,60 @@ export default function TrendAnalysis() {
                 </div>
                 <div>
                   <h3 className="text-sm font-medium mb-1">Confidence</h3>
-                  <p className="text-sm">{(selectedTrend.confidence * 100).toFixed(1)}%</p>
+                  <p className="text-sm">
+                    {(selectedTrend.confidence * 100).toFixed(1)}%
+                  </p>
                 </div>
               </div>
-              
+
               <div>
-                <h3 className="text-sm font-medium mb-2">Recommended Actions</h3>
+                <h3 className="text-sm font-medium mb-2">
+                  Recommended Actions
+                </h3>
                 <ul className="list-disc pl-5 space-y-1">
                   {selectedTrend.impact === 'CRITICAL' && (
                     <>
-                      <li className="text-sm">Schedule immediate strategy meeting</li>
-                      <li className="text-sm">Prepare response plan within 24-48 hours</li>
+                      <li className="text-sm">
+                        Schedule immediate strategy meeting
+                      </li>
+                      <li className="text-sm">
+                        Prepare response plan within 24-48 hours
+                      </li>
                       <li className="text-sm">Alert executive team</li>
                     </>
                   )}
                   {selectedTrend.impact === 'HIGH' && (
                     <>
-                      <li className="text-sm">Incorporate into next sprint planning</li>
-                      <li className="text-sm">Create content addressing this trend</li>
+                      <li className="text-sm">
+                        Incorporate into next sprint planning
+                      </li>
+                      <li className="text-sm">
+                        Create content addressing this trend
+                      </li>
                       <li className="text-sm">Adjust campaign messaging</li>
                     </>
                   )}
                   {selectedTrend.impact === 'MEDIUM' && (
                     <>
-                      <li className="text-sm">Monitor development of this trend</li>
-                      <li className="text-sm">Consider incorporating into upcoming content</li>
+                      <li className="text-sm">
+                        Monitor development of this trend
+                      </li>
+                      <li className="text-sm">
+                        Consider incorporating into upcoming content
+                      </li>
                     </>
                   )}
                   {selectedTrend.impact === 'LOW' && (
                     <>
-                      <li className="text-sm">Keep track of this trend for future reference</li>
+                      <li className="text-sm">
+                        Keep track of this trend for future reference
+                      </li>
                       <li className="text-sm">No immediate action required</li>
                     </>
                   )}
                 </ul>
               </div>
-              
+
               {selectedTrend.rawData && (
                 <div>
                   <h3 className="text-sm font-medium mb-1">Raw Data</h3>
@@ -493,18 +581,16 @@ export default function TrendAnalysis() {
                 </div>
               )}
             </div>
-            
+
             <DialogFooter>
               <Button variant="outline" onClick={() => setSelectedTrend(null)}>
                 Close
               </Button>
-              <Button>
-                Generate Report
-              </Button>
+              <Button>Generate Report</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
     </div>
   );
-} 
+}

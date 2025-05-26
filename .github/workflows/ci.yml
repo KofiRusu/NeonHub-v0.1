@@ -1,49 +1,436 @@
-name: CI
+name: 🚀 NeonHub Quality Pipeline
 
 on:
   push:
-    branches:
-      - main
+    branches: [main, develop]
   pull_request:
-    branches:
-      - main
-  schedule:
-    # Run every 5 minutes for agent optimization
-    - cron: '*/5 * * * *'
+    branches: [main, develop]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '18'
+  POSTGRES_PASSWORD: postgres
+  POSTGRES_DB: neonhub_test
+  REDIS_URL: redis://localhost:6379
 
 jobs:
-  agent-validator:
-    name: Agent Status Validator
+  # ============================================================================
+  # QUALITY GATES - Lint, Format, Type Check
+  # ============================================================================
+  quality-gates:
+    name: 🔍 Quality Gates
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Validate Agent Status
-        run: |
-          echo "🤖 Validating NeonHub Agent System..."
-          if [ ! -f "agent-config.json" ]; then
-            echo "❌ Agent configuration missing"
-            exit 1
-          fi
-          echo "✅ Agent validation complete"
+    timeout-minutes: 10
 
-  build:
-    runs-on: ubuntu-latest
-    needs: agent-validator
     steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 📦 Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-      - name: Install dependencies
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📥 Install dependencies
         run: npm ci
-      - name: Lint
+
+      - name: 🔍 ESLint check
         run: npm run lint
-      - name: Type Check
-        run: npx tsc --strict --noEmit
-      - name: Test
-        run: npm test
-      - name: Coverage
-        run: npm run test -- --coverage || true
-      - name: E2E Tests (if available)
-        run: npx playwright test || true 
+
+      - name: 💅 Prettier format check
+        run: npm run format:check
+
+      - name: 🔧 TypeScript type check
+        run: npm run build
+
+      - name: 📊 Upload lint results
+        if: always()
+        uses: github/super-linter@v4
+        env:
+          DEFAULT_BRANCH: main
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VALIDATE_TYPESCRIPT_ES: true
+          VALIDATE_JAVASCRIPT_ES: true
+
+  # ============================================================================
+  # SECURITY SCANS
+  # ============================================================================
+  security-scan:
+    name: 🔒 Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📥 Install dependencies
+        run: npm ci
+
+      - name: 🔍 NPM Audit
+        run: npm run security:audit
+
+      - name: 🛡️ Snyk Security Scan
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+
+      - name: 📊 Upload Snyk results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: snyk.sarif
+
+  # ============================================================================
+  # BUILD & TEST MATRIX
+  # ============================================================================
+  build-test:
+    name: 🏗️ Build & Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [quality-gates]
+
+    strategy:
+      matrix:
+        test-type: [unit, integration]
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📥 Install dependencies
+        run: npm ci
+
+      - name: 🗄️ Setup database
+        run: |
+          npm run migrate:dev
+        env:
+          DATABASE_URL: postgresql://postgres:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
+
+      - name: 🏗️ Build all packages
+        run: npm run build:all
+
+      - name: 🧪 Run ${{ matrix.test-type }} tests
+        run: |
+          if [ "${{ matrix.test-type }}" = "unit" ]; then
+            npm run test:unit
+          else
+            npm run test:integration
+          fi
+        env:
+          DATABASE_URL: postgresql://postgres:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
+          REDIS_URL: ${{ env.REDIS_URL }}
+
+      - name: 📊 Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results-${{ matrix.test-type }}
+          path: |
+            coverage/
+            test-results/
+
+  # ============================================================================
+  # COVERAGE CHECK
+  # ============================================================================
+  coverage-check:
+    name: 📊 Coverage Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [build-test]
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📥 Install dependencies
+        run: npm ci
+
+      - name: 🗄️ Setup database
+        run: npm run migrate:dev
+        env:
+          DATABASE_URL: postgresql://postgres:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
+
+      - name: 📊 Generate coverage report
+        run: npm run test:coverage
+        env:
+          DATABASE_URL: postgresql://postgres:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
+          REDIS_URL: ${{ env.REDIS_URL }}
+
+      - name: 📤 Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/lcov.info
+          flags: unittests
+          name: neonhub-coverage
+          fail_ci_if_error: true
+
+      - name: 🚨 Coverage Gate (≥80%)
+        run: |
+          COVERAGE=$(npm run test:coverage -- --silent | grep -o 'All files.*[0-9]\+\.[0-9]\+' | grep -o '[0-9]\+\.[0-9]\+' | tail -1)
+          echo "Coverage: $COVERAGE%"
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "❌ Coverage $COVERAGE% is below 80% threshold"
+            exit 1
+          else
+            echo "✅ Coverage $COVERAGE% meets 80% threshold"
+          fi
+
+  # ============================================================================
+  # E2E TESTS
+  # ============================================================================
+  e2e-tests:
+    name: 🎭 E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [build-test]
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📥 Install dependencies
+        run: npm ci
+
+      - name: 🎭 Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: 🗄️ Setup database
+        run: npm run migrate:dev
+        env:
+          DATABASE_URL: postgresql://postgres:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
+
+      - name: 🏗️ Build application
+        run: npm run build:all
+
+      - name: 🚀 Start application
+        run: |
+          npm start &
+          npx wait-on http://localhost:3000 --timeout 60000
+        env:
+          DATABASE_URL: postgresql://postgres:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
+          REDIS_URL: ${{ env.REDIS_URL }}
+
+      - name: 🎭 Run E2E tests
+        run: npm run test:e2e
+
+      - name: 📊 Upload E2E results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: e2e-results
+          path: |
+            test-results/
+            playwright-report/
+
+  # ============================================================================
+  # SONARCLOUD ANALYSIS
+  # ============================================================================
+  sonarcloud:
+    name: 📈 SonarCloud Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [coverage-check]
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 📊 Download coverage artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: test-results-unit
+          path: coverage/
+
+      - name: 📈 SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # ============================================================================
+  # DEPLOYMENT
+  # ============================================================================
+  deploy:
+    name: 🚀 Deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [security-scan, coverage-check, e2e-tests]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    environment:
+      name: production
+      url: https://neonhub.app
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📥 Install dependencies
+        run: npm ci
+
+      - name: 🏗️ Build for production
+        run: npm run build:all
+
+      - name: 🚀 Deploy to production
+        run: |
+          echo "🚀 Deploying to production..."
+          # Add your deployment commands here
+          # e.g., deploy to Vercel, AWS, etc.
+
+      - name: 🔔 Notify deployment success
+        if: success()
+        run: |
+          echo "✅ Deployment successful!"
+          # Add notification logic (Slack, Discord, etc.)
+
+  # ============================================================================
+  # QUALITY REPORT
+  # ============================================================================
+  quality-report:
+    name: 📋 Quality Report
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [quality-gates, security-scan, coverage-check, e2e-tests]
+    if: always()
+
+    steps:
+      - name: 📊 Generate Quality Report
+        run: |
+          echo "# 📋 NeonHub Quality Pipeline Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔍 Quality Gates" >> $GITHUB_STEP_SUMMARY
+          echo "- **Lint**: ${{ needs.quality-gates.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Format**: ${{ needs.quality-gates.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Type Check**: ${{ needs.quality-gates.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔒 Security" >> $GITHUB_STEP_SUMMARY
+          echo "- **Security Scan**: ${{ needs.security-scan.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🧪 Testing" >> $GITHUB_STEP_SUMMARY
+          echo "- **Coverage Check**: ${{ needs.coverage-check.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **E2E Tests**: ${{ needs.e2e-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ needs.quality-gates.result }}" == "success" && 
+                "${{ needs.security-scan.result }}" == "success" && 
+                "${{ needs.coverage-check.result }}" == "success" && 
+                "${{ needs.e2e-tests.result }}" == "success" ]]; then
+            echo "## ✅ Overall Status: PASSED" >> $GITHUB_STEP_SUMMARY
+            echo "All quality gates passed successfully!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ❌ Overall Status: FAILED" >> $GITHUB_STEP_SUMMARY
+            echo "One or more quality gates failed. Please review and fix." >> $GITHUB_STEP_SUMMARY
+          fi

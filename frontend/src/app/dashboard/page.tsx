@@ -15,7 +15,11 @@ export default function DashboardPage() {
   }, [user, loading, router]);
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        Loading...
+      </div>
+    );
   }
 
   return (
@@ -24,4 +28,4 @@ export default function DashboardPage() {
       <p>Select a project or task from the sidebar to get started.</p>
     </div>
   );
-} 
+}

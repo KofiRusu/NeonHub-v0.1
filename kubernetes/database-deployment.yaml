@@ -19,58 +19,58 @@ spec:
         tier: database
     spec:
       containers:
-      - name: postgres
-        image: postgres:14
-        ports:
-        - containerPort: 5432
-        env:
-        - name: POSTGRES_USER
-          valueFrom:
-            secretKeyRef:
-              name: neonhub-secrets
-              key: db-user
-        - name: POSTGRES_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: neonhub-secrets
-              key: db-password
-        - name: POSTGRES_DB
-          value: neonhub
-        resources:
-          limits:
-            cpu: "1000m"
-            memory: "1Gi"
-          requests:
-            cpu: "500m"
-            memory: "512Mi"
-        volumeMounts:
-        - name: postgres-data
-          mountPath: /var/lib/postgresql/data
-        livenessProbe:
-          exec:
-            command:
-            - pg_isready
-            - -U
-            - postgres
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          exec:
-            command:
-            - pg_isready
-            - -U
-            - postgres
-          initialDelaySeconds: 5
-          periodSeconds: 5
+        - name: postgres
+          image: postgres:14
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: neonhub-secrets
+                  key: db-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: neonhub-secrets
+                  key: db-password
+            - name: POSTGRES_DB
+              value: neonhub
+          resources:
+            limits:
+              cpu: '1000m'
+              memory: '1Gi'
+            requests:
+              cpu: '500m'
+              memory: '512Mi'
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - postgres
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - postgres
+            initialDelaySeconds: 5
+            periodSeconds: 5
   volumeClaimTemplates:
-  - metadata:
-      name: postgres-data
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      resources:
-        requests:
-          storage: 10Gi
-      storageClassName: standard
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ['ReadWriteOnce']
+        resources:
+          requests:
+            storage: 10Gi
+        storageClassName: standard
 
 ---
 apiVersion: v1
@@ -85,6 +85,6 @@ spec:
     app: neonhub
     tier: database
   ports:
-  - port: 5432
-    targetPort: 5432
-  clusterIP: None  # Headless service for StatefulSet 
+    - port: 5432
+      targetPort: 5432
+  clusterIP: None # Headless service for StatefulSet

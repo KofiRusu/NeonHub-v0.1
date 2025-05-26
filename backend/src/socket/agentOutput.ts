@@ -9,7 +9,10 @@ import { AgentLogEntry } from '../agents/base/types';
  * @param prisma Prisma client for database operations
  * @returns Configured Socket.io server
  */
-export function configureAgentSocket(httpServer: HttpServer, prisma: PrismaClient): SocketIOServer {
+export function configureAgentSocket(
+  httpServer: HttpServer,
+  prisma: PrismaClient,
+): SocketIOServer {
   // Create Socket.io server
   const io = new SocketIOServer(httpServer, {
     cors: {
@@ -28,7 +31,7 @@ export function configureAgentSocket(httpServer: HttpServer, prisma: PrismaClien
     // Handle joining an agent room
     socket.on('join:agent', (agentId: string) => {
       if (!agentId) return;
-      
+
       // Join the room for this specific agent
       socket.join(`agent:${agentId}`);
       console.log(`Client ${socket.id} joined agent room: ${agentId}`);
@@ -56,13 +59,15 @@ export function emitAgentStart(
     agentType: string;
     name: string;
     context?: Record<string, any>;
-  }
+  },
 ): void {
-  io.of('/agents').to(`agent:${agentId}`).emit('agent:start', {
-    agentId,
-    timestamp: new Date(),
-    ...metadata,
-  });
+  io.of('/agents')
+    .to(`agent:${agentId}`)
+    .emit('agent:start', {
+      agentId,
+      timestamp: new Date(),
+      ...metadata,
+    });
 }
 
 /**
@@ -74,7 +79,7 @@ export function emitAgentStart(
 export function emitAgentLog(
   io: SocketIOServer,
   agentId: string,
-  log: AgentLogEntry
+  log: AgentLogEntry,
 ): void {
   io.of('/agents').to(`agent:${agentId}`).emit('agent:log', {
     agentId,
@@ -96,13 +101,15 @@ export function emitAgentDone(
     data?: any;
     metrics?: Record<string, any>;
     duration?: number;
-  }
+  },
 ): void {
-  io.of('/agents').to(`agent:${agentId}`).emit('agent:done', {
-    agentId,
-    timestamp: new Date(),
-    ...result,
-  });
+  io.of('/agents')
+    .to(`agent:${agentId}`)
+    .emit('agent:done', {
+      agentId,
+      timestamp: new Date(),
+      ...result,
+    });
 }
 
 /**
@@ -117,7 +124,7 @@ export function emitAgentError(
   error: {
     message: string;
     stack?: string;
-  }
+  },
 ): void {
   io.of('/agents').to(`agent:${agentId}`).emit('agent:error', {
     agentId,
@@ -143,4 +150,4 @@ export function getSocketIO(): SocketIOServer | null {
  */
 export function setSocketIO(io: SocketIOServer): void {
   _io = io;
-} 
+}

@@ -14,4 +14,4 @@ router.use('/content', contentRoutes);
 router.use('/trend', trendRoutes);
 router.use('/campaign', campaignRoutes);
 
-export default router; 
+export default router;

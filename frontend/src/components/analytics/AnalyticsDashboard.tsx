@@ -1,7 +1,17 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+} from 'recharts';
 
 interface AnalyticsDashboardProps {
   campaignId: string;
@@ -21,7 +31,10 @@ interface AnalyticsDashboardProps {
   };
 }
 
-export function AnalyticsDashboard({ campaignId, data }: AnalyticsDashboardProps) {
+export function AnalyticsDashboard({
+  campaignId,
+  data,
+}: AnalyticsDashboardProps) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

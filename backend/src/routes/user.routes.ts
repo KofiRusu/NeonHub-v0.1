@@ -1,5 +1,10 @@
 import { Router } from 'express';
-import { getUsers, getUser, updateUser, deleteUser } from '../controllers/user.controller';
+import {
+  getUsers,
+  getUser,
+  updateUser,
+  deleteUser,
+} from '../controllers/user.controller';
 import { protect, authorize } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -32,4 +37,4 @@ router.put('/:id', protect, updateUser);
  */
 router.delete('/:id', protect, authorize('ADMIN'), deleteUser);
 
-export default router; 
+export default router;

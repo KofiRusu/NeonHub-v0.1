@@ -31,10 +31,7 @@ export const getMessages = async (req: Request, res: Response) => {
     const project = await prisma.project.findFirst({
       where: {
         id: projectId as string,
-        OR: [
-          { ownerId: userId },
-          { members: { some: { id: userId } } },
-        ],
+        OR: [{ ownerId: userId }, { members: { some: { id: userId } } }],
       },
     });
 
@@ -92,10 +89,7 @@ export const createMessage = async (req: Request, res: Response) => {
     const project = await prisma.project.findFirst({
       where: {
         id: projectId,
-        OR: [
-          { ownerId: userId },
-          { members: { some: { id: userId } } },
-        ],
+        OR: [{ ownerId: userId }, { members: { some: { id: userId } } }],
       },
     });
 
@@ -169,7 +163,8 @@ export const deleteMessage = async (req: Request, res: Response) => {
     }
 
     // Check if user is authorized to delete the message (sender or project owner)
-    const canDelete = message.userId === userId || message.project.ownerId === userId;
+    const canDelete =
+      message.userId === userId || message.project.ownerId === userId;
 
     if (!canDelete) {
       return res.status(403).json({
@@ -199,4 +194,4 @@ export const deleteMessage = async (req: Request, res: Response) => {
       message: 'Server error',
     });
   }
-}; 
+};

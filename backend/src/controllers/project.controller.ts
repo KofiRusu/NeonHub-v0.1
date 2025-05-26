@@ -13,10 +13,7 @@ export const getProjects = async (req: Request, res: Response) => {
     // Get all projects where user is a member or owner
     const projects = await prisma.project.findMany({
       where: {
-        OR: [
-          { ownerId: userId },
-          { members: { some: { id: userId } } },
-        ],
+        OR: [{ ownerId: userId }, { members: { some: { id: userId } } }],
       },
       include: {
         owner: {
@@ -108,8 +105,10 @@ export const getProject = async (req: Request, res: Response) => {
     }
 
     // Check if user is owner or member of the project
-    const isMember = project.ownerId === userId || project.members.some(member => member.id === userId);
-    
+    const isMember =
+      project.ownerId === userId ||
+      project.members.some((member) => member.id === userId);
+
     if (!isMember) {
       return res.status(403).json({
         success: false,
@@ -343,8 +342,8 @@ export const addMember = async (req: Request, res: Response) => {
     }
 
     // Check if user is already a member
-    const isMember = project.members.some(member => member.id === userId);
-    
+    const isMember = project.members.some((member) => member.id === userId);
+
     if (isMember) {
       return res.status(400).json({
         success: false,
@@ -422,8 +421,8 @@ export const removeMember = async (req: Request, res: Response) => {
     }
 
     // Check if user is a member
-    const isMember = project.members.some(member => member.id === userId);
-    
+    const isMember = project.members.some((member) => member.id === userId);
+
     if (!isMember) {
       return res.status(400).json({
         success: false,
@@ -464,4 +463,4 @@ export const removeMember = async (req: Request, res: Response) => {
       message: 'Server error',
     });
   }
-}; 
+};

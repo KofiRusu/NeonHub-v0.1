@@ -10,10 +10,13 @@ export class ClaudeService {
     });
   }
 
-  async generateContent(prompt: string, options: {
-    model?: string;
-    maxTokens?: number;
-  } = {}): Promise<{
+  async generateContent(
+    prompt: string,
+    options: {
+      model?: string;
+      maxTokens?: number;
+    } = {},
+  ): Promise<{
     content: string;
     usage: {
       inputTokens: number;
@@ -28,11 +31,12 @@ export class ClaudeService {
       });
 
       return {
-        content: response.content[0].type === 'text' ? response.content[0].text : '',
+        content:
+          response.content[0].type === 'text' ? response.content[0].text : '',
         usage: {
           inputTokens: response.usage.input_tokens,
           outputTokens: response.usage.output_tokens,
-        }
+        },
       };
     } catch (error) {
       console.error('Claude API Error:', error);
@@ -51,7 +55,7 @@ Provide detailed analysis with actionable insights in JSON format.`;
     const result = await this.generateContent(prompt, { maxTokens: 1500 });
     return {
       analysis: JSON.parse(result.content),
-      tokensUsed: result.usage
+      tokensUsed: result.usage,
     };
   }
 }

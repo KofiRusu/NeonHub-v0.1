@@ -45,4 +45,4 @@ export const getMetricService = (prisma: PrismaClient): MetricService => {
 // Export all service types
 export * from './auth/AuthService';
 export * from './campaigns/CampaignService';
-export * from './metrics/MetricService'; 
+export * from './metrics/MetricService';

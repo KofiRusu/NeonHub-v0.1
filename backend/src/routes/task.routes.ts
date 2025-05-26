@@ -1,10 +1,10 @@
 import { Router } from 'express';
-import { 
+import {
   getTasks,
   getTask,
   createTask,
   updateTask,
-  deleteTask
+  deleteTask,
 } from '../controllers/task.controller';
 import { protect } from '../middleware/auth.middleware';
 
@@ -45,4 +45,4 @@ router.put('/:id', protect, updateTask);
  */
 router.delete('/:id', protect, deleteTask);
 
-export default router; 
+export default router;

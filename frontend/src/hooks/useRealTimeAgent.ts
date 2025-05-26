@@ -25,8 +25,10 @@ export function useRealTimeAgent(agentId: string) {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    const newSocket = io(process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000');
-    
+    const newSocket = io(
+      process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000',
+    );
+
     newSocket.on('connect', () => {
       setIsConnected(true);
       newSocket.emit('subscribe-agent-updates', agentId);
@@ -44,7 +46,7 @@ export function useRealTimeAgent(agentId: string) {
 
     newSocket.on('agent-log', (logData: AgentLog) => {
       if (logData.agentId === agentId) {
-        setLogs(prev => [...prev.slice(-49), logData]); // Keep last 50 logs
+        setLogs((prev) => [...prev.slice(-49), logData]); // Keep last 50 logs
       }
     });
 

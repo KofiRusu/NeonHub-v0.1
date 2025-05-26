@@ -17,7 +17,7 @@
       ],
       "files_monitored": [
         "architecture.md",
-        "IMPLEMENTATION_PLAN.md", 
+        "IMPLEMENTATION_PLAN.md",
         "PROJECT_OVERVIEW.md",
         "backend/src/**/*.ts",
         "frontend/src/**/*.tsx"
@@ -83,7 +83,7 @@
       }
     },
     "frontend": {
-      "name": "NeonHub Frontend Agent", 
+      "name": "NeonHub Frontend Agent",
       "description": "Maintains UI/UX consistency, component quality, and frontend tests",
       "triggers": [
         "on_frontend_change",
@@ -277,10 +277,7 @@
       "prevent_loops": true,
       "commit_hook_bypass": true
     },
-    "notification_channels": [
-      "github_issues",
-      "slack_webhook"
-    ],
+    "notification_channels": ["github_issues", "slack_webhook"],
     "quality_standards": {
       "min_test_coverage": 90,
       "max_complexity": 10,
@@ -307,7 +304,7 @@
       "sequence": [
         "architecture",
         "backend",
-        "frontend", 
+        "frontend",
         "qa",
         "docs",
         "devops"
@@ -317,11 +314,7 @@
       "immediate_execution": true
     },
     "on_pull_request": {
-      "sequence": [
-        "backend",
-        "frontend",
-        "qa"
-      ],
+      "sequence": ["backend", "frontend", "qa"],
       "parallel_execution": true,
       "failure_strategy": "fail_fast"
     },
@@ -340,13 +333,9 @@
     },
     "scheduled_nightly": {
       "cron": "0 2 * * *",
-      "sequence": [
-        "qa",
-        "devops",
-        "docs"
-      ],
+      "sequence": ["qa", "devops", "docs"],
       "parallel_execution": false,
       "includes_full_e2e": true
     }
   }
-} 
+}

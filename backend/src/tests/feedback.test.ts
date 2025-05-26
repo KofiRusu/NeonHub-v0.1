@@ -8,7 +8,7 @@ jest.mock('../middleware/auth.middleware', () => ({
   protect: (req: any, res: any, next: any) => {
     req.user = { id: 'test-user-id' };
     next();
-  }
+  },
 }));
 
 describe('Feedback API Routes', () => {
@@ -24,18 +24,22 @@ describe('Feedback API Routes', () => {
       data: {
         name: 'Test User',
         email: 'feedback-test@example.com',
-        password: 'hashed-password'
-      }
+        password: 'hashed-password',
+      },
     });
 
-    authToken = generateJWT({ id: testUser.id, email: testUser.email, role: testUser.role });
+    authToken = generateJWT({
+      id: testUser.id,
+      email: testUser.email,
+      role: testUser.role,
+    });
 
     testProject = await prisma.project.create({
       data: {
         name: 'Test Project',
         description: 'Test project for feedback API tests',
-        ownerId: testUser.id
-      }
+        ownerId: testUser.id,
+      },
     });
 
     testCampaign = await prisma.campaign.create({
@@ -47,8 +51,8 @@ describe('Feedback API Routes', () => {
         targeting: {},
         status: 'DRAFT',
         ownerId: testUser.id,
-        projectId: testProject.id
-      }
+        projectId: testProject.id,
+      },
     });
 
     // Create a test agent
@@ -60,8 +64,8 @@ describe('Feedback API Routes', () => {
         status: 'IDLE',
         configuration: {},
         projectId: testProject.id,
-        managerId: testUser.id
-      }
+        managerId: testUser.id,
+      },
     });
 
     // Create test content
@@ -72,8 +76,8 @@ describe('Feedback API Routes', () => {
         contentType: 'BLOG_POST',
         status: 'DRAFT',
         agentId: testAgent.id,
-        campaignId: testCampaign.id
-      }
+        campaignId: testCampaign.id,
+      },
     });
 
     // Create test feedback
@@ -85,30 +89,30 @@ describe('Feedback API Routes', () => {
         sourceType: 'CONTENT',
         sourceId: testContent.id,
         userId: testUser.id,
-        contentId: testContent.id
-      }
+        contentId: testContent.id,
+      },
     });
   });
 
   afterAll(async () => {
     // Clean up test data
     await prisma.feedback.deleteMany({
-      where: { content: 'This is test feedback' }
+      where: { content: 'This is test feedback' },
     });
     await prisma.generatedContent.deleteMany({
-      where: { title: 'Test Content' }
+      where: { title: 'Test Content' },
     });
     await prisma.aIAgent.deleteMany({
-      where: { name: 'Test Agent' }
+      where: { name: 'Test Agent' },
     });
     await prisma.campaign.deleteMany({
-      where: { name: 'Test Campaign' }
+      where: { name: 'Test Campaign' },
     });
     await prisma.project.deleteMany({
-      where: { name: 'Test Project' }
+      where: { name: 'Test Project' },
     });
     await prisma.user.deleteMany({
-      where: { email: 'feedback-test@example.com' }
+      where: { email: 'feedback-test@example.com' },
     });
   });
 
@@ -147,4 +151,4 @@ describe('Feedback API Routes', () => {
     // TODO: Implement this test
     expect(true).toBe(true);
   });
-}); 
+});

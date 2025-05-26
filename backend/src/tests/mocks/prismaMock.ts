@@ -1,4 +1,10 @@
-import { PrismaClient, AgentType, AgentStatus, CampaignType, CampaignStatus } from '@prisma/client';
+import {
+  PrismaClient,
+  AgentType,
+  AgentStatus,
+  CampaignType,
+  CampaignStatus,
+} from '@prisma/client';
 import { mockDeep, mockReset, DeepMockProxy } from 'jest-mock-extended';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -29,7 +35,7 @@ export const createTestAgent = (overrides = {}) => ({
   scheduleEnabled: false,
   createdAt: new Date(),
   updatedAt: new Date(),
-  ...overrides
+  ...overrides,
 });
 
 // Helper to create a test campaign
@@ -48,7 +54,7 @@ export const createTestCampaign = (overrides = {}) => ({
   ownerId: generateId(),
   createdAt: new Date(),
   updatedAt: new Date(),
-  ...overrides
+  ...overrides,
 });
 
 // Helper to create a test metric
@@ -63,7 +69,7 @@ export const createTestMetric = (overrides = {}) => ({
   projectId: generateId(),
   metadata: {},
   timestamp: new Date(),
-  ...overrides
+  ...overrides,
 });
 
 // Helper to create a test execution session
@@ -80,7 +86,7 @@ export const createTestExecutionSession = (overrides = {}) => ({
   metrics: {},
   errorMessage: null,
   createdAt: new Date(),
-  ...overrides
+  ...overrides,
 });
 
-export type MockPrismaClient = DeepMockProxy<PrismaClient>; 
+export type MockPrismaClient = DeepMockProxy<PrismaClient>;

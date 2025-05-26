@@ -122,7 +122,10 @@ export class AuthService {
     }
 
     // Check password
-    const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
+    const isPasswordValid = await bcrypt.compare(
+      credentials.password,
+      user.password,
+    );
 
     if (!isPasswordValid) {
       throw new Error('Invalid credentials');
@@ -149,7 +152,10 @@ export class AuthService {
    * @param code Authorization code
    * @returns Authentication result
    */
-  async authenticateWithOAuth(provider: OAuthProvider, code: string): Promise<AuthResult> {
+  async authenticateWithOAuth(
+    provider: OAuthProvider,
+    code: string,
+  ): Promise<AuthResult> {
     // Get OAuth profile based on provider
     let profile: OAuthProfile;
 
@@ -245,20 +251,26 @@ export class AuthService {
   private async getGoogleProfile(code: string): Promise<OAuthProfile> {
     try {
       // Exchange code for tokens
-      const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', {
-        code,
-        client_id: process.env.GOOGLE_CLIENT_ID,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET,
-        redirect_uri: process.env.GOOGLE_REDIRECT_URI,
-        grant_type: 'authorization_code',
-      });
+      const tokenResponse = await axios.post(
+        'https://oauth2.googleapis.com/token',
+        {
+          code,
+          client_id: process.env.GOOGLE_CLIENT_ID,
+          client_secret: process.env.GOOGLE_CLIENT_SECRET,
+          redirect_uri: process.env.GOOGLE_REDIRECT_URI,
+          grant_type: 'authorization_code',
+        },
+      );
 
       // Get user info using access token
-      const userResponse = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
-        headers: {
-          Authorization: `Bearer ${tokenResponse.data.access_token}`,
+      const userResponse = await axios.get(
+        'https://www.googleapis.com/oauth2/v2/userinfo',
+        {
+          headers: {
+            Authorization: `Bearer ${tokenResponse.data.access_token}`,
+          },
         },
-      });
+      );
 
       return {
         id: userResponse.data.id,
@@ -292,7 +304,7 @@ export class AuthService {
           headers: {
             Accept: 'application/json',
           },
-        }
+        },
       );
 
       // Get user info using access token
@@ -303,14 +315,19 @@ export class AuthService {
       });
 
       // Get user email (GitHub might not return email in user info)
-      const emailsResponse = await axios.get('https://api.github.com/user/emails', {
-        headers: {
-          Authorization: `token ${tokenResponse.data.access_token}`,
+      const emailsResponse = await axios.get(
+        'https://api.github.com/user/emails',
+        {
+          headers: {
+            Authorization: `token ${tokenResponse.data.access_token}`,
+          },
         },
-      });
+      );
 
       // Find primary email
-      const primaryEmail = emailsResponse.data.find((email: any) => email.primary)?.email;
+      const primaryEmail = emailsResponse.data.find(
+        (email: any) => email.primary,
+      )?.email;
 
       return {
         id: userResponse.data.id.toString(),
@@ -324,4 +341,4 @@ export class AuthService {
       throw new Error('Failed to authenticate with GitHub');
     }
   }
-} 
+}

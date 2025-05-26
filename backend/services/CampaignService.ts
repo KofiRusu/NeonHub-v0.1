@@ -1,4 +1,10 @@
-import { PrismaClient, Campaign, AIAgent, CampaignStatus, CampaignType } from '@prisma/client';
+import {
+  PrismaClient,
+  Campaign,
+  AIAgent,
+  CampaignStatus,
+  CampaignType,
+} from '@prisma/client';
 
 /**
  * Service for managing marketing campaigns
@@ -29,7 +35,7 @@ export class CampaignService {
    */
   async getOrCreateCampaignForAgent(
     agentData: AIAgent,
-    campaignId?: string
+    campaignId?: string,
   ): Promise<Campaign> {
     // If campaign ID is provided, connect to that campaign
     if (campaignId) {
@@ -37,10 +43,10 @@ export class CampaignService {
       if (!campaign) {
         throw new Error(`Campaign with ID ${campaignId} not found`);
       }
-      
+
       // Connect agent to campaign if not already connected
       await this.connectAgentToCampaign(agentData.id, campaignId);
-      
+
       return campaign;
     }
 
@@ -61,28 +67,30 @@ export class CampaignService {
     }
 
     // Create a new campaign based on agent type
-    const campaignType = this.determineCampaignTypeFromAgent(agentData.agentType);
-    
+    const campaignType = this.determineCampaignTypeFromAgent(
+      agentData.agentType,
+    );
+
     const newCampaign = await this.prisma.campaign.create({
       data: {
         name: `${agentData.name} Campaign`,
         description: `Campaign created from ${agentData.name} agent run`,
         campaignType,
         status: 'ACTIVE' as CampaignStatus,
-        goals: { 
-          primary: "Automated campaign creation",
+        goals: {
+          primary: 'Automated campaign creation',
           automated: true,
-          agentDriven: true
+          agentDriven: true,
         },
-        targeting: { 
+        targeting: {
           automated: true,
-          source: `Agent: ${agentData.name}`
+          source: `Agent: ${agentData.name}`,
         },
         ownerId: agentData.managerId,
         projectId: agentData.projectId,
         agents: {
-          connect: { id: agentData.id }
-        }
+          connect: { id: agentData.id },
+        },
       },
     });
 
@@ -94,17 +102,20 @@ export class CampaignService {
    * @param agentId The agent ID
    * @param campaignId The campaign ID
    */
-  async connectAgentToCampaign(agentId: string, campaignId: string): Promise<void> {
+  async connectAgentToCampaign(
+    agentId: string,
+    campaignId: string,
+  ): Promise<void> {
     // Check if already connected
     const campaign = await this.prisma.campaign.findFirst({
       where: {
         id: campaignId,
         agents: {
           some: {
-            id: agentId
-          }
-        }
-      }
+            id: agentId,
+          },
+        },
+      },
     });
 
     if (campaign) {
@@ -117,9 +128,9 @@ export class CampaignService {
       where: { id: campaignId },
       data: {
         agents: {
-          connect: { id: agentId }
-        }
-      }
+          connect: { id: agentId },
+        },
+      },
     });
   }
 
@@ -128,10 +139,13 @@ export class CampaignService {
    * @param campaignId Campaign ID
    * @param status New status
    */
-  async updateCampaignStatus(campaignId: string, status: CampaignStatus): Promise<Campaign> {
+  async updateCampaignStatus(
+    campaignId: string,
+    status: CampaignStatus,
+  ): Promise<Campaign> {
     return this.prisma.campaign.update({
       where: { id: campaignId },
-      data: { status }
+      data: { status },
     });
   }
 
@@ -142,16 +156,16 @@ export class CampaignService {
    */
   private determineCampaignTypeFromAgent(agentType: string): CampaignType {
     const typeMap: { [key: string]: CampaignType } = {
-      'CONTENT_CREATOR': 'CONTENT_MARKETING' as CampaignType,
-      'SOCIAL_MEDIA_MANAGER': 'SOCIAL_MEDIA' as CampaignType,
-      'EMAIL_MARKETER': 'EMAIL' as CampaignType,
-      'SEO_SPECIALIST': 'SEO' as CampaignType,
-      'PERFORMANCE_OPTIMIZER': 'PPC' as CampaignType,
-      'OUTREACH_MANAGER': 'AFFILIATE' as CampaignType,
-      'AUDIENCE_RESEARCHER': 'INTEGRATED' as CampaignType,
-      'TREND_ANALYZER': 'INTEGRATED' as CampaignType,
-      'COPYWRITER': 'CONTENT_MARKETING' as CampaignType,
-      'CUSTOMER_SUPPORT': 'PR' as CampaignType
+      CONTENT_CREATOR: 'CONTENT_MARKETING' as CampaignType,
+      SOCIAL_MEDIA_MANAGER: 'SOCIAL_MEDIA' as CampaignType,
+      EMAIL_MARKETER: 'EMAIL' as CampaignType,
+      SEO_SPECIALIST: 'SEO' as CampaignType,
+      PERFORMANCE_OPTIMIZER: 'PPC' as CampaignType,
+      OUTREACH_MANAGER: 'AFFILIATE' as CampaignType,
+      AUDIENCE_RESEARCHER: 'INTEGRATED' as CampaignType,
+      TREND_ANALYZER: 'INTEGRATED' as CampaignType,
+      COPYWRITER: 'CONTENT_MARKETING' as CampaignType,
+      CUSTOMER_SUPPORT: 'PR' as CampaignType,
     };
 
     return typeMap[agentType] || ('INTEGRATED' as CampaignType);
@@ -171,4 +185,4 @@ export function getCampaignService(prisma: PrismaClient): CampaignService {
     campaignServiceInstance = new CampaignService(prisma);
   }
   return campaignServiceInstance;
-} 
+}

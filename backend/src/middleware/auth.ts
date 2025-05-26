@@ -19,7 +19,7 @@ export interface AuthRequest extends Request {
 export const authenticateToken = async (
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const authHeader = req.headers.authorization;
@@ -67,7 +67,11 @@ export const authenticateToken = async (
 /**
  * Middleware to check if user has admin role
  */
-export const adminOnly = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const adminOnly = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+) => {
   if (req.user?.role !== 'ADMIN') {
     return res.status(403).json({ message: 'Admin access required' });
   }
@@ -79,7 +83,7 @@ export const adminOnly = (req: AuthRequest, res: Response, next: NextFunction) =
  */
 export const generateJWT = (
   user: { id: string; email: string; role: string },
-  expiresIn = '7d'
+  expiresIn = '7d',
 ) => {
   const jwtSecret = process.env.JWT_SECRET;
   if (!jwtSecret) {
@@ -93,6 +97,6 @@ export const generateJWT = (
       role: user.role,
     },
     jwtSecret,
-    { expiresIn }
+    { expiresIn },
   );
-}; 
+};

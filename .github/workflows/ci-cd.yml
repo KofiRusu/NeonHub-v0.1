@@ -2,9 +2,9 @@ name: NeonHub CI/CD
 
 on:
   push:
-    branches: [ main, develop, autonomous-development ]
+    branches: [main, develop, autonomous-development]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   schedule:
     # Run every 5 minutes for agent optimization
     - cron: '*/5 * * * *'
@@ -21,26 +21,26 @@ jobs:
   agent-validator:
     name: Agent Status Validator
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-      
+
       - name: Validate Agent Status
         run: |
           echo "🤖 Validating NeonHub Agent System..."
-          
+
           # Check if agent config exists
           if [ ! -f "agent-config.json" ]; then
             echo "❌ Agent configuration missing"
             exit 1
           fi
-          
+
           # Validate agent configuration
           node -e "
             const config = require('./agent-config.json');
@@ -58,13 +58,13 @@ jobs:
             
             console.log('✅ All agents properly configured');
           "
-          
+
           # Check agent status files
           echo "📊 Agent Status Check:"
           for agent in architecture backend frontend devops qa docs; do
             echo "  - $agent: Ready for optimization"
           done
-          
+
           echo "✅ Agent validation complete"
 
   # ============================================================================
@@ -74,7 +74,7 @@ jobs:
     name: Backend Tests & Quality
     runs-on: ubuntu-latest
     needs: agent-validator
-    
+
     services:
       postgres:
         image: postgres:15
@@ -106,19 +106,19 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: ${{ env.BACKEND_DIR }}/package-lock.json
-      
+
       - name: Install backend dependencies
         run: |
           cd ${{ env.BACKEND_DIR }}
           npm ci
-      
+
       - name: Setup environment variables
         run: |
           cd ${{ env.BACKEND_DIR }}
@@ -127,29 +127,29 @@ jobs:
           echo "REDIS_URL=redis://localhost:6379" >> .env.test
           echo "JWT_SECRET=test-secret-key" >> .env.test
           echo "NODE_ENV=test" >> .env.test
-      
+
       - name: Generate Prisma client
         run: |
           cd ${{ env.BACKEND_DIR }}
           npx prisma generate
-      
+
       - name: Run database migrations
         run: |
           cd ${{ env.BACKEND_DIR }}
           npx prisma migrate deploy
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/neonhub_test
-      
+
       - name: Auto-fix backend linting
         run: |
           cd ${{ env.BACKEND_DIR }}
           npm run lint -- --fix || true
-      
+
       - name: Run backend type checking
         run: |
           cd ${{ env.BACKEND_DIR }}
           npx tsc --noEmit --strict
-      
+
       - name: Run backend unit tests
         run: |
           cd ${{ env.BACKEND_DIR }}
@@ -159,14 +159,14 @@ jobs:
           REDIS_URL: redis://localhost:6379
           JWT_SECRET: test-secret-key
           NODE_ENV: test
-      
+
       - name: Check test coverage threshold
         run: |
           cd ${{ env.BACKEND_DIR }}
           npm run test:coverage -- --coverageThreshold='{"global":{"branches":80,"functions":85,"lines":85,"statements":85}}' || true
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/neonhub_test
-      
+
       - name: Auto-commit backend fixes
         run: |
           git config --local user.email "agents@neonhub.com"
@@ -176,7 +176,7 @@ jobs:
             git commit --no-verify -m "auto: backend – lint and test fixes"
             git push || echo "Push failed, continuing..."
           fi
-      
+
       - name: Upload backend coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
@@ -188,41 +188,41 @@ jobs:
     name: Frontend Tests & Quality
     runs-on: ubuntu-latest
     needs: agent-validator
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: ${{ env.FRONTEND_DIR }}/package-lock.json
-      
+
       - name: Install frontend dependencies
         run: |
           cd ${{ env.FRONTEND_DIR }}
           npm ci
-      
+
       - name: Auto-fix frontend linting
         run: |
           cd ${{ env.FRONTEND_DIR }}
           npm run lint -- --fix || true
-      
+
       - name: Run frontend type checking
         run: |
           cd ${{ env.FRONTEND_DIR }}
           npx tsc --noEmit --strict
-      
+
       - name: Run frontend unit tests
         run: |
           cd ${{ env.FRONTEND_DIR }}
           npm run test -- --coverage --watchAll=false --coverageReporters=text-lcov > coverage.lcov
-      
+
       - name: Auto-commit frontend fixes
         run: |
           git config --local user.email "agents@neonhub.com"
@@ -232,7 +232,7 @@ jobs:
             git commit --no-verify -m "auto: frontend – lint and component fixes"
             git push || echo "Push failed, continuing..."
           fi
-      
+
       - name: Upload frontend coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
@@ -248,7 +248,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test-backend, test-frontend]
     if: github.event_name != 'schedule' || contains(github.event.schedule, '0 2')
-    
+
     services:
       postgres:
         image: postgres:15
@@ -267,7 +267,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -276,12 +276,12 @@ jobs:
           cache-dependency-path: |
             ${{ env.BACKEND_DIR }}/package-lock.json
             ${{ env.FRONTEND_DIR }}/package-lock.json
-      
+
       - name: Install dependencies
         run: |
           cd ${{ env.BACKEND_DIR }} && npm ci
           cd ../${{ env.FRONTEND_DIR }} && npm ci
-      
+
       - name: Setup test database
         run: |
           cd ${{ env.BACKEND_DIR }}
@@ -291,7 +291,7 @@ jobs:
           npx prisma migrate deploy
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/neonhub_e2e
-      
+
       - name: Build and start backend
         run: |
           cd ${{ env.BACKEND_DIR }}
@@ -301,7 +301,7 @@ jobs:
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/neonhub_e2e
           PORT: 8000
-      
+
       - name: Build and start frontend
         run: |
           cd ${{ env.FRONTEND_DIR }}
@@ -311,17 +311,17 @@ jobs:
         env:
           NEXT_PUBLIC_BACKEND_URL: http://localhost:8000
           PORT: 3000
-      
+
       - name: Wait for services
         run: |
           timeout 60 bash -c 'until curl -f http://localhost:8000/api/health; do sleep 2; done'
           timeout 60 bash -c 'until curl -f http://localhost:3000; do sleep 2; done'
-      
+
       - name: Install Playwright
         run: |
           cd ${{ env.FRONTEND_DIR }}
           npx playwright install --with-deps
-      
+
       - name: Run E2E tests
         run: |
           cd ${{ env.FRONTEND_DIR }}
@@ -329,14 +329,14 @@ jobs:
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:3000
           API_BASE_URL: http://localhost:8000
-      
+
       - name: Upload E2E test results
         uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: e2e-test-results
           path: ${{ env.FRONTEND_DIR }}/test-results/
-      
+
       - name: Cleanup test processes
         if: always()
         run: |
@@ -354,26 +354,26 @@ jobs:
     name: Security Audit
     runs-on: ubuntu-latest
     needs: agent-validator
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-      
+
       - name: Run npm audit (Backend)
         run: |
           cd ${{ env.BACKEND_DIR }}
           npm audit --audit-level moderate || true
-      
+
       - name: Run npm audit (Frontend)
         run: |
           cd ${{ env.FRONTEND_DIR }}
           npm audit --audit-level moderate || true
-      
+
       - name: Run Snyk security scan
         uses: snyk/actions/node@master
         continue-on-error: true
@@ -390,28 +390,28 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test-backend, test-frontend, security-scan]
     if: always()
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-      
+
       - name: Configure Git
         run: |
           git config --local user.email "agents@neonhub.com"
           git config --local user.name "NeonHub Agent Optimizer"
-      
+
       - name: Run Agent Orchestration
         run: |
           echo "🤖 Running NeonHub Agent Orchestration..."
-          
+
           # Load agent configuration
           node -e "
             const fs = require('fs');
@@ -450,7 +450,7 @@ jobs:
             
             console.log('🎉 Agent orchestration complete');
           "
-      
+
       - name: Auto-commit agent improvements
         run: |
           git add -A
@@ -469,21 +469,21 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test-backend, security-scan]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
+
       - name: Login to Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -494,7 +494,7 @@ jobs:
             type=ref,event=pr
             type=sha,prefix=sha-
             type=raw,value=latest,enable={{is_default_branch}}
-      
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
@@ -510,23 +510,23 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test-frontend, e2e-tests]
     if: github.ref == 'refs/heads/main'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: ${{ env.FRONTEND_DIR }}/package-lock.json
-      
+
       - name: Install dependencies
         run: |
           cd ${{ env.FRONTEND_DIR }}
           npm ci
-      
+
       - name: Build frontend
         run: |
           cd ${{ env.FRONTEND_DIR }}
@@ -535,7 +535,7 @@ jobs:
           NEXT_PUBLIC_BACKEND_URL: ${{ secrets.BACKEND_URL }}
           NEXT_PUBLIC_APP_NAME: NeonHub
           NEXT_PUBLIC_APP_VERSION: ${{ github.sha }}
-      
+
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
         with:
@@ -554,32 +554,32 @@ jobs:
     runs-on: ubuntu-latest
     needs: [deploy-frontend, build-backend]
     if: github.ref == 'refs/heads/main'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Wait for deployment
         run: sleep 30
-      
+
       - name: Run smoke tests
         run: |
           echo "🧪 Running production smoke tests..."
-          
+
           # Test frontend accessibility
           curl -f "${{ secrets.VERCEL_URL }}" || exit 1
           echo "✅ Frontend is accessible"
-          
+
           # Test API health endpoint
           curl -f "${{ secrets.BACKEND_URL }}/api/health" || exit 1
           echo "✅ Backend health check passed"
-          
+
           # Test API authentication endpoint
           curl -f "${{ secrets.BACKEND_URL }}/api/auth/status" || exit 1
           echo "✅ Authentication endpoint accessible"
-          
+
           echo "🎉 All smoke tests passed!"
-      
+
       - name: Notify team on success
         if: success()
         uses: 8398a7/action-slack@v3
@@ -607,7 +607,7 @@ jobs:
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
-      
+
       - name: Notify team on failure
         if: failure()
         uses: 8398a7/action-slack@v3
@@ -637,7 +637,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [agent-validator, agent-orchestration]
     if: always()
-    
+
     steps:
       - name: Generate Agent Status Report
         run: |
@@ -667,4 +667,4 @@ jobs:
             echo "✅ **All agents optimized and functioning at maximum throughput**"
           else
             echo "⚠️ **Some agents need attention - check logs above**"
-          fi 
+          fi

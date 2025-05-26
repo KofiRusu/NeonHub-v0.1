@@ -31,15 +31,18 @@ export const register = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Register error:', error);
-    
+
     // Handle specific errors
-    if (error instanceof Error && error.message === 'User with this email already exists') {
+    if (
+      error instanceof Error &&
+      error.message === 'User with this email already exists'
+    ) {
       return res.status(400).json({
         success: false,
         message: error.message,
       });
     }
-    
+
     res.status(500).json({
       success: false,
       message: 'Server error',
@@ -76,7 +79,7 @@ export const login = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Login error:', error);
-    
+
     // Handle invalid credentials
     if (error instanceof Error && error.message === 'Invalid credentials') {
       return res.status(400).json({
@@ -84,7 +87,7 @@ export const login = async (req: Request, res: Response) => {
         message: 'Invalid credentials',
       });
     }
-    
+
     res.status(500).json({
       success: false,
       message: 'Server error',
@@ -121,7 +124,10 @@ export const oauthLogin = async (req: Request, res: Response) => {
     const authService = getAuthService(prisma);
 
     // Authenticate with OAuth
-    const result = await authService.authenticateWithOAuth(provider as OAuthProvider, code);
+    const result = await authService.authenticateWithOAuth(
+      provider as OAuthProvider,
+      code,
+    );
 
     res.status(200).json({
       success: true,
@@ -172,4 +178,4 @@ export const getMe = async (req: Request, res: Response) => {
       message: 'Server error',
     });
   }
-}; 
+};

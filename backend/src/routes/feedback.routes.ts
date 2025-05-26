@@ -5,7 +5,7 @@ import {
   createFeedback,
   updateFeedback,
   deleteFeedback,
-  getSentimentSummary
+  getSentimentSummary,
 } from '../controllers/feedback.controller';
 import { protect } from '../middleware/auth.middleware';
 
@@ -53,4 +53,4 @@ router.put('/:id', protect, updateFeedback);
  */
 router.delete('/:id', protect, deleteFeedback);
 
-export default router; 
+export default router;

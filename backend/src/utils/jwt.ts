@@ -12,15 +12,17 @@ const DEFAULT_EXPIRY = process.env.JWT_EXPIRE || '7d';
  */
 export const generateJWT = (
   user: { id: string; email: string; role?: string },
-  expiresIn = DEFAULT_EXPIRY
+  expiresIn = DEFAULT_EXPIRY,
 ): string => {
   try {
     const jwtSecret = process.env.JWT_SECRET;
-    
+
     if (!jwtSecret) {
-      logger.warn('JWT_SECRET is not set. Using development secret. This is not secure for production!');
+      logger.warn(
+        'JWT_SECRET is not set. Using development secret. This is not secure for production!',
+      );
     }
-    
+
     return jwt.sign(
       {
         id: user.id,
@@ -28,7 +30,7 @@ export const generateJWT = (
         role: user.role || 'USER',
       },
       jwtSecret || 'development-secret',
-      { expiresIn: expiresIn }
+      { expiresIn: expiresIn },
     );
   } catch (error) {
     logger.error('Error generating JWT:', error);
@@ -44,11 +46,13 @@ export const generateJWT = (
 export const verifyJWT = (token: string): any | null => {
   try {
     const jwtSecret = process.env.JWT_SECRET;
-    
+
     if (!jwtSecret) {
-      logger.warn('JWT_SECRET is not set. Using development secret. This is not secure for production!');
+      logger.warn(
+        'JWT_SECRET is not set. Using development secret. This is not secure for production!',
+      );
     }
-    
+
     return jwt.verify(token, jwtSecret || 'development-secret');
   } catch (error) {
     logger.error('Error verifying JWT:', error);
@@ -68,6 +72,6 @@ export const extractTokenFromHeader = (authHeader?: string): string | null => {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return null;
   }
-  
+
   return authHeader.substring(7); // Remove "Bearer " prefix
-}; 
+};

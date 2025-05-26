@@ -1,0 +1,17 @@
+node_modules/
+dist/
+build/
+coverage/
+*.config.js
+*.config.ts
+frontend/
+backend/prisma/migrations/
+backend/node_modules/
+services/orchestrator/node_modules/
+services/orchestrator/dist/
+packages/agents/node_modules/
+packages/agents/dist/
+.husky/
+.git/
+*.log
+*.lock 

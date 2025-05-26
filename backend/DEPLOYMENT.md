@@ -33,6 +33,7 @@ cp env.example .env
 ```
 
 Edit the `.env` file to include your specific configuration:
+
 - Database credentials
 - JWT secret
 - API keys
@@ -113,11 +114,13 @@ docker-compose restart neonhub-api
 ### Database Connection Issues
 
 1. Check the database container is running:
+
    ```bash
    docker-compose ps neonhub-db
    ```
 
 2. Verify the database URL in your `.env` file:
+
    ```
    DATABASE_URL="postgresql://neonhub:secret@neonhub-db:5432/neonhub?schema=public"
    ```
@@ -130,11 +133,13 @@ docker-compose restart neonhub-api
 ### API Container Issues
 
 1. Check the API logs:
+
    ```bash
    docker-compose logs neonhub-api
    ```
 
 2. Enter the container for debugging:
+
    ```bash
    docker-compose exec neonhub-api sh
    ```
@@ -149,6 +154,7 @@ docker-compose restart neonhub-api
 ### Preparing for Cloud Deployment
 
 1. Build your image locally:
+
    ```bash
    docker build -t neonhub/backend:latest .
    ```
@@ -213,4 +219,4 @@ cat backup.sql | docker-compose exec -T neonhub-db psql -U neonhub -d neonhub
 - Never commit `.env` files with sensitive information
 - Change default database credentials in production
 - Use strong JWT secrets
-- Implement proper network security in production environments 
+- Implement proper network security in production environments

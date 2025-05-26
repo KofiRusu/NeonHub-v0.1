@@ -1,5 +1,9 @@
 import { PrismaClient, AIAgent } from '@prisma/client';
-import { BaseAgent, AgentEventType, ExecutionOptions } from '../../agents/base/BaseAgent';
+import {
+  BaseAgent,
+  AgentEventType,
+  ExecutionOptions,
+} from '../../agents/base/BaseAgent';
 import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
 
 // Mock implementation of BaseAgent for testing
@@ -25,12 +29,12 @@ class TestAgent extends BaseAgent {
     }
 
     // Simulate some work
-    await new Promise(resolve => setTimeout(resolve, 10));
-    
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
     return {
       success: true,
       data: 'Test execution completed',
-      config
+      config,
     };
   }
 
@@ -39,7 +43,12 @@ class TestAgent extends BaseAgent {
   }
 
   // Expose protected methods for testing
-  public testLogEvent(type: AgentEventType, message: string, data?: any, level?: 'info' | 'warning' | 'error'): void {
+  public testLogEvent(
+    type: AgentEventType,
+    message: string,
+    data?: any,
+    level?: 'info' | 'warning' | 'error',
+  ): void {
     this.logEvent(type, message, data, level);
   }
 
@@ -48,7 +57,10 @@ class TestAgent extends BaseAgent {
   }
 
   // Expose logMessage as public for testing
-  public async testLogMessage(message: string, level?: 'info' | 'warning' | 'error'): Promise<void> {
+  public async testLogMessage(
+    message: string,
+    level?: 'info' | 'warning' | 'error',
+  ): Promise<void> {
     return this.logMessage(message, level);
   }
 }
@@ -56,11 +68,13 @@ class TestAgent extends BaseAgent {
 // Mock the services
 jest.mock('../../../services', () => ({
   getCampaignService: jest.fn(() => ({
-    getOrCreateCampaignForAgent: jest.fn().mockResolvedValue({ id: 'test-campaign-id' })
+    getOrCreateCampaignForAgent: jest
+      .fn()
+      .mockResolvedValue({ id: 'test-campaign-id' }),
   })),
   getMetricService: jest.fn(() => ({
-    logAgentExecutionMetrics: jest.fn().mockResolvedValue(undefined)
-  }))
+    logAgentExecutionMetrics: jest.fn().mockResolvedValue(undefined),
+  })),
 }));
 
 describe('BaseAgent', () => {
@@ -70,7 +84,7 @@ describe('BaseAgent', () => {
 
   beforeEach(() => {
     mockPrisma = mockDeep<PrismaClient>();
-    
+
     mockAgentData = {
       id: 'test-agent-id',
       name: 'Test Agent',
@@ -85,7 +99,7 @@ describe('BaseAgent', () => {
       scheduleExpression: null,
       scheduleEnabled: false,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
 
     testAgent = new TestAgent(mockPrisma, mockAgentData);
@@ -109,7 +123,7 @@ describe('BaseAgent', () => {
         context: null,
         metrics: null,
         errorMessage: null,
-        createdAt: new Date()
+        createdAt: new Date(),
       });
 
       mockPrisma.agentExecutionSession.update.mockResolvedValue({} as any);
@@ -128,7 +142,7 @@ describe('BaseAgent', () => {
         campaignId: 'test-campaign-id',
         executionTime: expect.any(Number),
         sessionId: 'test-session-id',
-        events: expect.any(Array)
+        events: expect.any(Array),
       });
 
       // Check that events were logged
@@ -140,58 +154,69 @@ describe('BaseAgent', () => {
 
     it('should retry on failure and eventually succeed', async () => {
       testAgent.setFailureMode(true, 2); // Fail twice, then succeed
-      
+
       const config = { testConfig: true };
       const options: ExecutionOptions = { maxRetries: 3, retryDelay: 10 };
 
       const result = await testAgent.execute(config, options);
 
       expect(result.success).toBe(true);
-      
+
       // Check retry events - BaseAgent logs 2 events per retry (info + warning)
       const events = testAgent.getEvents();
-      const retryEvents = events.filter(e => e.type === AgentEventType.RETRY_ATTEMPT);
+      const retryEvents = events.filter(
+        (e) => e.type === AgentEventType.RETRY_ATTEMPT,
+      );
       expect(retryEvents).toHaveLength(4); // Two retries, each with 2 events (info + warning)
     });
 
     it('should fail after max retries', async () => {
       testAgent.setFailureMode(true, 5); // Always fail
-      
+
       const config = { testConfig: true };
       const options: ExecutionOptions = { maxRetries: 2, retryDelay: 10 };
 
-      await expect(testAgent.execute(config, options)).rejects.toThrow('Test failure');
-      
+      await expect(testAgent.execute(config, options)).rejects.toThrow(
+        'Test failure',
+      );
+
       // Check that session was updated with error
       expect(mockPrisma.agentExecutionSession.update).toHaveBeenCalledWith({
         where: { id: 'test-session-id' },
         data: expect.objectContaining({
           success: false,
-          errorMessage: expect.stringContaining('Test failure')
-        })
+          errorMessage: expect.stringContaining('Test failure'),
+        }),
       });
     });
 
     it('should handle stop request during execution', async () => {
       // Start execution in background
       const executePromise = testAgent.execute({ testConfig: true });
-      
+
       // Stop the agent immediately
       await testAgent.stop();
-      
+
       // Execution should be interrupted
-      await expect(executePromise).rejects.toThrow('Agent execution stopped by user request');
+      await expect(executePromise).rejects.toThrow(
+        'Agent execution stopped by user request',
+      );
     });
   });
 
   describe('event logging', () => {
     it('should log events with correct structure', () => {
       const testData = { key: 'value' };
-      testAgent.testLogEvent(AgentEventType.CUSTOM_EVENT, 'Test message', testData, 'info');
+      testAgent.testLogEvent(
+        AgentEventType.CUSTOM_EVENT,
+        'Test message',
+        testData,
+        'info',
+      );
 
       const events = testAgent.getEvents();
       expect(events).toHaveLength(1);
-      
+
       const event = events[0];
       expect(event.type).toBe(AgentEventType.CUSTOM_EVENT);
       expect(event.message).toBe('Test message');
@@ -207,20 +232,24 @@ describe('BaseAgent', () => {
 
       const events = testAgent.getEvents();
       expect(events).toHaveLength(3);
-      expect(events.map(e => e.message)).toEqual(['Event 1', 'Event 2', 'Event 3']);
+      expect(events.map((e) => e.message)).toEqual([
+        'Event 1',
+        'Event 2',
+        'Event 3',
+      ]);
     });
   });
 
   describe('status management', () => {
     it('should return correct status when idle', () => {
       const status = testAgent.getStatus();
-      
+
       expect(status).toEqual({
         isRunning: false,
         shouldStop: false,
         currentSessionId: null,
         eventCount: 0,
-        executionTime: undefined
+        executionTime: undefined,
       });
     });
   });
@@ -228,18 +257,20 @@ describe('BaseAgent', () => {
   describe('stop functionality', () => {
     it('should stop execution gracefully', async () => {
       await testAgent.stop();
-      
+
       expect(testAgent.testCheckShouldStop()).toBe(true);
-      
+
       const events = testAgent.getEvents();
-      const stopEvent = events.find(e => e.type === AgentEventType.STOP_REQUESTED);
+      const stopEvent = events.find(
+        (e) => e.type === AgentEventType.STOP_REQUESTED,
+      );
       expect(stopEvent).toBeDefined();
     });
 
     it('should not stop if not running', async () => {
       // Agent is not running, stop should be a no-op
       await testAgent.stop();
-      
+
       // Should still set the stop flag
       expect(testAgent.testCheckShouldStop()).toBe(true);
     });
@@ -248,7 +279,7 @@ describe('BaseAgent', () => {
   describe('legacy logMessage method', () => {
     it('should work for backward compatibility', async () => {
       await testAgent.testLogMessage('Legacy message', 'warning');
-      
+
       const events = testAgent.getEvents();
       expect(events).toHaveLength(1);
       expect(events[0].type).toBe(AgentEventType.CUSTOM_EVENT);
@@ -256,4 +287,4 @@ describe('BaseAgent', () => {
       expect(events[0].level).toBe('warning');
     });
   });
-}); 
+});

@@ -28,12 +28,14 @@ Before deploying NeonHub, ensure you have the following:
 To set up the development environment:
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/yourusername/neonhub.git
    cd neonhub
    ```
 
 2. Start the development environment using Docker Compose:
+
    ```bash
    docker-compose up -d
    ```
@@ -52,6 +54,7 @@ For production deployment using Docker:
 1. Update the environment variables in `docker-compose.prod.yml` with production values.
 
 2. Build and start the production containers:
+
    ```bash
    docker-compose -f docker-compose.prod.yml up -d
    ```
@@ -65,11 +68,13 @@ For deploying on Kubernetes:
 1. Ensure you have kubectl configured to access your cluster.
 
 2. Apply the Kubernetes manifests:
+
    ```bash
    kubectl apply -f kubernetes/
    ```
 
 3. Check the deployment status:
+
    ```bash
    kubectl get pods
    kubectl get services
@@ -106,6 +111,7 @@ The following environment variables need to be configured:
 To run database migrations:
 
 1. Access the backend container:
+
    ```bash
    docker exec -it neonhub-backend sh
    ```
@@ -120,10 +126,12 @@ To run database migrations:
 ### Common Issues
 
 1. **Connection refused to database**
+
    - Check if the database is running and accessible
    - Verify the DATABASE_URL environment variable is correct
 
 2. **JWT token issues**
+
    - Ensure JWT_SECRET is set and consistent across deployments
    - Check token expiration time
 
@@ -143,4 +151,4 @@ docker logs neonhub-frontend
 # Kubernetes logs
 kubectl logs deployment/neonhub-backend
 kubectl logs deployment/neonhub-frontend
-``` 
+```

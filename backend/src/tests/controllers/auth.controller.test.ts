@@ -8,7 +8,9 @@ import * as jwtUtils from '../../utils/jwt';
 
 // Mock services
 jest.mock('../../services');
-const mockGetAuthService = getAuthService as jest.MockedFunction<typeof getAuthService>;
+const mockGetAuthService = getAuthService as jest.MockedFunction<
+  typeof getAuthService
+>;
 const mockAuthService = {
   register: jest.fn(),
   login: jest.fn(),
@@ -84,7 +86,7 @@ describe('Auth Controller', () => {
 
     it('should return 400 if user already exists', async () => {
       mockAuthService.register.mockRejectedValueOnce(
-        new Error('User with this email already exists')
+        new Error('User with this email already exists'),
       );
 
       const response = await request(app)
@@ -148,7 +150,7 @@ describe('Auth Controller', () => {
 
     it('should return 400 if credentials are invalid', async () => {
       mockAuthService.login.mockRejectedValueOnce(
-        new Error('Invalid credentials')
+        new Error('Invalid credentials'),
       );
 
       const response = await request(app)
@@ -189,7 +191,7 @@ describe('Auth Controller', () => {
 
       expect(mockAuthService.authenticateWithOAuth).toHaveBeenCalledWith(
         OAuthProvider.GOOGLE,
-        oauthData.code
+        oauthData.code,
       );
 
       expect(response.body).toEqual({
@@ -246,7 +248,9 @@ describe('Auth Controller', () => {
 
       // Mock JWT verification
       (jwtUtils.verifyJWT as jest.Mock).mockReturnValueOnce(mockReq.user);
-      (jwtUtils.extractTokenFromHeader as jest.Mock).mockReturnValueOnce('mock-token');
+      (jwtUtils.extractTokenFromHeader as jest.Mock).mockReturnValueOnce(
+        'mock-token',
+      );
 
       mockAuthService.getUserById.mockResolvedValueOnce(mockUser);
 
@@ -279,4 +283,4 @@ describe('Auth Controller', () => {
       expect(mockAuthService.getUserById).not.toHaveBeenCalled();
     });
   });
-}); 
+});

@@ -95,7 +95,7 @@ export const updateUser = async (req: Request, res: Response) => {
     if (name) updateData.name = name;
     if (email) updateData.email = email;
     if (avatar) updateData.avatar = avatar;
-    
+
     // If password is being updated, hash it
     if (password) {
       const salt = await bcrypt.genSalt(10);
@@ -164,4 +164,4 @@ export const deleteUser = async (req: Request, res: Response) => {
       message: 'Server error',
     });
   }
-}; 
+};

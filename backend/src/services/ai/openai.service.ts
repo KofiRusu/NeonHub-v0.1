@@ -20,7 +20,7 @@ export class OpenAIService {
   private costPerToken = {
     'gpt-4': { input: 0.00003, output: 0.00006 },
     'gpt-4-turbo': { input: 0.00001, output: 0.00003 },
-    'gpt-3.5-turbo': { input: 0.0000005, output: 0.0000015 }
+    'gpt-3.5-turbo': { input: 0.0000005, output: 0.0000015 },
   };
 
   constructor() {
@@ -33,12 +33,15 @@ export class OpenAIService {
     });
   }
 
-  async generateContent(prompt: string, options: {
-    model?: string;
-    maxTokens?: number;
-    temperature?: number;
-    systemPrompt?: string;
-  } = {}): Promise<OpenAIResponse> {
+  async generateContent(
+    prompt: string,
+    options: {
+      model?: string;
+      maxTokens?: number;
+      temperature?: number;
+      systemPrompt?: string;
+    } = {},
+  ): Promise<OpenAIResponse> {
     try {
       const model = options.model || this.defaultModel;
       const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [];
@@ -46,7 +49,7 @@ export class OpenAIService {
       if (options.systemPrompt) {
         messages.push({ role: 'system', content: options.systemPrompt });
       }
-      
+
       messages.push({ role: 'user', content: prompt });
 
       const response = await this.openai.chat.completions.create({
@@ -67,14 +70,18 @@ export class OpenAIService {
         promptTokens: usage.prompt_tokens,
         completionTokens: usage.completion_tokens,
         totalTokens: usage.total_tokens,
-        estimatedCost: this.calculateCost(model, usage.prompt_tokens, usage.completion_tokens)
+        estimatedCost: this.calculateCost(
+          model,
+          usage.prompt_tokens,
+          usage.completion_tokens,
+        ),
       };
 
       return {
         content: choice.message.content,
         usage: openAIUsage,
         model,
-        finishReason: choice.finish_reason
+        finishReason: choice.finish_reason,
       };
     } catch (error) {
       console.error('OpenAI API Error:', error);
@@ -85,7 +92,10 @@ export class OpenAIService {
     }
   }
 
-  async generateTrendAnalysis(data: any, context?: string): Promise<{
+  async generateTrendAnalysis(
+    data: any,
+    context?: string,
+  ): Promise<{
     analysis: any;
     usage: OpenAIUsage;
   }> {
@@ -129,17 +139,17 @@ Focus on:
 
 Provide analysis in the specified JSON format.`;
 
-    const result = await this.generateContent(prompt, { 
+    const result = await this.generateContent(prompt, {
       maxTokens: 2500,
       systemPrompt,
-      temperature: 0.3 // Lower temperature for more consistent analysis
+      temperature: 0.3, // Lower temperature for more consistent analysis
     });
 
     try {
       const analysis = JSON.parse(result.content);
       return {
         analysis,
-        usage: result.usage
+        usage: result.usage,
       };
     } catch (parseError) {
       console.error('Failed to parse OpenAI response as JSON:', parseError);
@@ -148,10 +158,20 @@ Provide analysis in the specified JSON format.`;
   }
 
   async generateMarketingContent(config: {
-    contentType: 'blog_post' | 'social_post' | 'email' | 'ad_copy' | 'landing_page';
+    contentType:
+      | 'blog_post'
+      | 'social_post'
+      | 'email'
+      | 'ad_copy'
+      | 'landing_page';
     topic: string;
     targetAudience: string;
-    tone: 'professional' | 'casual' | 'friendly' | 'authoritative' | 'conversational';
+    tone:
+      | 'professional'
+      | 'casual'
+      | 'friendly'
+      | 'authoritative'
+      | 'conversational';
     length: 'short' | 'medium' | 'long';
     keywords?: string[];
     callToAction?: string;
@@ -174,7 +194,7 @@ Provide analysis in the specified JSON format.`;
     const lengthGuide = {
       short: { words: '50-150', readTime: '30 seconds' },
       medium: { words: '200-500', readTime: '1-2 minutes' },
-      long: { words: '600-1500', readTime: '3-6 minutes' }
+      long: { words: '600-1500', readTime: '3-6 minutes' },
     };
 
     const prompt = `Create ${config.contentType.replace('_', ' ')} content with these specifications:
@@ -205,7 +225,7 @@ Format the response as JSON:
     const result = await this.generateContent(prompt, {
       maxTokens: this.getMaxTokensForLength(config.length),
       systemPrompt,
-      temperature: 0.7
+      temperature: 0.7,
     });
 
     try {
@@ -218,9 +238,11 @@ Format the response as JSON:
         metadata: {
           wordCount,
           estimatedReadTime,
-          seoScore: config.keywords ? this.calculateSEOScore(parsed.content, config.keywords) : undefined
+          seoScore: config.keywords
+            ? this.calculateSEOScore(parsed.content, config.keywords)
+            : undefined,
         },
-        usage: result.usage
+        usage: result.usage,
       };
     } catch (parseError) {
       console.error('Failed to parse content generation response:', parseError);
@@ -230,9 +252,9 @@ Format the response as JSON:
         content: result.content,
         metadata: {
           wordCount,
-          estimatedReadTime: this.calculateReadTime(wordCount)
+          estimatedReadTime: this.calculateReadTime(wordCount),
         },
-        usage: result.usage
+        usage: result.usage,
       };
     }
   }
@@ -245,7 +267,11 @@ Format the response as JSON:
       role?: string;
       interests?: string[];
     };
-    outreachType: 'cold_email' | 'follow_up' | 'social_outreach' | 'partnership';
+    outreachType:
+      | 'cold_email'
+      | 'follow_up'
+      | 'social_outreach'
+      | 'partnership';
     value_proposition: string;
     call_to_action: string;
     tone: 'formal' | 'casual' | 'friendly';
@@ -280,45 +306,54 @@ Requirements:
 ${config.outreachType === 'cold_email' ? 'Include both subject line and email body.' : 'Provide the message content.'}
 
 Format as JSON:
-${config.outreachType === 'cold_email' ? 
-  '{"subject": "Email subject", "content": "Email body"}' : 
-  '{"content": "Message content"}'
+${
+  config.outreachType === 'cold_email'
+    ? '{"subject": "Email subject", "content": "Email body"}'
+    : '{"content": "Message content"}'
 }`;
 
     const result = await this.generateContent(prompt, {
       maxTokens: 800,
       systemPrompt,
-      temperature: 0.8 // Higher creativity for personalization
+      temperature: 0.8, // Higher creativity for personalization
     });
 
     try {
       const parsed = JSON.parse(result.content);
       return {
         ...parsed,
-        usage: result.usage
+        usage: result.usage,
       };
     } catch (parseError) {
       console.error('Failed to parse outreach response:', parseError);
       return {
         content: result.content,
-        usage: result.usage
+        usage: result.usage,
       };
     }
   }
 
-  private calculateCost(model: string, promptTokens: number, completionTokens: number): number {
+  private calculateCost(
+    model: string,
+    promptTokens: number,
+    completionTokens: number,
+  ): number {
     const costs = this.costPerToken[model as keyof typeof this.costPerToken];
     if (!costs) return 0;
 
-    return (promptTokens * costs.input) + (completionTokens * costs.output);
+    return promptTokens * costs.input + completionTokens * costs.output;
   }
 
   private getMaxTokensForLength(length: 'short' | 'medium' | 'long'): number {
     switch (length) {
-      case 'short': return 300;
-      case 'medium': return 800;
-      case 'long': return 2000;
-      default: return 800;
+      case 'short':
+        return 300;
+      case 'medium':
+        return 800;
+      case 'long':
+        return 2000;
+      default:
+        return 800;
     }
   }
 
@@ -335,11 +370,13 @@ ${config.outreachType === 'cold_email' ?
   private calculateSEOScore(content: string, keywords: string[]): number {
     let score = 0;
     const contentLower = content.toLowerCase();
-    
-    keywords.forEach(keyword => {
+
+    keywords.forEach((keyword) => {
       const keywordLower = keyword.toLowerCase();
-      const occurrences = (contentLower.match(new RegExp(keywordLower, 'g')) || []).length;
-      
+      const occurrences = (
+        contentLower.match(new RegExp(keywordLower, 'g')) || []
+      ).length;
+
       if (occurrences > 0) {
         score += Math.min(occurrences * 10, 30); // Max 30 points per keyword
       }
@@ -358,4 +395,4 @@ ${config.outreachType === 'cold_email' ?
       return false;
     }
   }
-} 
+}

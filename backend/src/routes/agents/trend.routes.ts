@@ -14,10 +14,22 @@ const prisma = new PrismaClient();
 router.post(
   '/predict',
   [
-    body('industries').optional().isArray().withMessage('Industries must be an array'),
-    body('keywords').optional().isArray().withMessage('Keywords must be an array'),
-    body('sources').optional().isArray().withMessage('Sources must be an array'),
-    body('timeframe').optional().isString().withMessage('Timeframe must be a string'),
+    body('industries')
+      .optional()
+      .isArray()
+      .withMessage('Industries must be an array'),
+    body('keywords')
+      .optional()
+      .isArray()
+      .withMessage('Keywords must be an array'),
+    body('sources')
+      .optional()
+      .isArray()
+      .withMessage('Sources must be an array'),
+    body('timeframe')
+      .optional()
+      .isString()
+      .withMessage('Timeframe must be a string'),
   ],
   async (req, res) => {
     // Check for validation errors
@@ -57,7 +69,7 @@ router.post(
               sources: sources || ['social_media', 'news', 'search_trends'],
               industries: industries || ['marketing', 'technology'],
               keywords: keywords || ['AI', 'automation', 'personalization'],
-              timeframe: timeframe || 'recent'
+              timeframe: timeframe || 'recent',
             },
             userId,
           },
@@ -104,11 +116,14 @@ router.post(
       console.error('Trend prediction error:', error);
       res.status(500).json({
         success: false,
-        message: error instanceof Error ? error.message : 'An unexpected error occurred',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred',
         error: error instanceof Error ? error.stack : null,
       });
     }
-  }
+  },
 );
 
 /**
@@ -194,11 +209,14 @@ router.post(
       console.error('Trend analysis error:', error);
       res.status(500).json({
         success: false,
-        message: error instanceof Error ? error.message : 'An unexpected error occurred',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred',
         error: error instanceof Error ? error.stack : null,
       });
     }
-  }
+  },
 );
 
-export default router; 
+export default router;

@@ -16,13 +16,13 @@ on:
         default: 'all'
         type: choice
         options:
-        - all
-        - architecture
-        - backend
-        - frontend
-        - devops
-        - qa
-        - docs
+          - all
+          - architecture
+          - backend
+          - frontend
+          - devops
+          - qa
+          - docs
       force_mode:
         description: 'Force run even if agent is paused'
         required: false
@@ -38,38 +38,38 @@ jobs:
   # ============================================================================
   agent-orchestrator:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-      
+
       - name: Setup NPM dependencies
         run: |
           npm install @octokit/rest
-      
+
       - name: Configure Git for Agent Commits
         run: |
           git config --local user.email "agents@neonhub.com"
           git config --local user.name "NeonHub Agent Optimizer"
-      
+
       - name: Validate Agent Configuration
         run: |
           echo "🤖 Validating NeonHub Agent System..."
-          
+
           # Check if agent config exists
           if [ ! -f "agent-config.json" ]; then
             echo "❌ Agent configuration missing"
             exit 1
           fi
-          
+
           # Validate agent configuration
           node -e "
             const config = require('./agent-config.json');
@@ -88,18 +88,18 @@ jobs:
             
             console.log('✅ All agents properly configured for optimization');
           "
-      
+
       - name: Architecture Agent
         if: github.event.inputs.agent_type == 'architecture' || github.event.inputs.agent_type == 'all' || github.event.inputs.agent_type == ''
         run: |
           echo "🏗️ NeonHub Architecture Agent - Enhanced Mode"
-          
+
           # Load agent configuration
           node -e "
             const config = require('./agent-config.json').agents.architecture;
             console.log('📋 Responsibilities:', config.responsibilities.slice(0, 3).join(', '));
           "
-          
+
           # Check for architecture updates needed
           if [ -f "architecture.md" ]; then
             echo "  📄 Updating architecture documentation..."
@@ -109,7 +109,7 @@ jobs:
             
             echo "  ✅ Architecture documentation updated"
           fi
-          
+
           # Validate markdown
           echo "  🔍 Running quality gates..."
           if command -v markdownlint &> /dev/null; then
@@ -117,12 +117,12 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Backend Agent
         if: github.event.inputs.agent_type == 'backend' || github.event.inputs.agent_type == 'all' || github.event.inputs.agent_type == ''
         run: |
           echo "🔧 NeonHub Backend Agent - Enhanced Mode"
-          
+
           if [ -d "backend" ]; then
             cd backend
             
@@ -162,12 +162,12 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Frontend Agent
         if: github.event.inputs.agent_type == 'frontend' || github.event.inputs.agent_type == 'all' || github.event.inputs.agent_type == ''
         run: |
           echo "🎨 NeonHub Frontend Agent - Enhanced Mode"
-          
+
           if [ -d "frontend" ]; then
             cd frontend
             
@@ -212,17 +212,17 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: DevOps Agent
         if: github.event.inputs.agent_type == 'devops' || github.event.inputs.agent_type == 'all' || github.event.inputs.agent_type == ''
         run: |
           echo "🚀 NeonHub DevOps Agent - Enhanced Mode"
-          
+
           # Validate GitHub Actions workflows
           echo "  📋 Validating workflow files..."
           WORKFLOWS=$(find .github/workflows -name "*.yml" 2>/dev/null | wc -l)
           echo "  📊 Found $WORKFLOWS workflow files"
-          
+
           # Validate Docker configurations
           if [ -f "docker-compose.yml" ]; then
             echo "  🐳 Validating Docker Compose..."
@@ -232,93 +232,93 @@ jobs:
               echo "  ⚠️ Docker Compose validation failed"
             fi
           fi
-          
+
           # Check Dockerfile
           if [ -f "backend/Dockerfile" ]; then
             echo "  🐳 Backend Dockerfile found"
           fi
-          
+
           # Security scan simulation
           echo "  🔒 Security scan simulation..."
           echo "  ✅ No critical vulnerabilities detected"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: QA Agent
         if: github.event.inputs.agent_type == 'qa' || github.event.inputs.agent_type == 'all' || github.event.inputs.agent_type == ''
         run: |
           echo "🧪 NeonHub QA Agent - Enhanced Mode"
-          
+
           # Generate coverage report
           echo "  📊 Generating coverage report..."
-          
+
           BACKEND_TESTS=0
           FRONTEND_TESTS=0
           E2E_TESTS=0
-          
+
           if [ -d "backend" ]; then
             BACKEND_TESTS=$(find backend -name "*.test.*" -o -name "*.spec.*" 2>/dev/null | wc -l)
           fi
-          
+
           if [ -d "frontend" ]; then
             FRONTEND_TESTS=$(find frontend -name "*.test.*" -o -name "*.spec.*" 2>/dev/null | wc -l)
             if [ -d "frontend/tests/e2e" ]; then
               E2E_TESTS=$(find frontend/tests/e2e -name "*.spec.*" 2>/dev/null | wc -l)
             fi
           fi
-          
+
           # Create coverage report
           cat > qa-coverage-report.md << EOF
           # QA Coverage Report
-          
+
           **Generated**: $(date -Iseconds)
           **Agent**: NeonHub QA Agent
-          
+
           ## Summary
-          
+
           - Backend test files: $BACKEND_TESTS
           - Frontend test files: $FRONTEND_TESTS
           - E2E test files: $E2E_TESTS
-          
+
           ## Coverage Targets
-          
+
           - **Minimum Coverage**: 90%
           - **Current Status**: Monitoring
           - **Trend**: Improving
-          
+
           ## Recommendations
-          
+
           1. Maintain comprehensive test coverage
           2. Add integration tests for critical user flows
           3. Regular E2E testing with Playwright
           4. Monitor performance regression
-          
+
           ---
           *Generated by NeonHub QA Agent*
           EOF
-          
+
           echo "  ✅ Coverage report generated"
           echo "  📊 Backend: $BACKEND_TESTS tests, Frontend: $FRONTEND_TESTS tests, E2E: $E2E_TESTS tests"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Docs Agent
         if: github.event.inputs.agent_type == 'docs' || github.event.inputs.agent_type == 'all' || github.event.inputs.agent_type == ''
         run: |
           echo "📚 NeonHub Docs Agent - Enhanced Mode"
-          
+
           # Update README timestamp
           if [ -f "README.md" ]; then
             echo "  📄 Updating README timestamp..."
             sed -i "s/Last updated: .*/Last updated: $(date +%Y-%m-%d)/" README.md || true
             echo "  ✅ README timestamp updated"
           fi
-          
+
           # Check documentation files
           echo "  📄 Checking documentation files..."
           MD_FILES=$(find . -name "*.md" -not -path "./node_modules/*" -not -path "./.git/*" 2>/dev/null | wc -l)
           echo "  📊 Found $MD_FILES markdown files"
-          
+
           # Validate markdown links (basic check)
           echo "  🔗 Checking markdown links..."
           if grep -r "\[.*\](.*)" *.md >/dev/null 2>&1; then
@@ -328,11 +328,11 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Auto-commit Agent Changes
         run: |
           echo "🔄 Auto-committing agent improvements..."
-          
+
           # Check for changes
           if ! git diff --quiet || ! git diff --staged --quiet; then
             echo "  📝 Changes detected, preparing commit..."
@@ -371,60 +371,60 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Generate Agent Status Report
         if: always()
         run: |
           echo "📊 Generating agent status report..."
-          
+
           TIMESTAMP=$(date -Iseconds)
           TRIGGER="${{ github.event_name }}"
-          
+
           cat > agent-status.md << EOF
           # NeonHub Agent Orchestrator Report
-          
+
           **Timestamp**: $TIMESTAMP
           **Trigger**: $TRIGGER
           **Mode**: Enhanced with Auto-commit & Self-healing
-          
+
           ## Agent Optimization Status
-          
+
           - 🏗️ Architecture Agent: ✅ Optimized (5min cadence)
           - 🔧 Backend Agent: ✅ Optimized (auto-commit enabled)
           - 🎨 Frontend Agent: ✅ Optimized (auto-lint fixes)
           - 🚀 DevOps Agent: ✅ Optimized (infrastructure monitoring)
           - 🧪 QA Agent: ✅ Optimized (90% coverage target)
           - 📚 Docs Agent: ✅ Optimized (auto-documentation)
-          
+
           ## Configuration Active
-          
+
           - ⚡ **Schedule**: Every 5 minutes + on push
           - 🔄 **Auto-commit**: Enabled for all agents
           - 🚨 **Self-healing**: Enabled with GitHub issue escalation
           - 📈 **Throughput**: Maximum reliability mode
-          
+
           ## Next Run
-          
+
           Agents will automatically run again in 5 minutes or on the next push to main.
-          
+
           ## Statistics
-          
+
           - **Workflow runs**: Optimized for frequency
           - **Commit strategy**: Immediate with loop prevention
           - **Failure handling**: Auto-escalation enabled
           - **Quality gates**: All agents have validation
-          
+
           ---
           *Generated by NeonHub Agent Orchestrator*
           EOF
-          
+
           echo "✅ Agent status report generated"
-      
+
       - name: Enhanced E2E Testing (Nightly Only)
         if: contains(github.event.schedule, '0 2') || github.event.inputs.agent_type == 'qa'
         run: |
           echo "🌙 Running enhanced nightly E2E tests..."
-          
+
           if [ -d "frontend" ] && [ -d "frontend/tests/e2e" ]; then
             cd frontend
             
@@ -445,7 +445,7 @@ jobs:
           else
             echo "  ℹ️ E2E tests not found, skipping..."
           fi
-      
+
       - name: Failure Escalation Check
         if: failure()
         run: |
@@ -457,7 +457,7 @@ jobs:
           echo "- Log failure for analysis"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Upload Artifacts
         if: always()
         uses: actions/upload-artifact@v3
@@ -467,7 +467,7 @@ jobs:
             agent-status.md
             qa-coverage-report.md
           retention-days: 7
-      
+
       - name: Notify Team (Success)
         if: success() && (contains(github.event.schedule, '0 2') || github.event_name == 'workflow_dispatch')
         uses: 8398a7/action-slack@v3
@@ -495,7 +495,7 @@ jobs:
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
-      
+
       - name: Summary
         if: always()
         run: |
@@ -515,4 +515,4 @@ jobs:
           echo "   - Trigger: Push to main"
           echo "   - Manual: workflow_dispatch"
           echo ""
-          echo "📊 Throughput: MAXIMUM RELIABILITY MODE ACTIVE" 
+          echo "📊 Throughput: MAXIMUM RELIABILITY MODE ACTIVE"

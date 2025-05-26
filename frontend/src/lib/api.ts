@@ -19,7 +19,7 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 // Add a response interceptor
@@ -32,7 +32,7 @@ api.interceptors.response.use(
       window.location.href = '/auth/login';
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 // Auth API
@@ -91,4 +91,4 @@ export const documentsAPI = {
   delete: (id: string) => api.delete(`/documents/${id}`),
 };
 
-export default api; 
+export default api;

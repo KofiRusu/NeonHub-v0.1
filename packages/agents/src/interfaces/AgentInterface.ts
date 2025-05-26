@@ -13,7 +13,7 @@ import {
   AgentConfiguration,
   ValidationResult,
   AgentCapability,
-  AgentStatus
+  AgentStatus,
 } from '../types';
 
 // ============================================================================
@@ -123,7 +123,10 @@ export interface IDebugAgent extends IAgent {
   /**
    * Analyze error and provide diagnostic information
    */
-  diagnoseError(error: Error, context?: Record<string, any>): Promise<AgentReport>;
+  diagnoseError(
+    error: Error,
+    context?: Record<string, any>,
+  ): Promise<AgentReport>;
 
   /**
    * Suggest fixes for identified issues
@@ -217,7 +220,10 @@ export interface IAgentFactory {
   /**
    * Validate agent configuration
    */
-  validateConfiguration(type: string, config: AgentConfiguration): ValidationResult;
+  validateConfiguration(
+    type: string,
+    config: AgentConfiguration,
+  ): ValidationResult;
 }
 
 // ============================================================================
@@ -349,9 +355,9 @@ export abstract class BaseAgent implements IAgent {
       data: {
         status: this.status,
         uptime: Date.now() - this.startTime.getTime(),
-        executionCount: this.executionHistory.length
+        executionCount: this.executionHistory.length,
       },
-      retention: 7 * 24 * 60 * 60 * 1000 // 7 days
+      retention: 7 * 24 * 60 * 60 * 1000, // 7 days
     };
   }
 
@@ -373,8 +379,8 @@ export abstract class BaseAgent implements IAgent {
         activeJobs: 0,
         averageExecutionTime: 0,
         errorRate: 0,
-        throughput: 0
-      }
+        throughput: 0,
+      },
     };
   }
 
@@ -382,7 +388,7 @@ export abstract class BaseAgent implements IAgent {
     return {
       valid: true,
       errors: [],
-      warnings: []
+      warnings: [],
     };
   }
 
@@ -390,11 +396,15 @@ export abstract class BaseAgent implements IAgent {
     return [];
   }
 
-  async updateConfiguration(config: Partial<AgentConfiguration>): Promise<void> {
+  async updateConfiguration(
+    config: Partial<AgentConfiguration>,
+  ): Promise<void> {
     this.config = { ...this.config, ...config };
   }
 
-  async executeWithContext(context: ExecutionContext): Promise<ExecutionResult> {
+  async executeWithContext(
+    context: ExecutionContext,
+  ): Promise<ExecutionResult> {
     const startTime = Date.now();
     this.status = 'running';
 
@@ -415,8 +425,8 @@ export abstract class BaseAgent implements IAgent {
           filesProcessed: 0,
           linesChanged: 0,
           testsGenerated: 0,
-          issuesFixed: 0
-        }
+          issuesFixed: 0,
+        },
       };
 
       this.executionHistory.push(result);
@@ -432,11 +442,11 @@ export abstract class BaseAgent implements IAgent {
     return {
       valid: true,
       errors: [],
-      warnings: []
+      warnings: [],
     };
   }
 
-  async getExecutionHistory(limit: number = 10): Promise<ExecutionResult[]> {
+  async getExecutionHistory(limit = 10): Promise<ExecutionResult[]> {
     return this.executionHistory.slice(-limit);
   }
 }
@@ -454,5 +464,5 @@ export {
   IAgentFactory,
   IAgentRegistry,
   IAgentOrchestrator,
-  BaseAgent
-}; 
+  BaseAgent,
+};

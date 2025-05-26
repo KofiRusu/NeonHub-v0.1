@@ -1,6 +1,12 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { useRouter } from "next/navigation";
-import apiClient from "../lib/apiClient";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from 'react';
+import { useRouter } from 'next/navigation';
+import apiClient from '../lib/apiClient';
 
 interface User {
   id: string;
@@ -27,7 +33,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await apiClient.get<{ user: User }>("/auth/me");
+        const { data } = await apiClient.get<{ user: User }>('/auth/me');
         setUser(data.user);
       } catch {
         setUser(null);
@@ -38,19 +44,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const { data } = await apiClient.post<{ user: User }>("/auth/login", { email, password });
+    const { data } = await apiClient.post<{ user: User }>('/auth/login', {
+      email,
+      password,
+    });
     setUser(data.user);
     router.push('/dashboard');
   };
 
   const register = async (name: string, email: string, password: string) => {
-    const { data } = await apiClient.post<{ user: User }>("/auth/register", { name, email, password });
+    const { data } = await apiClient.post<{ user: User }>('/auth/register', {
+      name,
+      email,
+      password,
+    });
     setUser(data.user);
     router.push('/dashboard');
   };
 
   const logout = async () => {
-    await apiClient.post("/auth/logout");
+    await apiClient.post('/auth/logout');
     setUser(null);
     router.push('/auth/login');
   };
@@ -65,9 +78,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 export const useAuth = (): AuthContextValue => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };
 
-export default AuthContext; 
+export default AuthContext;

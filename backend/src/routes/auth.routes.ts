@@ -1,5 +1,10 @@
 import { Router } from 'express';
-import { register, login, getMe, oauthLogin } from '../controllers/auth.controller';
+import {
+  register,
+  login,
+  getMe,
+  oauthLogin,
+} from '../controllers/auth.controller';
 import { protect } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -32,4 +37,4 @@ router.post('/oauth/:provider', oauthLogin);
  */
 router.get('/me', protect, getMe);
 
-export default router; 
+export default router;

@@ -31,4 +31,4 @@ router.use('/feedback', authenticate, feedbackRoutes);
 router.use('/content', authenticate, contentRoutes);
 router.use('/trends', authenticate, trendRoutes);
 
-export default router; 
+export default router;

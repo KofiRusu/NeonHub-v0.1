@@ -19,7 +19,7 @@ function parseArgs(): {
     context?: Record<string, any>;
   } = {};
 
-  args.forEach(arg => {
+  args.forEach((arg) => {
     if (arg.startsWith('--agentId=')) {
       result.agentId = arg.substring('--agentId='.length);
     } else if (arg.startsWith('--type=')) {
@@ -54,7 +54,11 @@ function validateAndGetAgentType(type: string): AgentType {
       return AgentType.TREND_ANALYZER;
     default:
       console.error(chalk.red(`Invalid agent type: ${type}`));
-      console.error(chalk.yellow('Valid types are: Content, Outreach, AdOptimizer, TrendPredictor'));
+      console.error(
+        chalk.yellow(
+          'Valid types are: Content, Outreach, AdOptimizer, TrendPredictor',
+        ),
+      );
       process.exit(1);
   }
 }
@@ -100,7 +104,7 @@ ${chalk.bold('Examples:')}
  */
 function checkForHelp(): boolean {
   const helpFlags = ['-h', '--help', 'help'];
-  return process.argv.some(arg => helpFlags.includes(arg));
+  return process.argv.some((arg) => helpFlags.includes(arg));
 }
 
 /**
@@ -109,14 +113,20 @@ function checkForHelp(): boolean {
 function displayResult(result: any): void {
   if (result.success) {
     console.log(chalk.green.bold('\n✓ Agent executed successfully\n'));
-    console.log(chalk.cyan('Execution time:'), chalk.yellow(`${result.metrics?.duration || 0}ms`));
+    console.log(
+      chalk.cyan('Execution time:'),
+      chalk.yellow(`${result.metrics?.duration || 0}ms`),
+    );
     console.log(chalk.cyan('Timestamp:'), chalk.yellow(result.timestamp));
-    
+
     console.log(chalk.cyan.bold('\nOutput:'));
     console.log(chalk.yellow(JSON.stringify(result.data, null, 2)));
   } else {
     console.error(chalk.red.bold('\n✗ Agent execution failed\n'));
-    console.error(chalk.cyan('Error:'), chalk.red(result.error?.message || 'Unknown error'));
+    console.error(
+      chalk.cyan('Error:'),
+      chalk.red(result.error?.message || 'Unknown error'),
+    );
     if (result.error?.stack) {
       console.error(chalk.cyan('Stack:'), chalk.gray(result.error.stack));
     }
@@ -127,16 +137,19 @@ function displayResult(result: any): void {
 /**
  * Create a temporary agent for testing
  */
-async function createTemporaryAgent(prisma: PrismaClient, type: AgentType): Promise<string> {
+async function createTemporaryAgent(
+  prisma: PrismaClient,
+  type: AgentType,
+): Promise<string> {
   console.log(chalk.yellow(`Creating temporary ${type} agent for testing...`));
-  
+
   // Generate a basic configuration based on agent type
   const config: any = {
     id: `temp-${Date.now()}`,
     maxRetries: 1,
-    autoRetry: true
+    autoRetry: true,
   };
-  
+
   // Add type-specific configurations
   switch (type) {
     case AgentType.CONTENT_CREATOR:
@@ -148,14 +161,14 @@ async function createTemporaryAgent(prisma: PrismaClient, type: AgentType): Prom
       config.personalizationLevel = 'high';
       config.templates = {
         email: 'Default email template',
-        linkedin: 'Default LinkedIn template'
+        linkedin: 'Default LinkedIn template',
       };
       break;
     case AgentType.PERFORMANCE_OPTIMIZER:
       config.platforms = ['FACEBOOK', 'GOOGLE'];
       config.targetMetrics = {
         ctr: 0.02,
-        cpc: 2.5
+        cpc: 2.5,
       };
       break;
     case AgentType.TREND_ANALYZER:
@@ -164,7 +177,7 @@ async function createTemporaryAgent(prisma: PrismaClient, type: AgentType): Prom
       config.keywords = ['AI', 'automation', 'personalization'];
       break;
   }
-  
+
   // Create the agent in the database
   const agent = await prisma.aIAgent.create({
     data: {
@@ -174,10 +187,10 @@ async function createTemporaryAgent(prisma: PrismaClient, type: AgentType): Prom
       status: 'IDLE',
       configuration: config,
       projectId: await getDefaultProjectId(prisma),
-      managerId: await getDefaultUserId(prisma)
-    }
+      managerId: await getDefaultUserId(prisma),
+    },
   });
-  
+
   console.log(chalk.green(`Created temporary agent with ID: ${agent.id}`));
   return agent.id;
 }
@@ -188,56 +201,61 @@ async function createTemporaryAgent(prisma: PrismaClient, type: AgentType): Prom
 async function getDefaultProjectId(prisma: PrismaClient): Promise<string> {
   // Try to find an existing project
   const project = await prisma.project.findFirst({
-    select: { id: true }
+    select: { id: true },
   });
-  
+
   if (project) {
     return project.id;
   }
-  
+
   // If no project exists, create a test project
-  console.log(chalk.yellow('No existing projects found. Creating a test project...'));
+  console.log(
+    chalk.yellow('No existing projects found. Creating a test project...'),
+  );
   const user = await getDefaultUserId(prisma, true);
-  
+
   const newProject = await prisma.project.create({
     data: {
       name: 'Test Project',
       description: 'Created for agent testing',
-      ownerId: user
-    }
+      ownerId: user,
+    },
   });
-  
+
   return newProject.id;
 }
 
 /**
  * Get a default user ID for testing
  */
-async function getDefaultUserId(prisma: PrismaClient, createIfMissing: boolean = true): Promise<string> {
+async function getDefaultUserId(
+  prisma: PrismaClient,
+  createIfMissing = true,
+): Promise<string> {
   // Try to find an existing user
   const user = await prisma.user.findFirst({
-    select: { id: true }
+    select: { id: true },
   });
-  
+
   if (user) {
     return user.id;
   }
-  
+
   if (!createIfMissing) {
     throw new Error('No users found in the database');
   }
-  
+
   // If no user exists, create a test user
   console.log(chalk.yellow('No existing users found. Creating a test user...'));
-  
+
   const newUser = await prisma.user.create({
     data: {
       name: 'Test User',
       email: `test.user.${Date.now()}@example.com`,
       password: 'hashedpassword', // In a real app, this would be properly hashed
-    }
+    },
   });
-  
+
   return newUser.id;
 }
 
@@ -246,67 +264,80 @@ async function getDefaultUserId(prisma: PrismaClient, createIfMissing: boolean =
  */
 async function main(): Promise<void> {
   console.log(chalk.blue.bold('AI Agent Test CLI'));
-  
+
   // Check for help flag
   if (checkForHelp()) {
     showHelp();
     return;
   }
-  
+
   // Parse arguments
   const args = parseArgs();
-  
+
   // Initialize Prisma client
   const prisma = new PrismaClient();
-  
+
   try {
     // Initialize agent manager
     console.log(chalk.yellow('Initializing Agent Manager...'));
     const manager = await initializeAgentManager(prisma);
-    
+
     let agentId = args.agentId;
-    
+
     // If agent type is specified, create a temporary agent
     if (!agentId && args.type) {
       const agentType = validateAndGetAgentType(args.type);
       agentId = await createTemporaryAgent(prisma, agentType);
     }
-    
+
     // If neither agent ID nor type is specified, try to use the first available agent
     if (!agentId) {
-      console.log(chalk.yellow('No agent ID or type specified. Looking for available agents...'));
-      
+      console.log(
+        chalk.yellow(
+          'No agent ID or type specified. Looking for available agents...',
+        ),
+      );
+
       const agents = await prisma.aIAgent.findMany({
         take: 1,
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
       });
-      
+
       if (agents.length === 0) {
         console.error(chalk.red('No agents found in the database.'));
-        console.log(chalk.yellow('Please create an agent first or specify a type using --type=<agent-type>'));
+        console.log(
+          chalk.yellow(
+            'Please create an agent first or specify a type using --type=<agent-type>',
+          ),
+        );
         return;
       }
-      
+
       agentId = agents[0].id;
-      console.log(chalk.green(`Found agent: ${agents[0].name} (${agents[0].agentType}) with ID: ${agentId}`));
+      console.log(
+        chalk.green(
+          `Found agent: ${agents[0].name} (${agents[0].agentType}) with ID: ${agentId}`,
+        ),
+      );
     }
-    
+
     // Run the agent
     console.log(chalk.yellow(`Running agent with ID: ${agentId}`));
     if (args.context) {
       console.log(chalk.yellow('Context:'), args.context);
     }
-    
+
     console.log(chalk.blue('\nExecuting agent...'));
-    
+
     const result = await manager.runAgent(agentId, args.context);
-    
+
     // Display the result
     displayResult(result);
-    
   } catch (error) {
     console.error(chalk.red.bold('\n✗ Execution error:'));
-    console.error(chalk.red(error instanceof Error ? error.message : String(error)));
+    console.error(
+      chalk.red(error instanceof Error ? error.message : String(error)),
+    );
     if (error instanceof Error && error.stack) {
       console.error(chalk.gray(error.stack));
     }
@@ -317,7 +348,7 @@ async function main(): Promise<void> {
 }
 
 // Run the main function
-main().catch(error => {
+main().catch((error) => {
   console.error(chalk.red('Fatal error:'), error);
   process.exit(1);
-}); 
+});

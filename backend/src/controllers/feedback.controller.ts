@@ -9,16 +9,16 @@ import { FeedbackChannel, FeedbackSource, Sentiment } from '@prisma/client';
  */
 export const getAllFeedback = async (req: Request, res: Response) => {
   try {
-    const { 
-      userId, 
-      sourceType, 
-      sourceId, 
-      sentiment, 
+    const {
+      userId,
+      sourceType,
+      sourceId,
+      sentiment,
       channel,
       startDate,
-      endDate
+      endDate,
     } = req.query;
-    
+
     const currentUserId = req.user?.id;
 
     // Build where clause
@@ -75,11 +75,11 @@ export const getAllFeedback = async (req: Request, res: Response) => {
               project: {
                 OR: [
                   { ownerId: currentUserId },
-                  { members: { some: { id: currentUserId } } }
-                ]
-              }
-            }
-          }
+                  { members: { some: { id: currentUserId } } },
+                ],
+              },
+            },
+          },
         },
         {
           outreachTask: {
@@ -87,12 +87,12 @@ export const getAllFeedback = async (req: Request, res: Response) => {
               project: {
                 OR: [
                   { ownerId: currentUserId },
-                  { members: { some: { id: currentUserId } } }
-                ]
-              }
-            }
-          }
-        }
+                  { members: { some: { id: currentUserId } } },
+                ],
+              },
+            },
+          },
+        },
       ];
     }
 
@@ -105,41 +105,41 @@ export const getAllFeedback = async (req: Request, res: Response) => {
             id: true,
             name: true,
             email: true,
-            avatar: true
-          }
+            avatar: true,
+          },
         },
         content_rel: {
           select: {
             id: true,
             title: true,
             contentType: true,
-            campaignId: true
-          }
+            campaignId: true,
+          },
         },
         outreachTask: {
           select: {
             id: true,
             title: true,
             outreachType: true,
-            campaignId: true
-          }
-        }
+            campaignId: true,
+          },
+        },
       },
       orderBy: {
-        createdAt: 'desc'
-      }
+        createdAt: 'desc',
+      },
     });
 
     res.status(200).json({
       success: true,
       count: feedback.length,
-      data: feedback
+      data: feedback,
     });
   } catch (error) {
     console.error('Get feedback error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: 'Server error',
     });
   }
 };
@@ -163,8 +163,8 @@ export const getFeedback = async (req: Request, res: Response) => {
             id: true,
             name: true,
             email: true,
-            avatar: true
-          }
+            avatar: true,
+          },
         },
         content_rel: {
           select: {
@@ -180,14 +180,14 @@ export const getFeedback = async (req: Request, res: Response) => {
                     ownerId: true,
                     members: {
                       select: {
-                        id: true
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
+                        id: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
         outreachTask: {
           select: {
@@ -203,22 +203,22 @@ export const getFeedback = async (req: Request, res: Response) => {
                     ownerId: true,
                     members: {
                       select: {
-                        id: true
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+                        id: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!feedback) {
       return res.status(404).json({
         success: false,
-        message: 'Feedback not found'
+        message: 'Feedback not found',
       });
     }
 
@@ -228,36 +228,36 @@ export const getFeedback = async (req: Request, res: Response) => {
     // Check if user has access to the related project
     if (!hasAccess && feedback.content_rel) {
       const project = feedback.content_rel.campaign?.project;
-      hasAccess = 
-        project?.ownerId === userId || 
-        project?.members.some(member => member.id === userId) || 
+      hasAccess =
+        project?.ownerId === userId ||
+        project?.members.some((member) => member.id === userId) ||
         false;
     }
 
     if (!hasAccess && feedback.outreachTask) {
       const project = feedback.outreachTask.campaign?.project;
-      hasAccess = 
-        project?.ownerId === userId || 
-        project?.members.some(member => member.id === userId) || 
+      hasAccess =
+        project?.ownerId === userId ||
+        project?.members.some((member) => member.id === userId) ||
         false;
     }
 
     if (!hasAccess) {
       return res.status(403).json({
         success: false,
-        message: 'Not authorized to access this feedback'
+        message: 'Not authorized to access this feedback',
       });
     }
 
     res.status(200).json({
       success: true,
-      data: feedback
+      data: feedback,
     });
   } catch (error) {
     console.error('Get feedback error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: 'Server error',
     });
   }
 };
@@ -269,23 +269,24 @@ export const getFeedback = async (req: Request, res: Response) => {
  */
 export const createFeedback = async (req: Request, res: Response) => {
   try {
-    const { 
-      content, 
-      sentiment, 
-      sourceType, 
-      sourceId, 
+    const {
+      content,
+      sentiment,
+      sourceType,
+      sourceId,
       channel,
       contentId,
-      outreachTaskId
+      outreachTaskId,
     } = req.body;
-    
+
     const userId = req.user?.id;
 
     // Validate required fields
     if (!content || !sentiment || !sourceType || !sourceId || !channel) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide content, sentiment, sourceType, sourceId, and channel'
+        message:
+          'Please provide content, sentiment, sourceType, sourceId, and channel',
       });
     }
 
@@ -293,14 +294,14 @@ export const createFeedback = async (req: Request, res: Response) => {
     if (sourceType === 'CONTENT' && !contentId) {
       return res.status(400).json({
         success: false,
-        message: 'contentId is required when sourceType is CONTENT'
+        message: 'contentId is required when sourceType is CONTENT',
       });
     }
 
     if (sourceType === 'OUTREACH' && !outreachTaskId) {
       return res.status(400).json({
         success: false,
-        message: 'outreachTaskId is required when sourceType is OUTREACH'
+        message: 'outreachTaskId is required when sourceType is OUTREACH',
       });
     }
 
@@ -315,18 +316,18 @@ export const createFeedback = async (req: Request, res: Response) => {
               project: {
                 select: {
                   ownerId: true,
-                  members: { select: { id: true } }
-                }
-              }
-            }
-          }
-        }
+                  members: { select: { id: true } },
+                },
+              },
+            },
+          },
+        },
       });
 
       if (!content) {
         return res.status(404).json({
           success: false,
-          message: 'Content not found'
+          message: 'Content not found',
         });
       }
 
@@ -344,18 +345,18 @@ export const createFeedback = async (req: Request, res: Response) => {
               project: {
                 select: {
                   ownerId: true,
-                  members: { select: { id: true } }
-                }
-              }
-            }
-          }
-        }
+                  members: { select: { id: true } },
+                },
+              },
+            },
+          },
+        },
       });
 
       if (!outreachTask) {
         return res.status(404).json({
           success: false,
-          message: 'Outreach task not found'
+          message: 'Outreach task not found',
         });
       }
 
@@ -372,28 +373,28 @@ export const createFeedback = async (req: Request, res: Response) => {
         channel: channel as FeedbackChannel,
         userId,
         contentId,
-        outreachTaskId
+        outreachTaskId,
       },
       include: {
         user: {
           select: {
             id: true,
             name: true,
-            email: true
-          }
-        }
-      }
+            email: true,
+          },
+        },
+      },
     });
 
     res.status(201).json({
       success: true,
-      data: feedback
+      data: feedback,
     });
   } catch (error) {
     console.error('Create feedback error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: 'Server error',
     });
   }
 };
@@ -411,13 +412,13 @@ export const updateFeedback = async (req: Request, res: Response) => {
 
     // Find the feedback to check ownership
     const existingFeedback = await prisma.feedback.findUnique({
-      where: { id: feedbackId }
+      where: { id: feedbackId },
     });
 
     if (!existingFeedback) {
       return res.status(404).json({
         success: false,
-        message: 'Feedback not found'
+        message: 'Feedback not found',
       });
     }
 
@@ -425,7 +426,7 @@ export const updateFeedback = async (req: Request, res: Response) => {
     if (existingFeedback.userId !== userId) {
       return res.status(403).json({
         success: false,
-        message: 'Not authorized to update this feedback'
+        message: 'Not authorized to update this feedback',
       });
     }
 
@@ -434,28 +435,28 @@ export const updateFeedback = async (req: Request, res: Response) => {
       where: { id: feedbackId },
       data: {
         content,
-        sentiment: sentiment as Sentiment
+        sentiment: sentiment as Sentiment,
       },
       include: {
         user: {
           select: {
             id: true,
             name: true,
-            email: true
-          }
-        }
-      }
+            email: true,
+          },
+        },
+      },
     });
 
     res.status(200).json({
       success: true,
-      data: feedback
+      data: feedback,
     });
   } catch (error) {
     console.error('Update feedback error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: 'Server error',
     });
   }
 };
@@ -480,12 +481,12 @@ export const deleteFeedback = async (req: Request, res: Response) => {
               select: {
                 project: {
                   select: {
-                    ownerId: true
-                  }
-                }
-              }
-            }
-          }
+                    ownerId: true,
+                  },
+                },
+              },
+            },
+          },
         },
         outreachTask: {
           select: {
@@ -493,54 +494,55 @@ export const deleteFeedback = async (req: Request, res: Response) => {
               select: {
                 project: {
                   select: {
-                    ownerId: true
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+                    ownerId: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!feedback) {
       return res.status(404).json({
         success: false,
-        message: 'Feedback not found'
+        message: 'Feedback not found',
       });
     }
 
     // Check if user is the feedback creator or project owner
     const isCreator = feedback.userId === userId;
-    
+
     let isProjectOwner = false;
     if (feedback.content_rel?.campaign?.project) {
       isProjectOwner = feedback.content_rel.campaign.project.ownerId === userId;
     } else if (feedback.outreachTask?.campaign?.project) {
-      isProjectOwner = feedback.outreachTask.campaign.project.ownerId === userId;
+      isProjectOwner =
+        feedback.outreachTask.campaign.project.ownerId === userId;
     }
 
     if (!isCreator && !isProjectOwner) {
       return res.status(403).json({
         success: false,
-        message: 'Not authorized to delete this feedback'
+        message: 'Not authorized to delete this feedback',
       });
     }
 
     // Delete feedback
     await prisma.feedback.delete({
-      where: { id: feedbackId }
+      where: { id: feedbackId },
     });
 
     res.status(200).json({
       success: true,
-      data: {}
+      data: {},
     });
   } catch (error) {
     console.error('Delete feedback error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: 'Server error',
     });
   }
 };
@@ -552,7 +554,8 @@ export const deleteFeedback = async (req: Request, res: Response) => {
  */
 export const getSentimentSummary = async (req: Request, res: Response) => {
   try {
-    const { sourceType, sourceId, projectId, campaignId, startDate, endDate } = req.query;
+    const { sourceType, sourceId, projectId, campaignId, startDate, endDate } =
+      req.query;
     const userId = req.user?.id;
 
     // Build where clause
@@ -574,34 +577,31 @@ export const getSentimentSummary = async (req: Request, res: Response) => {
         {
           content_rel: {
             campaign: {
-              projectId: projectId as string
-            }
-          }
+              projectId: projectId as string,
+            },
+          },
         },
         {
           outreachTask: {
             campaign: {
-              projectId: projectId as string
-            }
-          }
-        }
+              projectId: projectId as string,
+            },
+          },
+        },
       ];
 
       // Check if user has access to the project
       const project = await prisma.project.findFirst({
         where: {
           id: projectId as string,
-          OR: [
-            { ownerId: userId },
-            { members: { some: { id: userId } } }
-          ]
-        }
+          OR: [{ ownerId: userId }, { members: { some: { id: userId } } }],
+        },
       });
 
       if (!project) {
         return res.status(403).json({
           success: false,
-          message: 'Not authorized to access this project'
+          message: 'Not authorized to access this project',
         });
       }
     }
@@ -611,14 +611,14 @@ export const getSentimentSummary = async (req: Request, res: Response) => {
       where.OR = [
         {
           content_rel: {
-            campaignId: campaignId as string
-          }
+            campaignId: campaignId as string,
+          },
         },
         {
           outreachTask: {
-            campaignId: campaignId as string
-          }
-        }
+            campaignId: campaignId as string,
+          },
+        },
       ];
 
       // Check if user has access to the campaign
@@ -627,21 +627,22 @@ export const getSentimentSummary = async (req: Request, res: Response) => {
           id: campaignId as string,
           OR: [
             { ownerId: userId },
-            { project: { 
+            {
+              project: {
                 OR: [
                   { ownerId: userId },
-                  { members: { some: { id: userId } } }
-                ]
-              } 
-            }
-          ]
-        }
+                  { members: { some: { id: userId } } },
+                ],
+              },
+            },
+          ],
+        },
       });
 
       if (!campaign) {
         return res.status(403).json({
           success: false,
-          message: 'Not authorized to access this campaign'
+          message: 'Not authorized to access this campaign',
         });
       }
     }
@@ -669,11 +670,11 @@ export const getSentimentSummary = async (req: Request, res: Response) => {
               project: {
                 OR: [
                   { ownerId: userId },
-                  { members: { some: { id: userId } } }
-                ]
-              }
-            }
-          }
+                  { members: { some: { id: userId } } },
+                ],
+              },
+            },
+          },
         },
         {
           outreachTask: {
@@ -681,12 +682,12 @@ export const getSentimentSummary = async (req: Request, res: Response) => {
               project: {
                 OR: [
                   { ownerId: userId },
-                  { members: { some: { id: userId } } }
-                ]
-              }
-            }
-          }
-        }
+                  { members: { some: { id: userId } } },
+                ],
+              },
+            },
+          },
+        },
       ];
     }
 
@@ -696,8 +697,8 @@ export const getSentimentSummary = async (req: Request, res: Response) => {
       where,
       _count: true,
       orderBy: {
-        sentiment: 'asc'
-      }
+        sentiment: 'asc',
+      },
     });
 
     // Calculate sentiment score
@@ -707,28 +708,29 @@ export const getSentimentSummary = async (req: Request, res: Response) => {
       NEGATIVE: -1,
       NEUTRAL: 0,
       POSITIVE: 1,
-      VERY_POSITIVE: 2
+      VERY_POSITIVE: 2,
     };
 
     let totalFeedback = 0;
     let weightedSum = 0;
 
-    sentimentCounts.forEach(count => {
+    sentimentCounts.forEach((count) => {
       const sentiment = count.sentiment as keyof typeof sentimentValues;
       const value = sentimentValues[sentiment];
       const feedbackCount = count._count;
-      
+
       totalFeedback += feedbackCount;
       weightedSum += value * feedbackCount;
     });
 
-    const averageSentiment = totalFeedback > 0 ? weightedSum / totalFeedback : 0;
+    const averageSentiment =
+      totalFeedback > 0 ? weightedSum / totalFeedback : 0;
 
     // Get recent feedback for context
     const recentFeedback = await prisma.feedback.findMany({
       where,
       orderBy: {
-        createdAt: 'desc'
+        createdAt: 'desc',
       },
       take: 5,
       select: {
@@ -739,33 +741,33 @@ export const getSentimentSummary = async (req: Request, res: Response) => {
         user: {
           select: {
             id: true,
-            name: true
-          }
-        }
-      }
+            name: true,
+          },
+        },
+      },
     });
 
     // Format the summary
     const summary = {
-      sentimentDistribution: sentimentCounts.map(count => ({
+      sentimentDistribution: sentimentCounts.map((count) => ({
         sentiment: count.sentiment,
-        count: count._count
+        count: count._count,
       })),
       totalFeedback,
       averageSentiment,
       sentimentScore: averageSentiment.toFixed(2),
-      recentFeedback
+      recentFeedback,
     };
 
     res.status(200).json({
       success: true,
-      data: summary
+      data: summary,
     });
   } catch (error) {
     console.error('Get sentiment summary error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: 'Server error',
     });
   }
-}; 
+};

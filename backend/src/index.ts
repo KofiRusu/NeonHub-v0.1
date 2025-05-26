@@ -59,7 +59,7 @@ const agentManager = getAgentManager(prisma);
 const agentScheduler = new AgentScheduler(prisma, agentManager, {
   runMissedOnStartup: true,
   autoStart: true,
-  checkInterval: 30000 // Check every 30 seconds
+  checkInterval: 30000, // Check every 30 seconds
 });
 
 // Export agent scheduler for use in routes
@@ -91,17 +91,17 @@ app.get('/health', (req, res) => {
         status: 'ok',
         timestamp: new Date(),
         uptime: process.uptime(),
-        databaseConnected: true
+        databaseConnected: true,
       });
     })
-    .catch(err => {
+    .catch((err) => {
       console.error('Health check database error:', err);
       res.status(500).json({
         status: 'error',
         timestamp: new Date(),
         uptime: process.uptime(),
         databaseConnected: false,
-        error: 'Database connection failed'
+        error: 'Database connection failed',
       });
     });
 });
@@ -126,9 +126,18 @@ io.on('connection', (socket) => {
   });
 
   // User typing indicator
-  socket.on('typing', ({ projectId, user }: { projectId: string; user: { id: string; name: string } }) => {
-    socket.to(projectId).emit('user-typing', user);
-  });
+  socket.on(
+    'typing',
+    ({
+      projectId,
+      user,
+    }: {
+      projectId: string;
+      user: { id: string; name: string };
+    }) => {
+      socket.to(projectId).emit('user-typing', user);
+    },
+  );
 
   // User stopped typing
   socket.on('stop-typing', (projectId: string) => {
@@ -164,4 +173,4 @@ process.on('SIGINT', async () => {
 process.on('SIGTERM', async () => {
   await prisma.$disconnect();
   process.exit(0);
-}); 
+});

@@ -39,7 +39,10 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <form onSubmit={handleSubmit} className="bg-white p-8 rounded shadow-md w-full max-w-md">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-8 rounded shadow-md w-full max-w-md"
+      >
         <h1 className="text-2xl mb-6 text-center">Create a NeonHub Account</h1>
 
         {error && <p className="text-red-500 mb-4">{error}</p>}
@@ -49,7 +52,7 @@ export default function RegisterPage() {
           <input
             type="text"
             value={name}
-            onChange={e => setName(e.target.value)}
+            onChange={(e) => setName(e.target.value)}
             required
             className="mt-1 block w-full border rounded p-2"
           />
@@ -60,7 +63,7 @@ export default function RegisterPage() {
           <input
             type="email"
             value={email}
-            onChange={e => setEmail(e.target.value)}
+            onChange={(e) => setEmail(e.target.value)}
             required
             className="mt-1 block w-full border rounded p-2"
           />
@@ -71,7 +74,7 @@ export default function RegisterPage() {
           <input
             type="password"
             value={password}
-            onChange={e => setPassword(e.target.value)}
+            onChange={(e) => setPassword(e.target.value)}
             required
             className="mt-1 block w-full border rounded p-2"
           />
@@ -82,7 +85,7 @@ export default function RegisterPage() {
           <input
             type="password"
             value={confirmPassword}
-            onChange={e => setConfirmPassword(e.target.value)}
+            onChange={(e) => setConfirmPassword(e.target.value)}
             required
             className="mt-1 block w-full border rounded p-2"
           />
@@ -97,9 +100,12 @@ export default function RegisterPage() {
         </button>
 
         <p className="mt-4 text-center">
-          Already have an account? <a href="/auth/login" className="text-blue-600 hover:underline">Log In</a>
+          Already have an account?{' '}
+          <a href="/auth/login" className="text-blue-600 hover:underline">
+            Log In
+          </a>
         </p>
       </form>
     </div>
   );
-} 
+}

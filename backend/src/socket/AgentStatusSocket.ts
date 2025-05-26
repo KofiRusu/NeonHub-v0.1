@@ -19,7 +19,7 @@ export class AgentStatusSocket {
     io: SocketIOServer,
     prisma: PrismaClient,
     agentManager: AgentManager,
-    agentScheduler: AgentScheduler
+    agentScheduler: AgentScheduler,
   ) {
     this.io = io;
     this.prisma = prisma;
@@ -84,18 +84,29 @@ export class AgentStatusSocket {
       });
 
       // Handle agent control commands
-      socket.on('agent:start', async (data: { agentId: string; campaignId?: string; options?: any }) => {
-        try {
-          const result = await this.agentManager.startAgent(data.agentId, data.campaignId, data.options);
-          socket.emit('agent:start:response', { success: true, result });
-          this.broadcastAgentStatusUpdate(data.agentId);
-        } catch (error) {
-          socket.emit('agent:start:response', { 
-            success: false, 
-            error: error instanceof Error ? error.message : 'Unknown error' 
-          });
-        }
-      });
+      socket.on(
+        'agent:start',
+        async (data: {
+          agentId: string;
+          campaignId?: string;
+          options?: any;
+        }) => {
+          try {
+            const result = await this.agentManager.startAgent(
+              data.agentId,
+              data.campaignId,
+              data.options,
+            );
+            socket.emit('agent:start:response', { success: true, result });
+            this.broadcastAgentStatusUpdate(data.agentId);
+          } catch (error) {
+            socket.emit('agent:start:response', {
+              success: false,
+              error: error instanceof Error ? error.message : 'Unknown error',
+            });
+          }
+        },
+      );
 
       socket.on('agent:stop', async (agentId: string) => {
         try {
@@ -103,9 +114,9 @@ export class AgentStatusSocket {
           socket.emit('agent:stop:response', { success: true });
           this.broadcastAgentStatusUpdate(agentId);
         } catch (error) {
-          socket.emit('agent:stop:response', { 
-            success: false, 
-            error: error instanceof Error ? error.message : 'Unknown error' 
+          socket.emit('agent:stop:response', {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error',
           });
         }
       });
@@ -142,14 +153,17 @@ export class AgentStatusSocket {
   /**
    * Send agent status to a specific socket
    */
-  private async sendAgentStatus(socket: Socket, agentId: string): Promise<void> {
+  private async sendAgentStatus(
+    socket: Socket,
+    agentId: string,
+  ): Promise<void> {
     try {
       const status = await this.agentManager.getAgentStatus(agentId);
       socket.emit('agent:status', status);
     } catch (error) {
-      socket.emit('agent:status:error', { 
-        agentId, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      socket.emit('agent:status:error', {
+        agentId,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -163,8 +177,8 @@ export class AgentStatusSocket {
       const taskDetails = this.agentScheduler.getTaskDetails();
       socket.emit('scheduler:status', { stats, taskDetails });
     } catch (error) {
-      socket.emit('scheduler:status:error', { 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      socket.emit('scheduler:status:error', {
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -177,7 +191,10 @@ export class AgentStatusSocket {
       const status = await this.agentManager.getAgentStatus(agentId);
       this.io.to(`agent:${agentId}`).emit('agent:status:update', status);
     } catch (error) {
-      console.error(`Error broadcasting agent status update for ${agentId}:`, error);
+      console.error(
+        `Error broadcasting agent status update for ${agentId}:`,
+        error,
+      );
     }
   }
 
@@ -185,7 +202,9 @@ export class AgentStatusSocket {
    * Broadcast agent event to subscribed clients
    */
   public broadcastAgentEvent(agentId: string, event: AgentEvent): void {
-    this.io.to(`agent:${agentId}:events`).emit('agent:event', { agentId, event });
+    this.io
+      .to(`agent:${agentId}:events`)
+      .emit('agent:event', { agentId, event });
     this.io.to('global:events').emit('global:agent:event', { agentId, event });
   }
 
@@ -196,7 +215,9 @@ export class AgentStatusSocket {
     try {
       const stats = this.agentScheduler.getStats();
       const taskDetails = this.agentScheduler.getTaskDetails();
-      this.io.to('scheduler:status').emit('scheduler:status:update', { stats, taskDetails });
+      this.io
+        .to('scheduler:status')
+        .emit('scheduler:status:update', { stats, taskDetails });
     } catch (error) {
       console.error('Error broadcasting scheduler status update:', error);
     }
@@ -213,7 +234,7 @@ export class AgentStatusSocket {
   }): void {
     this.io.to('global:events').emit('system:event', {
       ...event,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   }
 
@@ -278,4 +299,4 @@ export class AgentStatusSocket {
     this.stopStatusBroadcast();
     this.connectedClients.clear();
   }
-} 
+}

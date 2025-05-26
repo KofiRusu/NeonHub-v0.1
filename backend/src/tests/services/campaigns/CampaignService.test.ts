@@ -1,5 +1,14 @@
-import { PrismaClient, Campaign, CampaignType, CampaignStatus } from '@prisma/client';
-import { CampaignService, CreateCampaignData, UpdateCampaignData } from '../../../services/campaigns/CampaignService';
+import {
+  PrismaClient,
+  Campaign,
+  CampaignType,
+  CampaignStatus,
+} from '@prisma/client';
+import {
+  CampaignService,
+  CreateCampaignData,
+  UpdateCampaignData,
+} from '../../../services/campaigns/CampaignService';
 
 // Mock Prisma
 jest.mock('@prisma/client');
@@ -34,7 +43,9 @@ describe('CampaignService', () => {
         { id: 'campaign-2', name: 'Campaign 2', ownerId: userId },
       ];
 
-      (mockPrisma.campaign.findMany as jest.Mock).mockResolvedValueOnce(mockCampaigns);
+      (mockPrisma.campaign.findMany as jest.Mock).mockResolvedValueOnce(
+        mockCampaigns,
+      );
 
       const result = await campaignService.getCampaigns(userId);
 
@@ -50,9 +61,13 @@ describe('CampaignService', () => {
     it('should filter campaigns by project ID if provided', async () => {
       const userId = 'user-123';
       const projectId = 'project-456';
-      const mockCampaigns = [{ id: 'campaign-1', name: 'Campaign 1', ownerId: userId, projectId }];
+      const mockCampaigns = [
+        { id: 'campaign-1', name: 'Campaign 1', ownerId: userId, projectId },
+      ];
 
-      (mockPrisma.campaign.findMany as jest.Mock).mockResolvedValueOnce(mockCampaigns);
+      (mockPrisma.campaign.findMany as jest.Mock).mockResolvedValueOnce(
+        mockCampaigns,
+      );
 
       const result = await campaignService.getCampaigns(userId, projectId);
 
@@ -67,11 +82,19 @@ describe('CampaignService', () => {
 
     it('should include related data when includeRelated is true', async () => {
       const userId = 'user-123';
-      const mockCampaigns = [{ id: 'campaign-1', name: 'Campaign 1', ownerId: userId }];
+      const mockCampaigns = [
+        { id: 'campaign-1', name: 'Campaign 1', ownerId: userId },
+      ];
 
-      (mockPrisma.campaign.findMany as jest.Mock).mockResolvedValueOnce(mockCampaigns);
+      (mockPrisma.campaign.findMany as jest.Mock).mockResolvedValueOnce(
+        mockCampaigns,
+      );
 
-      const result = await campaignService.getCampaigns(userId, undefined, true);
+      const result = await campaignService.getCampaigns(
+        userId,
+        undefined,
+        true,
+      );
 
       expect(mockPrisma.campaign.findMany).toHaveBeenCalledWith({
         where: { ownerId: userId },
@@ -93,7 +116,9 @@ describe('CampaignService', () => {
       const campaignId = 'campaign-123';
       const mockCampaign = { id: campaignId, name: 'Test Campaign' };
 
-      (mockPrisma.campaign.findUnique as jest.Mock).mockResolvedValueOnce(mockCampaign);
+      (mockPrisma.campaign.findUnique as jest.Mock).mockResolvedValueOnce(
+        mockCampaign,
+      );
 
       const result = await campaignService.getCampaign(campaignId);
 
@@ -109,7 +134,9 @@ describe('CampaignService', () => {
       const campaignId = 'campaign-123';
       const mockCampaign = { id: campaignId, name: 'Test Campaign' };
 
-      (mockPrisma.campaign.findUnique as jest.Mock).mockResolvedValueOnce(mockCampaign);
+      (mockPrisma.campaign.findUnique as jest.Mock).mockResolvedValueOnce(
+        mockCampaign,
+      );
 
       const result = await campaignService.getCampaign(campaignId, true);
 
@@ -153,7 +180,9 @@ describe('CampaignService', () => {
         updatedAt: new Date(),
       };
 
-      (mockPrisma.campaign.create as jest.Mock).mockResolvedValueOnce(mockCampaign);
+      (mockPrisma.campaign.create as jest.Mock).mockResolvedValueOnce(
+        mockCampaign,
+      );
 
       const result = await campaignService.createCampaign(campaignData);
 
@@ -186,7 +215,9 @@ describe('CampaignService', () => {
         updatedAt: new Date(),
       };
 
-      (mockPrisma.campaign.create as jest.Mock).mockResolvedValueOnce(mockCampaign);
+      (mockPrisma.campaign.create as jest.Mock).mockResolvedValueOnce(
+        mockCampaign,
+      );
 
       const result = await campaignService.createCampaign(campaignData);
 
@@ -199,10 +230,7 @@ describe('CampaignService', () => {
           projectId: campaignData.projectId,
           status: 'DRAFT',
           agents: {
-            connect: [
-              { id: 'agent-1' },
-              { id: 'agent-2' },
-            ],
+            connect: [{ id: 'agent-1' }, { id: 'agent-2' }],
           },
         },
       });
@@ -227,9 +255,14 @@ describe('CampaignService', () => {
         updatedAt: new Date(),
       };
 
-      (mockPrisma.campaign.update as jest.Mock).mockResolvedValueOnce(mockCampaign);
+      (mockPrisma.campaign.update as jest.Mock).mockResolvedValueOnce(
+        mockCampaign,
+      );
 
-      const result = await campaignService.updateCampaign(campaignId, updateData);
+      const result = await campaignService.updateCampaign(
+        campaignId,
+        updateData,
+      );
 
       expect(mockPrisma.campaign.update).toHaveBeenCalledWith({
         where: { id: campaignId },
@@ -249,25 +282,26 @@ describe('CampaignService', () => {
       const mockExistingCampaign = {
         id: campaignId,
         name: 'Original Campaign',
-        agents: [
-          { id: 'agent-1' },
-          { id: 'agent-2' },
-        ],
+        agents: [{ id: 'agent-1' }, { id: 'agent-2' }],
       };
 
       const mockUpdatedCampaign = {
         id: campaignId,
         name: 'Updated Campaign',
-        agents: [
-          { id: 'agent-2' },
-          { id: 'agent-3' },
-        ],
+        agents: [{ id: 'agent-2' }, { id: 'agent-3' }],
       };
 
-      (mockPrisma.campaign.findUnique as jest.Mock).mockResolvedValueOnce(mockExistingCampaign);
-      (mockPrisma.campaign.update as jest.Mock).mockResolvedValueOnce(mockUpdatedCampaign);
+      (mockPrisma.campaign.findUnique as jest.Mock).mockResolvedValueOnce(
+        mockExistingCampaign,
+      );
+      (mockPrisma.campaign.update as jest.Mock).mockResolvedValueOnce(
+        mockUpdatedCampaign,
+      );
 
-      const result = await campaignService.updateCampaign(campaignId, updateData);
+      const result = await campaignService.updateCampaign(
+        campaignId,
+        updateData,
+      );
 
       expect(mockPrisma.campaign.findUnique).toHaveBeenCalledWith({
         where: { id: campaignId },
@@ -294,7 +328,9 @@ describe('CampaignService', () => {
       const campaignId = 'campaign-123';
       const mockCampaign = { id: campaignId, name: 'Test Campaign' };
 
-      (mockPrisma.campaign.delete as jest.Mock).mockResolvedValueOnce(mockCampaign);
+      (mockPrisma.campaign.delete as jest.Mock).mockResolvedValueOnce(
+        mockCampaign,
+      );
 
       const result = await campaignService.deleteCampaign(campaignId);
 
@@ -311,17 +347,23 @@ describe('CampaignService', () => {
       const campaignId = 'campaign-123';
       const startDate = new Date('2023-01-01');
       const endDate = new Date('2023-12-31');
-      const mockCampaign = { 
-        id: campaignId, 
+      const mockCampaign = {
+        id: campaignId,
         name: 'Test Campaign',
         startDate,
         endDate,
         status: 'SCHEDULED' as CampaignStatus,
       };
 
-      (mockPrisma.campaign.update as jest.Mock).mockResolvedValueOnce(mockCampaign);
+      (mockPrisma.campaign.update as jest.Mock).mockResolvedValueOnce(
+        mockCampaign,
+      );
 
-      const result = await campaignService.scheduleCampaign(campaignId, startDate, endDate);
+      const result = await campaignService.scheduleCampaign(
+        campaignId,
+        startDate,
+        endDate,
+      );
 
       expect(mockPrisma.campaign.update).toHaveBeenCalledWith({
         where: { id: campaignId },
@@ -339,17 +381,23 @@ describe('CampaignService', () => {
       const campaignId = 'campaign-123';
       const startDate = new Date(Date.now() - 86400000); // Yesterday
       const endDate = new Date(Date.now() + 86400000); // Tomorrow
-      const mockCampaign = { 
-        id: campaignId, 
+      const mockCampaign = {
+        id: campaignId,
         name: 'Test Campaign',
         startDate,
         endDate,
         status: 'ACTIVE' as CampaignStatus,
       };
 
-      (mockPrisma.campaign.update as jest.Mock).mockResolvedValueOnce(mockCampaign);
+      (mockPrisma.campaign.update as jest.Mock).mockResolvedValueOnce(
+        mockCampaign,
+      );
 
-      const result = await campaignService.scheduleCampaign(campaignId, startDate, endDate);
+      const result = await campaignService.scheduleCampaign(
+        campaignId,
+        startDate,
+        endDate,
+      );
 
       expect(mockPrisma.campaign.update).toHaveBeenCalledWith({
         where: { id: campaignId },
@@ -363,4 +411,4 @@ describe('CampaignService', () => {
       expect(result).toEqual(mockCampaign);
     });
   });
-}); 
+});

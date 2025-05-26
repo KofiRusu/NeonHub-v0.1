@@ -1,6 +1,15 @@
-import { PrismaClient, AgentType, SignalType, TrendImpact } from '@prisma/client';
+import {
+  PrismaClient,
+  AgentType,
+  SignalType,
+  TrendImpact,
+} from '@prisma/client';
 import { AIAgent } from '../base/AIAgent';
-import { AgentConfig, AgentRunOptions, TrendPredictorOutput } from '../base/types';
+import {
+  AgentConfig,
+  AgentRunOptions,
+  TrendPredictorOutput,
+} from '../base/types';
 
 /**
  * Configuration for trend predictor agents
@@ -37,69 +46,70 @@ export interface TrendPredictorConfig extends AgentConfig {
 /**
  * AI Agent that predicts market trends and opportunities
  */
-export class TrendPredictorAgent extends AIAgent<TrendPredictorConfig, TrendPredictorOutput> {
+export class TrendPredictorAgent extends AIAgent<
+  TrendPredictorConfig,
+  TrendPredictorOutput
+> {
   /**
    * Create a new TrendPredictorAgent
-   * 
+   *
    * @param id Agent ID
    * @param config Agent configuration
    * @param prisma Prisma client instance
    */
-  constructor(
-    id: string,
-    config: TrendPredictorConfig,
-    prisma: PrismaClient
-  ) {
+  constructor(id: string, config: TrendPredictorConfig, prisma: PrismaClient) {
     super(id, AgentType.TREND_ANALYZER, config, prisma);
   }
 
   /**
    * Execute trend prediction logic
-   * 
+   *
    * @param options Run options
    * @returns Trend predictions and insights
    */
-  protected async execute(options: AgentRunOptions): Promise<TrendPredictorOutput> {
+  protected async execute(
+    options: AgentRunOptions,
+  ): Promise<TrendPredictorOutput> {
     // Log execution start with context
-    this.log('info', 'Starting trend analysis', { 
+    this.log('info', 'Starting trend analysis', {
       sources: this.config.sources,
       industries: this.config.industries,
       keywords: this.config.keywords,
-      context: options.context
+      context: options.context,
     });
-    
+
     try {
       // Get project context if available
       const projectId = options.context?.projectId;
-      
+
       if (projectId) {
         // Validate project exists
         const project = await this.prisma.project.findUnique({
           where: { id: projectId },
-          select: { id: true, name: true }
+          select: { id: true, name: true },
         });
-        
+
         if (!project) {
           throw new Error(`Project with ID ${projectId} not found`);
         }
-        
+
         this.log('info', `Analyzing trends for project: ${project.name}`);
       }
-      
+
       // In a real implementation, this would:
       // 1. Collect data from configured sources (social media, news, search trends, etc.)
       // 2. Apply NLP and ML models to identify emerging patterns
       // 3. Analyze historical data to validate predictions
       // 4. Calculate confidence scores and impact estimates
-      
+
       // For demo purposes, we'll simulate trend analysis
-      
+
       // Add artificial delay to simulate processing
-      await new Promise(resolve => setTimeout(resolve, 2500));
-      
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+
       // Generate trend predictions
       const trends = this.generateTrendPredictions();
-      
+
       // Store predictions in the database
       if (projectId) {
         for (const trend of trends) {
@@ -112,14 +122,17 @@ export class TrendPredictorAgent extends AIAgent<TrendPredictorConfig, TrendPred
               confidence: trend.confidence,
               impact: this.mapImpactLevel(trend.predictedImpact),
               agentId: this.id,
-              rawData: trend as any
-            }
+              rawData: trend as any,
+            },
           });
         }
-        
-        this.log('info', `Stored ${trends.length} trend signals in the database`);
+
+        this.log(
+          'info',
+          `Stored ${trends.length} trend signals in the database`,
+        );
       }
-      
+
       // Return the trend predictions
       return {
         trends,
@@ -127,50 +140,63 @@ export class TrendPredictorAgent extends AIAgent<TrendPredictorConfig, TrendPred
           analyzedAt: new Date().toISOString(),
           sourcesAnalyzed: this.config.sources,
           keywordsTracked: this.config.keywords,
-          confidenceAverage: trends.reduce((sum, trend) => sum + trend.confidence, 0) / trends.length
-        }
+          confidenceAverage:
+            trends.reduce((sum, trend) => sum + trend.confidence, 0) /
+            trends.length,
+        },
       };
     } catch (error) {
       this.log('error', 'Trend analysis failed', { error });
       throw error;
     }
   }
-  
+
   /**
    * Generate trend predictions based on configuration
    * This is a placeholder for actual trend analysis algorithms
    */
   private generateTrendPredictions(): TrendPredictorOutput['trends'] {
     const trends: TrendPredictorOutput['trends'] = [];
-    const industries = this.config.industries || ['marketing', 'technology', 'retail'];
-    const sources = this.config.sources || ['social_media', 'news', 'search_trends', 'competitor_analysis'];
-    
+    const industries = this.config.industries || [
+      'marketing',
+      'technology',
+      'retail',
+    ];
+    const sources = this.config.sources || [
+      'social_media',
+      'news',
+      'search_trends',
+      'competitor_analysis',
+    ];
+
     // Generate 3-7 trends
     const numTrends = 3 + Math.floor(Math.random() * 5);
-    
+
     for (let i = 0; i < numTrends; i++) {
-      const industry = industries[Math.floor(Math.random() * industries.length)];
+      const industry =
+        industries[Math.floor(Math.random() * industries.length)];
       const source = sources[Math.floor(Math.random() * sources.length)];
-      
+
       // Create trend with random confidence and impact
       const confidence = 0.65 + Math.random() * 0.35;
       const impact = 0.5 + Math.random() * 0.5;
-      
+
       trends.push({
         title: this.generateTrendTitle(industry, source),
         description: this.generateTrendDescription(industry, source),
         confidence,
         source,
-        predictedImpact: impact
+        predictedImpact: impact,
       });
     }
-    
+
     // Sort by confidence * impact
-    return trends.sort((a, b) => 
-      (b.confidence * b.predictedImpact) - (a.confidence * a.predictedImpact)
+    return trends.sort(
+      (a, b) =>
+        b.confidence * b.predictedImpact - a.confidence * a.predictedImpact,
     );
   }
-  
+
   /**
    * Generate a title for a trend
    */
@@ -185,33 +211,33 @@ export class TrendPredictorAgent extends AIAgent<TrendPredictorConfig, TrendPred
       `${industry} subscription models growing rapidly`,
       `Data privacy concerns reshaping ${industry}`,
       `Remote work transforming ${industry} needs`,
-      `Social commerce revolutionizing ${industry} sales`
+      `Social commerce revolutionizing ${industry} sales`,
     ];
-    
+
     return titles[Math.floor(Math.random() * titles.length)];
   }
-  
+
   /**
    * Generate a description for a trend
    */
   private generateTrendDescription(industry: string, source: string): string {
     const sourcePrefix = this.getSourcePrefix(source);
-    
+
     const descriptions = [
       `${sourcePrefix} indicate a significant increase in consumer interest for ${industry} automation tools, with a focus on efficiency and cost reduction. Companies offering AI-powered solutions in this space are seeing 30% higher engagement rates.`,
-      
+
       `${sourcePrefix} show a growing preference for sustainable and eco-friendly approaches in ${industry}. Brands highlighting their environmental initiatives are experiencing 25% better reception among millennial and Gen Z audiences.`,
-      
+
       `${sourcePrefix} reveal that personalized experiences in ${industry} are no longer optional. Organizations implementing advanced personalization are reporting conversion improvements of up to 40% compared to generic approaches.`,
-      
+
       `${sourcePrefix} demonstrate that mobile-optimized ${industry} strategies are becoming the primary focus for successful brands. Companies with seamless mobile experiences are capturing 50% more market share in their respective niches.`,
-      
-      `${sourcePrefix} highlight the rapid adoption of subscription-based models in ${industry}, with recurring revenue businesses growing 5x faster than traditional one-time purchase models.`
+
+      `${sourcePrefix} highlight the rapid adoption of subscription-based models in ${industry}, with recurring revenue businesses growing 5x faster than traditional one-time purchase models.`,
     ];
-    
+
     return descriptions[Math.floor(Math.random() * descriptions.length)];
   }
-  
+
   /**
    * Get a descriptive prefix based on the data source
    */
@@ -229,7 +255,7 @@ export class TrendPredictorAgent extends AIAgent<TrendPredictorConfig, TrendPred
         return 'Market signals';
     }
   }
-  
+
   /**
    * Map source to SignalType enum
    */
@@ -247,7 +273,7 @@ export class TrendPredictorAgent extends AIAgent<TrendPredictorConfig, TrendPred
         return SignalType.MARKET_OPPORTUNITY;
     }
   }
-  
+
   /**
    * Map impact value to TrendImpact enum
    */
@@ -257,4 +283,4 @@ export class TrendPredictorAgent extends AIAgent<TrendPredictorConfig, TrendPred
     if (impact < 0.8) return TrendImpact.HIGH;
     return TrendImpact.CRITICAL;
   }
-} 
+}

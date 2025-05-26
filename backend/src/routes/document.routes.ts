@@ -1,10 +1,10 @@
 import { Router } from 'express';
-import { 
+import {
   getDocuments,
   getDocument,
   uploadDocument,
   downloadDocument,
-  deleteDocument
+  deleteDocument,
 } from '../controllers/document.controller';
 import { protect } from '../middleware/auth.middleware';
 
@@ -45,4 +45,4 @@ router.get('/:id/download', protect, downloadDocument);
  */
 router.delete('/:id', protect, deleteDocument);
 
-export default router; 
+export default router;

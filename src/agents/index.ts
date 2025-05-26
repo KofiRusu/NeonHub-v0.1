@@ -26,11 +26,13 @@ let managerInstance: AgentManager | null = null;
 export function getAgentManager(prisma?: PrismaClient): AgentManager {
   if (!managerInstance) {
     if (!prisma) {
-      throw new Error('PrismaClient must be provided on first call to getAgentManager');
+      throw new Error(
+        'PrismaClient must be provided on first call to getAgentManager',
+      );
     }
     managerInstance = new AgentManager(prisma);
   }
-  
+
   return managerInstance;
 }
 
@@ -39,7 +41,9 @@ export function getAgentManager(prisma?: PrismaClient): AgentManager {
  * @param prisma Prisma client instance
  * @returns The initialized AgentManager
  */
-export async function initializeAgentManager(prisma: PrismaClient): Promise<AgentManager> {
+export async function initializeAgentManager(
+  prisma: PrismaClient,
+): Promise<AgentManager> {
   const manager = getAgentManager(prisma);
   await manager.initialize();
   return manager;
@@ -53,4 +57,4 @@ export function shutdownAgentManager(): void {
     managerInstance.shutdown();
     managerInstance = null;
   }
-} 
+}

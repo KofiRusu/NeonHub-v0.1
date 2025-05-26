@@ -21,7 +21,11 @@ jest.mock('@prisma/client', () => {
 // Mock jwt utilities
 jest.mock('../utils/jwt', () => ({
   generateToken: jest.fn(() => 'test-token'),
-  verifyToken: jest.fn(() => ({ id: 'test-id', email: 'test@example.com', role: 'USER' })),
+  verifyToken: jest.fn(() => ({
+    id: 'test-id',
+    email: 'test@example.com',
+    role: 'USER',
+  })),
 }));
 
 // Mock bcrypt
@@ -39,7 +43,7 @@ describe('Auth Controller', () => {
     app = express();
     app.use(express.json());
     app.use('/api/auth', authRoutes);
-    
+
     // Get the mocked prisma client
     prisma = new PrismaClient();
   });
@@ -66,13 +70,11 @@ describe('Auth Controller', () => {
       prisma.user.create.mockResolvedValue(mockUser);
 
       // Test request
-      const res = await request(app)
-        .post('/api/auth/register')
-        .send({
-          name: 'Test User',
-          email: 'test@example.com',
-          password: 'password123',
-        });
+      const res = await request(app).post('/api/auth/register').send({
+        name: 'Test User',
+        email: 'test@example.com',
+        password: 'password123',
+      });
 
       // Assertions
       expect(res.status).toBe(201);
@@ -108,13 +110,11 @@ describe('Auth Controller', () => {
       prisma.user.findUnique.mockResolvedValue(mockUser);
 
       // Test request
-      const res = await request(app)
-        .post('/api/auth/register')
-        .send({
-          name: 'Existing User',
-          email: 'existing@example.com',
-          password: 'password123',
-        });
+      const res = await request(app).post('/api/auth/register').send({
+        name: 'Existing User',
+        email: 'existing@example.com',
+        password: 'password123',
+      });
 
       // Assertions
       expect(res.status).toBe(400);
@@ -142,12 +142,10 @@ describe('Auth Controller', () => {
       bcrypt.compare = jest.fn().mockResolvedValue(true);
 
       // Test request
-      const res = await request(app)
-        .post('/api/auth/login')
-        .send({
-          email: 'test@example.com',
-          password: 'password123',
-        });
+      const res = await request(app).post('/api/auth/login').send({
+        email: 'test@example.com',
+        password: 'password123',
+      });
 
       // Assertions
       expect(res.status).toBe(200);
@@ -162,7 +160,10 @@ describe('Auth Controller', () => {
       expect(prisma.user.findUnique).toHaveBeenCalledWith({
         where: { email: 'test@example.com' },
       });
-      expect(bcrypt.compare).toHaveBeenCalledWith('password123', 'hashed-password');
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        'password123',
+        'hashed-password',
+      );
     });
 
     it('should return 400 if user does not exist', async () => {
@@ -170,12 +171,10 @@ describe('Auth Controller', () => {
       prisma.user.findUnique.mockResolvedValue(null);
 
       // Test request
-      const res = await request(app)
-        .post('/api/auth/login')
-        .send({
-          email: 'nonexistent@example.com',
-          password: 'password123',
-        });
+      const res = await request(app).post('/api/auth/login').send({
+        email: 'nonexistent@example.com',
+        password: 'password123',
+      });
 
       // Assertions
       expect(res.status).toBe(400);
@@ -201,12 +200,10 @@ describe('Auth Controller', () => {
       bcrypt.compare = jest.fn().mockResolvedValue(false);
 
       // Test request
-      const res = await request(app)
-        .post('/api/auth/login')
-        .send({
-          email: 'test@example.com',
-          password: 'wrong-password',
-        });
+      const res = await request(app).post('/api/auth/login').send({
+        email: 'test@example.com',
+        password: 'wrong-password',
+      });
 
       // Assertions
       expect(res.status).toBe(400);
@@ -215,7 +212,10 @@ describe('Auth Controller', () => {
       expect(prisma.user.findUnique).toHaveBeenCalledWith({
         where: { email: 'test@example.com' },
       });
-      expect(bcrypt.compare).toHaveBeenCalledWith('wrong-password', 'hashed-password');
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        'wrong-password',
+        'hashed-password',
+      );
     });
   });
-}); 
+});

@@ -7,7 +7,9 @@ import { getCampaignService, CampaignService } from '../../services';
 
 // Mock services
 jest.mock('../../services');
-const mockGetCampaignService = getCampaignService as jest.MockedFunction<typeof getCampaignService>;
+const mockGetCampaignService = getCampaignService as jest.MockedFunction<
+  typeof getCampaignService
+>;
 const mockCampaignService = {
   getCampaigns: jest.fn(),
   getCampaign: jest.fn(),
@@ -49,14 +51,12 @@ describe('Campaign Controller', () => {
 
       mockCampaignService.getCampaigns.mockResolvedValueOnce(mockCampaigns);
 
-      const response = await request(app)
-        .get('/api/campaigns')
-        .expect(200);
+      const response = await request(app).get('/api/campaigns').expect(200);
 
       expect(mockCampaignService.getCampaigns).toHaveBeenCalledWith(
         'user-123',
         undefined,
-        false
+        false,
       );
 
       expect(response.body).toEqual({
@@ -67,7 +67,12 @@ describe('Campaign Controller', () => {
 
     it('should filter campaigns by project ID', async () => {
       const mockCampaigns = [
-        { id: 'campaign-1', name: 'Campaign 1', ownerId: 'user-123', projectId: 'project-456' },
+        {
+          id: 'campaign-1',
+          name: 'Campaign 1',
+          ownerId: 'user-123',
+          projectId: 'project-456',
+        },
       ];
 
       mockCampaignService.getCampaigns.mockResolvedValueOnce(mockCampaigns);
@@ -79,7 +84,7 @@ describe('Campaign Controller', () => {
       expect(mockCampaignService.getCampaigns).toHaveBeenCalledWith(
         'user-123',
         'project-456',
-        false
+        false,
       );
 
       expect(response.body).toEqual({
@@ -102,7 +107,7 @@ describe('Campaign Controller', () => {
       expect(mockCampaignService.getCampaigns).toHaveBeenCalledWith(
         'user-123',
         undefined,
-        true
+        true,
       );
 
       expect(response.body).toEqual({
@@ -128,7 +133,7 @@ describe('Campaign Controller', () => {
 
       expect(mockCampaignService.getCampaign).toHaveBeenCalledWith(
         'campaign-123',
-        false
+        false,
       );
 
       expect(response.body).toEqual({
@@ -271,10 +276,12 @@ describe('Campaign Controller', () => {
         .send(updateData)
         .expect(200);
 
-      expect(mockCampaignService.getCampaign).toHaveBeenCalledWith('campaign-123');
+      expect(mockCampaignService.getCampaign).toHaveBeenCalledWith(
+        'campaign-123',
+      );
       expect(mockCampaignService.updateCampaign).toHaveBeenCalledWith(
         'campaign-123',
-        updateData
+        updateData,
       );
 
       expect(response.body).toEqual({
@@ -335,14 +342,20 @@ describe('Campaign Controller', () => {
       };
 
       mockCampaignService.getCampaign.mockResolvedValueOnce(existingCampaign);
-      mockCampaignService.deleteCampaign.mockResolvedValueOnce(existingCampaign);
+      mockCampaignService.deleteCampaign.mockResolvedValueOnce(
+        existingCampaign,
+      );
 
       const response = await request(app)
         .delete('/api/campaigns/campaign-123')
         .expect(204);
 
-      expect(mockCampaignService.getCampaign).toHaveBeenCalledWith('campaign-123');
-      expect(mockCampaignService.deleteCampaign).toHaveBeenCalledWith('campaign-123');
+      expect(mockCampaignService.getCampaign).toHaveBeenCalledWith(
+        'campaign-123',
+      );
+      expect(mockCampaignService.deleteCampaign).toHaveBeenCalledWith(
+        'campaign-123',
+      );
     });
 
     it('should return 404 if campaign not found', async () => {
@@ -411,14 +424,20 @@ describe('Campaign Controller', () => {
       };
 
       mockCampaignService.getCampaign.mockResolvedValueOnce(existingCampaign);
-      mockCampaignService.getCampaignAnalytics.mockResolvedValueOnce(mockAnalytics);
+      mockCampaignService.getCampaignAnalytics.mockResolvedValueOnce(
+        mockAnalytics,
+      );
 
       const response = await request(app)
         .get('/api/campaigns/campaign-123/analytics')
         .expect(200);
 
-      expect(mockCampaignService.getCampaign).toHaveBeenCalledWith('campaign-123');
-      expect(mockCampaignService.getCampaignAnalytics).toHaveBeenCalledWith('campaign-123');
+      expect(mockCampaignService.getCampaign).toHaveBeenCalledWith(
+        'campaign-123',
+      );
+      expect(mockCampaignService.getCampaignAnalytics).toHaveBeenCalledWith(
+        'campaign-123',
+      );
 
       expect(response.body).toEqual({
         success: true,
@@ -463,18 +482,22 @@ describe('Campaign Controller', () => {
       };
 
       mockCampaignService.getCampaign.mockResolvedValueOnce(existingCampaign);
-      mockCampaignService.scheduleCampaign.mockResolvedValueOnce(scheduledCampaign);
+      mockCampaignService.scheduleCampaign.mockResolvedValueOnce(
+        scheduledCampaign,
+      );
 
       const response = await request(app)
         .post('/api/campaigns/campaign-123/schedule')
         .send(scheduleData)
         .expect(200);
 
-      expect(mockCampaignService.getCampaign).toHaveBeenCalledWith('campaign-123');
+      expect(mockCampaignService.getCampaign).toHaveBeenCalledWith(
+        'campaign-123',
+      );
       expect(mockCampaignService.scheduleCampaign).toHaveBeenCalledWith(
         'campaign-123',
         new Date(scheduleData.startDate),
-        new Date(scheduleData.endDate)
+        new Date(scheduleData.endDate),
       );
 
       expect(response.body).toEqual({
@@ -497,4 +520,4 @@ describe('Campaign Controller', () => {
       expect(mockCampaignService.scheduleCampaign).not.toHaveBeenCalled();
     });
   });
-}); 
+});

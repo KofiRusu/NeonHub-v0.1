@@ -1,5 +1,9 @@
 import { PrismaClient, AIAgent } from '@prisma/client';
-import { getCampaignService, getMetricService, MetricSource } from '../../../services';
+import {
+  getCampaignService,
+  getMetricService,
+  MetricSource,
+} from '../../../services';
 
 // Token usage tracking interface
 export interface TokenUsage {
@@ -25,7 +29,7 @@ export enum AgentEventType {
   EXECUTION_FAILED = 'execution_failed',
   RETRY_ATTEMPT = 'retry_attempt',
   STOP_REQUESTED = 'stop_requested',
-  CUSTOM_EVENT = 'custom_event'
+  CUSTOM_EVENT = 'custom_event',
 }
 
 // Agent event interface
@@ -72,17 +76,20 @@ export abstract class BaseAgent {
     this.shouldStop = false;
     this.executionStartTime = Date.now();
     this.events = [];
-    
+
     // Set retry options
     this.maxRetries = options.maxRetries ?? this.maxRetries;
     this.retryDelay = options.retryDelay ?? this.retryDelay;
-    
+
     // Default options
     const { campaignId, trackMetrics = true } = options;
-    
+
     // Log execution start event
-    this.logEvent(AgentEventType.EXECUTION_STARTED, 'Agent execution started', { config, options });
-    
+    this.logEvent(AgentEventType.EXECUTION_STARTED, 'Agent execution started', {
+      config,
+      options,
+    });
+
     try {
       // Create execution session
       const session = await this.prisma.agentExecutionSession.create({
@@ -91,27 +98,27 @@ export abstract class BaseAgent {
           context: config as any,
         },
       });
-      
+
       this.currentSessionId = session.id;
-      
+
       // Link to campaign if provided or create one
       let linkedCampaignId = campaignId;
       if (!linkedCampaignId && config.campaignId) {
         linkedCampaignId = config.campaignId;
       }
-      
+
       const campaignService = getCampaignService(this.prisma);
       const campaign = await campaignService.getOrCreateCampaignForAgent(
         this.agentData,
-        linkedCampaignId
+        linkedCampaignId,
       );
-      
+
       // Execute agent-specific logic with retry mechanism
       const result = await this.executeWithRetry(config);
-      
+
       // Calculate execution duration
       const executionTime = Date.now() - this.executionStartTime;
-      
+
       // Update execution session
       await this.prisma.agentExecutionSession.update({
         where: { id: session.id },
@@ -121,14 +128,14 @@ export abstract class BaseAgent {
           duration: executionTime,
           outputSummary: JSON.stringify(result).substring(0, 1000),
           logs: this.events as any,
-          metrics: { 
+          metrics: {
             executionTime,
             eventCount: this.events.length,
-            ...(options.tokenUsage || {})
+            ...(options.tokenUsage || {}),
           } as any,
         },
       });
-      
+
       // Log metrics if enabled
       if (trackMetrics) {
         const metricService = getMetricService(this.prisma);
@@ -140,37 +147,39 @@ export abstract class BaseAgent {
           session.id,
           campaign.id,
           true,
-          options.tokenUsage
+          options.tokenUsage,
         );
       }
-      
+
       // Log execution completion event
-      this.logEvent(AgentEventType.EXECUTION_COMPLETED, 
-        `Agent execution completed successfully in ${executionTime}ms`, 
-        { executionTime, sessionId: session.id }
+      this.logEvent(
+        AgentEventType.EXECUTION_COMPLETED,
+        `Agent execution completed successfully in ${executionTime}ms`,
+        { executionTime, sessionId: session.id },
       );
-      
+
       this.isRunning = false;
       this.currentSessionId = null;
-      
+
       // Add campaign to the result
       return {
         ...result,
         campaignId: campaign.id,
         executionTime,
         sessionId: session.id,
-        events: this.events
+        events: this.events,
       };
     } catch (error) {
       // Log execution error event
-      this.logEvent(AgentEventType.EXECUTION_FAILED, 
-        `Agent execution failed: ${error instanceof Error ? error.message : String(error)}`, 
-        { error: error instanceof Error ? error.stack : error }
+      this.logEvent(
+        AgentEventType.EXECUTION_FAILED,
+        `Agent execution failed: ${error instanceof Error ? error.message : String(error)}`,
+        { error: error instanceof Error ? error.stack : error },
       );
-      
+
       // Calculate execution duration
       const executionTime = Date.now() - this.executionStartTime;
-      
+
       // Update session if it was created
       if (this.currentSessionId) {
         await this.prisma.agentExecutionSession.update({
@@ -180,10 +189,11 @@ export abstract class BaseAgent {
             success: false,
             duration: executionTime,
             logs: this.events as any,
-            errorMessage: error instanceof Error ? error.message : String(error),
+            errorMessage:
+              error instanceof Error ? error.message : String(error),
           },
         });
-        
+
         // Log failure metrics
         if (trackMetrics) {
           try {
@@ -196,14 +206,14 @@ export abstract class BaseAgent {
               this.currentSessionId,
               campaignId,
               false,
-              options.tokenUsage
+              options.tokenUsage,
             );
           } catch (metricError) {
             console.error('Failed to log metrics:', metricError);
           }
         }
       }
-      
+
       this.isRunning = false;
       this.currentSessionId = null;
       throw error;
@@ -217,42 +227,44 @@ export abstract class BaseAgent {
    */
   private async executeWithRetry(config: any): Promise<any> {
     let lastError: Error | null = null;
-    
+
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
       if (this.shouldStop) {
         throw new Error('Agent execution stopped by user request');
       }
-      
+
       try {
         if (attempt > 0) {
-          this.logEvent(AgentEventType.RETRY_ATTEMPT, 
-            `Retry attempt ${attempt}/${this.maxRetries}`, 
-            { attempt, maxRetries: this.maxRetries }
+          this.logEvent(
+            AgentEventType.RETRY_ATTEMPT,
+            `Retry attempt ${attempt}/${this.maxRetries}`,
+            { attempt, maxRetries: this.maxRetries },
           );
-          
+
           // Wait before retry with exponential backoff
           const delay = this.retryDelay * Math.pow(2, attempt - 1);
           await this.sleep(delay);
         }
-        
+
         return await this.executeImpl(config);
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
-        
+
         if (attempt === this.maxRetries) {
           // Final attempt failed
           break;
         }
-        
+
         // Log retry event
-        this.logEvent(AgentEventType.RETRY_ATTEMPT, 
-          `Attempt ${attempt + 1} failed, will retry: ${lastError.message}`, 
-          { attempt: attempt + 1, error: lastError.message }, 
-          'warning'
+        this.logEvent(
+          AgentEventType.RETRY_ATTEMPT,
+          `Attempt ${attempt + 1} failed, will retry: ${lastError.message}`,
+          { attempt: attempt + 1, error: lastError.message },
+          'warning',
         );
       }
     }
-    
+
     throw lastError || new Error('Unknown error during execution');
   }
 
@@ -260,9 +272,12 @@ export abstract class BaseAgent {
    * Stop the agent execution
    */
   async stop(): Promise<void> {
-    this.logEvent(AgentEventType.STOP_REQUESTED, `Stopping agent ${this.agentData.id}`);
+    this.logEvent(
+      AgentEventType.STOP_REQUESTED,
+      `Stopping agent ${this.agentData.id}`,
+    );
     this.shouldStop = true;
-    
+
     // Execute agent-specific stop logic only if running
     if (this.isRunning) {
       await this.stopImpl();
@@ -280,7 +295,10 @@ export abstract class BaseAgent {
    */
   protected async stopImpl(): Promise<void> {
     // Default implementation - can be overridden by subclasses
-    this.logEvent(AgentEventType.CUSTOM_EVENT, `Default stop implementation for agent ${this.agentData.id}`);
+    this.logEvent(
+      AgentEventType.CUSTOM_EVENT,
+      `Default stop implementation for agent ${this.agentData.id}`,
+    );
   }
 
   /**
@@ -298,23 +316,28 @@ export abstract class BaseAgent {
    * @param level Log level
    */
   protected logEvent(
-    type: AgentEventType, 
-    message: string, 
-    data?: any, 
-    level: 'info' | 'warning' | 'error' = 'info'
+    type: AgentEventType,
+    message: string,
+    data?: any,
+    level: 'info' | 'warning' | 'error' = 'info',
   ): void {
     const event: AgentEvent = {
       type,
       timestamp: new Date(),
       message,
       data,
-      level
+      level,
     };
-    
+
     this.events.push(event);
-    
+
     // Also log to console for immediate visibility
-    const logMethod = level === 'error' ? console.error : level === 'warning' ? console.warn : console.log;
+    const logMethod =
+      level === 'error'
+        ? console.error
+        : level === 'warning'
+          ? console.warn
+          : console.log;
     logMethod(`[${this.agentData.id}] ${type}: ${message}`, data || '');
   }
 
@@ -323,7 +346,10 @@ export abstract class BaseAgent {
    * @param message The message to log
    * @param level Log level
    */
-  protected async logMessage(message: string, level: 'info' | 'warning' | 'error' = 'info'): Promise<void> {
+  protected async logMessage(
+    message: string,
+    level: 'info' | 'warning' | 'error' = 'info',
+  ): Promise<void> {
     this.logEvent(AgentEventType.CUSTOM_EVENT, message, undefined, level);
   }
 
@@ -342,7 +368,9 @@ export abstract class BaseAgent {
       shouldStop: this.shouldStop,
       currentSessionId: this.currentSessionId,
       eventCount: this.events.length,
-      executionTime: this.isRunning ? Date.now() - this.executionStartTime : undefined
+      executionTime: this.isRunning
+        ? Date.now() - this.executionStartTime
+        : undefined,
     };
   }
 
@@ -357,6 +385,6 @@ export abstract class BaseAgent {
    * Sleep utility for retry delays
    */
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
-} 
+}

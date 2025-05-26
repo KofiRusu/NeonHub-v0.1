@@ -1,7 +1,11 @@
 import { PrismaClient } from '@prisma/client';
 import { AgentManager } from './manager/AgentManager';
 import { AgentScheduler } from './scheduler/AgentScheduler';
-import { AgentFactory, createAgentFactory, pluginRegistry } from './factory/AgentFactory';
+import {
+  AgentFactory,
+  createAgentFactory,
+  pluginRegistry,
+} from './factory/AgentFactory';
 import { BaseAgent, AgentEvent, AgentEventType } from './base/BaseAgent';
 
 // Import and register all plugins
@@ -30,7 +34,10 @@ export function getAgentManager(prisma: PrismaClient): AgentManager {
  * @param manager Optional agent manager instance
  * @returns AgentScheduler instance
  */
-export function getAgentScheduler(prisma: PrismaClient, manager?: AgentManager): AgentScheduler {
+export function getAgentScheduler(
+  prisma: PrismaClient,
+  manager?: AgentManager,
+): AgentScheduler {
   if (!agentScheduler) {
     const agentMgr = manager || getAgentManager(prisma);
     agentScheduler = new AgentScheduler(prisma, agentMgr, {
@@ -40,7 +47,7 @@ export function getAgentScheduler(prisma: PrismaClient, manager?: AgentManager):
       baseBackoffDelay: 1000,
       maxBackoffDelay: 300000, // 5 minutes
       autoStart: true,
-      runMissedOnStartup: true
+      runMissedOnStartup: true,
     });
   }
   return agentScheduler;
@@ -73,7 +80,9 @@ export function initializeAgentSystem(prisma: PrismaClient): {
   const factory = getAgentFactory(prisma);
 
   console.log('Agent system initialized successfully');
-  console.log(`Available agent types: ${factory.getAvailableAgentTypes().length}`);
+  console.log(
+    `Available agent types: ${factory.getAvailableAgentTypes().length}`,
+  );
   console.log(`Scheduler running: ${scheduler.isSchedulerRunning()}`);
 
   return { manager, scheduler, factory };
@@ -86,11 +95,11 @@ export function cleanupAgentSystem(): void {
   if (agentScheduler) {
     agentScheduler.stop();
   }
-  
+
   agentManager = null;
   agentScheduler = null;
   agentFactory = null;
-  
+
   console.log('Agent system cleaned up');
 }
 
@@ -103,11 +112,11 @@ export {
   AgentEvent,
   AgentEventType,
   pluginRegistry,
-  createAgentFactory
+  createAgentFactory,
 };
 
 // Export types
 export * from './types';
 export * from './base/BaseAgent';
 export * from './factory/AgentFactory';
-export * from './scheduler/AgentScheduler'; 
+export * from './scheduler/AgentScheduler';

@@ -15,14 +15,26 @@ class NeonHubFinalDevelopment {
     this.errors = [];
     this.currentPhase = 1;
     this.totalPhases = 6;
-    
+
     this.phases = [
-      { name: 'Real-time WebSocket Integration', priority: 1, estimatedHours: 8 },
-      { name: 'AI Services Integration (OpenAI/Claude)', priority: 1, estimatedHours: 6 },
+      {
+        name: 'Real-time WebSocket Integration',
+        priority: 1,
+        estimatedHours: 8,
+      },
+      {
+        name: 'AI Services Integration (OpenAI/Claude)',
+        priority: 1,
+        estimatedHours: 6,
+      },
       { name: 'Advanced Analytics Dashboard', priority: 2, estimatedHours: 10 },
-      { name: 'Testing Suite (90%+ Coverage)', priority: 2, estimatedHours: 12 },
+      {
+        name: 'Testing Suite (90%+ Coverage)',
+        priority: 2,
+        estimatedHours: 12,
+      },
       { name: 'CI/CD & Docker Infrastructure', priority: 3, estimatedHours: 8 },
-      { name: 'OAuth & Production Deployment', priority: 3, estimatedHours: 6 }
+      { name: 'OAuth & Production Deployment', priority: 3, estimatedHours: 6 },
     ];
   }
 
@@ -42,12 +54,14 @@ class NeonHubFinalDevelopment {
 
   async executePhases() {
     for (const phase of this.phases) {
-      console.log(`\n🔧 Phase ${this.currentPhase}/${this.totalPhases}: ${phase.name}`);
+      console.log(
+        `\n🔧 Phase ${this.currentPhase}/${this.totalPhases}: ${phase.name}`,
+      );
       console.log(`⏱️  Estimated: ${phase.estimatedHours} hours\n`);
-      
+
       await this.executePhase(phase);
       this.currentPhase++;
-      
+
       // Update status after each phase
       await this.updateStatusDocument();
     }
@@ -78,14 +92,14 @@ class NeonHubFinalDevelopment {
 
   async implementWebSocketIntegration() {
     console.log('🔌 Implementing WebSocket integration...');
-    
+
     // Backend WebSocket service
     await this.createWebSocketService();
     await this.createRealTimeAgentMonitoring();
-    
+
     // Frontend real-time components
     await this.createRealTimeComponents();
-    
+
     this.completedTasks.push('WebSocket server implementation');
     this.completedTasks.push('Real-time agent monitoring');
     this.completedTasks.push('Live dashboard updates');
@@ -155,7 +169,10 @@ export class WebSocketService {
   }
 }`;
 
-    fs.writeFileSync('backend/src/services/websocket.service.ts', webSocketService);
+    fs.writeFileSync(
+      'backend/src/services/websocket.service.ts',
+      webSocketService,
+    );
     console.log('✅ WebSocket service created');
   }
 
@@ -249,17 +266,20 @@ export function useRealTimeAgent(agentId: string) {
   return { socket, status, logs, isConnected };
 }`;
 
-    fs.writeFileSync('frontend/src/hooks/useRealTimeAgent.ts', realTimeComponent);
+    fs.writeFileSync(
+      'frontend/src/hooks/useRealTimeAgent.ts',
+      realTimeComponent,
+    );
     console.log('✅ Real-time React components created');
   }
 
   async implementAIServices() {
     console.log('🤖 Implementing AI services integration...');
-    
+
     await this.createOpenAIService();
     await this.createClaudeService();
     await this.updateAgentsWithAI();
-    
+
     this.completedTasks.push('OpenAI API integration');
     this.completedTasks.push('Claude API integration');
     this.completedTasks.push('Token usage tracking');
@@ -406,11 +426,11 @@ Provide detailed analysis with actionable insights in JSON format.\`;
 
   async implementAnalyticsDashboard() {
     console.log('📊 Implementing advanced analytics dashboard...');
-    
+
     await this.installVisualizationLibraries();
     await this.createAnalyticsComponents();
     await this.createMetricsAPI();
-    
+
     this.completedTasks.push('Data visualization library setup');
     this.completedTasks.push('Campaign analytics charts');
     this.completedTasks.push('Agent performance metrics');
@@ -418,12 +438,17 @@ Provide detailed analysis with actionable insights in JSON format.\`;
 
   async installVisualizationLibraries() {
     console.log('📦 Installing visualization libraries...');
-    
+
     try {
-      execSync('cd frontend && npm install recharts @tremor/react lucide-react', { stdio: 'inherit' });
+      execSync(
+        'cd frontend && npm install recharts @tremor/react lucide-react',
+        { stdio: 'inherit' },
+      );
       console.log('✅ Visualization libraries installed');
     } catch (error) {
-      console.log('⚠️ Visualization libraries installation queued for next run');
+      console.log(
+        '⚠️ Visualization libraries installation queued for next run',
+      );
     }
   }
 
@@ -495,7 +520,10 @@ export function AnalyticsDashboard({ campaignId, data }: AnalyticsDashboardProps
   );
 }`;
 
-    fs.writeFileSync('frontend/src/components/analytics/AnalyticsDashboard.tsx', analyticsComponent);
+    fs.writeFileSync(
+      'frontend/src/components/analytics/AnalyticsDashboard.tsx',
+      analyticsComponent,
+    );
     console.log('✅ Analytics components created');
   }
 
@@ -506,12 +534,12 @@ export function AnalyticsDashboard({ campaignId, data }: AnalyticsDashboardProps
 
   async implementTestingSuite() {
     console.log('🧪 Implementing comprehensive testing suite...');
-    
+
     await this.createUnitTests();
     await this.createIntegrationTests();
     await this.createE2ETests();
     await this.setupCoverageReporting();
-    
+
     this.completedTasks.push('Unit tests (90% coverage)');
     this.completedTasks.push('Integration tests');
     this.completedTasks.push('Playwright E2E tests');
@@ -573,11 +601,11 @@ test.describe('NeonHub E2E Tests', () => {
 
   async implementCICD() {
     console.log('🚀 Implementing CI/CD pipeline...');
-    
+
     await this.createDockerfiles();
     await this.createGitHubActions();
     await this.createVercelConfig();
-    
+
     this.completedTasks.push('Production Dockerfile');
     this.completedTasks.push('GitHub Actions CI/CD');
     this.completedTasks.push('Vercel deployment config');
@@ -811,11 +839,11 @@ jobs:
 
   async implementOAuthAndDeploy() {
     console.log('🔐 Implementing OAuth and final deployment...');
-    
+
     await this.createOAuthServices();
     await this.configureSecretManagement();
     await this.finalDeployment();
-    
+
     this.completedTasks.push('Google OAuth integration');
     this.completedTasks.push('GitHub OAuth integration');
     this.completedTasks.push('Production deployment');
@@ -854,7 +882,10 @@ export class GoogleOAuthService {
   }
 }`;
 
-    fs.writeFileSync('backend/src/services/auth/google-oauth.service.ts', googleOAuth);
+    fs.writeFileSync(
+      'backend/src/services/auth/google-oauth.service.ts',
+      googleOAuth,
+    );
     console.log('✅ OAuth services created');
   }
 
@@ -870,11 +901,11 @@ export class GoogleOAuthService {
   async updateStatusDocument() {
     const now = new Date();
     const progress = Math.round((this.currentPhase / this.totalPhases) * 100);
-    
+
     const statusUpdate = `### **Day 1 - ${now.toLocaleDateString()}**
 
 #### ✅ Completed Tasks
-${this.completedTasks.map(task => `- ${task}`).join('\n')}
+${this.completedTasks.map((task) => `- ${task}`).join('\n')}
 
 #### 🔄 In-Flight Work
 - Phase ${this.currentPhase}/${this.totalPhases} in progress
@@ -893,35 +924,38 @@ ${this.completedTasks.map(task => `- ${task}`).join('\n')}
 
   async generateFinalReport() {
     const duration = (Date.now() - this.startTime) / 1000 / 60; // minutes
-    
+
     const report = {
       completedAt: new Date().toISOString(),
       duration: `${Math.round(duration)} minutes`,
       tasksCompleted: this.completedTasks.length,
       phases: this.totalPhases,
       errors: this.errors,
-      status: this.errors.length === 0 ? 'SUCCESS' : 'PARTIAL_SUCCESS'
+      status: this.errors.length === 0 ? 'SUCCESS' : 'PARTIAL_SUCCESS',
     };
 
     console.log('\n🎉 NeonHub Development Automation Complete!');
     console.log(`✅ Tasks Completed: ${report.tasksCompleted}`);
     console.log(`⏱️  Duration: ${report.duration}`);
     console.log(`📊 Status: ${report.status}`);
-    
+
     if (this.errors.length > 0) {
       console.log(`⚠️  Errors: ${this.errors.length}`);
     }
 
-    fs.writeFileSync('docs/automation-report.json', JSON.stringify(report, null, 2));
+    fs.writeFileSync(
+      'docs/automation-report.json',
+      JSON.stringify(report, null, 2),
+    );
   }
 
   async handleFailure(error) {
     this.errors.push({
       message: error.message,
       timestamp: new Date().toISOString(),
-      phase: this.currentPhase
+      phase: this.currentPhase,
     });
-    
+
     console.error('❌ Phase failed, continuing with next phase...');
   }
 }
@@ -932,4 +966,4 @@ if (require.main === module) {
   automation.start().catch(console.error);
 }
 
-module.exports = NeonHubFinalDevelopment; 
+module.exports = NeonHubFinalDevelopment;

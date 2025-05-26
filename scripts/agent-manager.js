@@ -17,7 +17,7 @@ class NeonHubAgentManager {
       frontend: new FrontendAgent(),
       devops: new DevOpsAgent(),
       qa: new QAAgent(),
-      docs: new DocsAgent()
+      docs: new DocsAgent(),
     };
   }
 
@@ -32,7 +32,7 @@ class NeonHubAgentManager {
 
   async runAll() {
     console.log('🚀 Running all NeonHub agents...\n');
-    
+
     const results = {};
     for (const [name, agent] of Object.entries(this.agents)) {
       try {
@@ -52,7 +52,7 @@ class NeonHubAgentManager {
 class ArchitectureAgent {
   async run() {
     console.log('🏗️ Analyzing system architecture...');
-    
+
     // Check if architecture.md exists and update it
     const architecturePath = 'architecture.md';
     if (!fs.existsSync(architecturePath)) {
@@ -63,7 +63,9 @@ class ArchitectureAgent {
 
     // Analyze project structure
     const structure = this.analyzeProjectStructure();
-    console.log(`Found ${structure.backend} backend files, ${structure.frontend} frontend files`);
+    console.log(
+      `Found ${structure.backend} backend files, ${structure.frontend} frontend files`,
+    );
 
     return { status: 'success', files_analyzed: structure };
   }
@@ -117,10 +119,10 @@ Last updated: ${new Date().toISOString()}
 
   countFiles(dir) {
     if (!fs.existsSync(dir)) return 0;
-    
+
     let count = 0;
     const files = fs.readdirSync(dir, { withFileTypes: true });
-    
+
     for (const file of files) {
       if (file.isDirectory()) {
         count += this.countFiles(path.join(dir, file.name));
@@ -128,7 +130,7 @@ Last updated: ${new Date().toISOString()}
         count++;
       }
     }
-    
+
     return count;
   }
 }
@@ -136,7 +138,7 @@ Last updated: ${new Date().toISOString()}
 class BackendAgent {
   async run() {
     console.log('🔧 Analyzing backend changes...');
-    
+
     if (!fs.existsSync('backend')) {
       console.log('No backend directory found');
       return { status: 'skipped' };
@@ -164,11 +166,12 @@ class BackendAgent {
 
     const endpoints = [];
     const files = fs.readdirSync(routesDir, { recursive: true });
-    
+
     for (const file of files) {
       if (file.endsWith('.ts')) {
         const content = fs.readFileSync(path.join(routesDir, file), 'utf8');
-        const matches = content.match(/router\.(get|post|put|delete|patch)/g) || [];
+        const matches =
+          content.match(/router\.(get|post|put|delete|patch)/g) || [];
         endpoints.push(...matches);
       }
     }
@@ -180,7 +183,7 @@ class BackendAgent {
 class FrontendAgent {
   async run() {
     console.log('🎨 Analyzing frontend changes...');
-    
+
     if (!fs.existsSync('frontend')) {
       console.log('No frontend directory found');
       return { status: 'skipped' };
@@ -208,7 +211,7 @@ class FrontendAgent {
 
     const components = [];
     const files = fs.readdirSync(componentsDir, { recursive: true });
-    
+
     for (const file of files) {
       if (file.endsWith('.tsx')) {
         components.push(file);
@@ -222,27 +225,38 @@ class FrontendAgent {
 class DevOpsAgent {
   async run() {
     console.log('🚀 Validating infrastructure...');
-    
+
     // Check GitHub Actions workflows
     const workflows = this.validateWorkflows();
-    
+
     // Check Docker files
     const docker = this.validateDocker();
-    
-    console.log(`Validated ${workflows.length} workflows, ${docker.length} Docker files`);
 
-    return { status: 'success', workflows: workflows.length, docker: docker.length };
+    console.log(
+      `Validated ${workflows.length} workflows, ${docker.length} Docker files`,
+    );
+
+    return {
+      status: 'success',
+      workflows: workflows.length,
+      docker: docker.length,
+    };
   }
 
   validateWorkflows() {
     const workflowsDir = '.github/workflows';
     if (!fs.existsSync(workflowsDir)) return [];
 
-    const workflows = fs.readdirSync(workflowsDir).filter(f => f.endsWith('.yml'));
-    
+    const workflows = fs
+      .readdirSync(workflowsDir)
+      .filter((f) => f.endsWith('.yml'));
+
     for (const workflow of workflows) {
       try {
-        const content = fs.readFileSync(path.join(workflowsDir, workflow), 'utf8');
+        const content = fs.readFileSync(
+          path.join(workflowsDir, workflow),
+          'utf8',
+        );
         // Basic YAML validation would go here
         console.log(`✅ ${workflow} is valid`);
       } catch (error) {
@@ -254,9 +268,13 @@ class DevOpsAgent {
   }
 
   validateDocker() {
-    const dockerFiles = ['docker-compose.yml', 'docker-compose.prod.yml', 'Dockerfile'];
-    const found = dockerFiles.filter(f => fs.existsSync(f));
-    
+    const dockerFiles = [
+      'docker-compose.yml',
+      'docker-compose.prod.yml',
+      'Dockerfile',
+    ];
+    const found = dockerFiles.filter((f) => fs.existsSync(f));
+
     for (const file of found) {
       console.log(`✅ ${file} exists`);
     }
@@ -268,14 +286,14 @@ class DevOpsAgent {
 class QAAgent {
   async run() {
     console.log('🧪 Analyzing test coverage...');
-    
+
     const backend = this.analyzeBackendTests();
     const frontend = this.analyzeFrontendTests();
-    
+
     // Generate QA report
     const report = this.generateQAReport(backend, frontend);
     fs.writeFileSync('qa-report.md', report);
-    
+
     console.log('Generated QA report');
 
     return { status: 'success', backend, frontend };
@@ -283,30 +301,30 @@ class QAAgent {
 
   analyzeBackendTests() {
     if (!fs.existsSync('backend')) return { tests: 0, coverage: 'unknown' };
-    
+
     const testFiles = this.findTestFiles('backend');
     return { tests: testFiles.length, coverage: 'analyzing' };
   }
 
   analyzeFrontendTests() {
     if (!fs.existsSync('frontend')) return { tests: 0, coverage: 'unknown' };
-    
+
     const testFiles = this.findTestFiles('frontend');
     return { tests: testFiles.length, coverage: 'analyzing' };
   }
 
   findTestFiles(dir) {
     if (!fs.existsSync(dir)) return [];
-    
+
     const testFiles = [];
     const files = fs.readdirSync(dir, { recursive: true });
-    
+
     for (const file of files) {
       if (file.includes('.test.') || file.includes('.spec.')) {
         testFiles.push(file);
       }
     }
-    
+
     return testFiles;
   }
 
@@ -336,13 +354,13 @@ Generated by NeonHub QA Agent
 class DocsAgent {
   async run() {
     console.log('📚 Updating documentation...');
-    
+
     // Update README if needed
     this.updateReadme();
-    
+
     // Check for broken links
     const links = this.checkMarkdownLinks();
-    
+
     console.log(`Checked ${links.length} markdown links`);
 
     return { status: 'success', links: links.length };
@@ -417,15 +435,15 @@ MIT License - see [LICENSE](./LICENSE) for details.
   }
 
   checkMarkdownLinks() {
-    const mdFiles = fs.readdirSync('.').filter(f => f.endsWith('.md'));
+    const mdFiles = fs.readdirSync('.').filter((f) => f.endsWith('.md'));
     const links = [];
-    
+
     for (const file of mdFiles) {
       const content = fs.readFileSync(file, 'utf8');
       const matches = content.match(/\[.*?\]\(.*?\)/g) || [];
       links.push(...matches);
     }
-    
+
     return links;
   }
 }
@@ -434,29 +452,37 @@ MIT License - see [LICENSE](./LICENSE) for details.
 if (require.main === module) {
   const manager = new NeonHubAgentManager();
   const args = process.argv.slice(2);
-  
+
   if (args.length === 0) {
     console.log('🤖 NeonHub Agent Manager');
     console.log('Usage: node agent-manager.js [agent-name|all]');
-    console.log('Available agents: architecture, backend, frontend, devops, qa, docs');
+    console.log(
+      'Available agents: architecture, backend, frontend, devops, qa, docs',
+    );
     process.exit(0);
   }
 
   const agentName = args[0];
-  
+
   if (agentName === 'all') {
-    manager.runAll().then(results => {
-      console.log('\n📊 Final Results:');
-      console.table(results);
-    }).catch(console.error);
+    manager
+      .runAll()
+      .then((results) => {
+        console.log('\n📊 Final Results:');
+        console.table(results);
+      })
+      .catch(console.error);
   } else {
-    manager.runAgent(agentName).then(result => {
-      console.log('\n✅ Agent completed:', result);
-    }).catch(error => {
-      console.error('\n❌ Agent failed:', error.message);
-      process.exit(1);
-    });
+    manager
+      .runAgent(agentName)
+      .then((result) => {
+        console.log('\n✅ Agent completed:', result);
+      })
+      .catch((error) => {
+        console.error('\n❌ Agent failed:', error.message);
+        process.exit(1);
+      });
   }
 }
 
-module.exports = { NeonHubAgentManager }; 
+module.exports = { NeonHubAgentManager };

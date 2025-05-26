@@ -56,4 +56,4 @@ Some aspects require manual testing:
 3. Real-time metric collection
 4. Integration with front-end components
 
-These should be tested in a development environment before release. 
+These should be tested in a development environment before release.

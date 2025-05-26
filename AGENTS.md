@@ -9,36 +9,42 @@ The NeonHub Agent System is a comprehensive automation framework that maintains 
 ### Specialized Agents
 
 #### 🏗️ **Architecture Agent**
+
 - **Purpose**: Maintains system design and architectural consistency
 - **Triggers**: Changes to architecture files, main branch pushes
 - **Actions**: Updates architecture.md, validates component relationships, breaks down features
 - **Files Monitored**: `architecture.md`, `IMPLEMENTATION_PLAN.md`, `PROJECT_OVERVIEW.md`
 
 #### 🔧 **Backend Agent**
+
 - **Purpose**: Ensures backend code quality and API consistency
 - **Triggers**: Backend code changes, main branch pushes
 - **Actions**: Lints code, runs tests, scaffolds missing routes, validates TypeScript
 - **Files Monitored**: `backend/**/*.ts`, Prisma schemas, package.json
 
 #### 🎨 **Frontend Agent**
+
 - **Purpose**: Maintains UI/UX consistency and component quality
 - **Triggers**: Frontend code changes, main branch pushes
 - **Actions**: Lints React code, runs tests, scaffolds components, validates builds
 - **Files Monitored**: `frontend/**/*.tsx`, components, package.json
 
 #### 🚀 **DevOps Agent**
+
 - **Purpose**: Ensures CI/CD pipeline health and infrastructure reliability
 - **Triggers**: Workflow changes, Docker changes, hourly schedule
 - **Actions**: Validates YAML, checks Docker configs, monitors security
 - **Files Monitored**: `.github/workflows/`, `docker-compose*.yml`, Dockerfiles
 
 #### 🧪 **QA Agent**
+
 - **Purpose**: Maintains test coverage and prevents regressions
 - **Triggers**: Code changes, test changes, main branch pushes
 - **Actions**: Analyzes coverage, generates tests, runs E2E tests
 - **Files Monitored**: Test files, source code for coverage analysis
 
 #### 📚 **Docs Agent**
+
 - **Purpose**: Keeps documentation synchronized with code
 - **Triggers**: Documentation changes, API changes, main branch pushes
 - **Actions**: Updates README, generates API docs, validates links
@@ -56,6 +62,7 @@ The agent system automatically runs on:
 4. **Manual trigger**: Run specific agents via GitHub Actions UI
 
 #### Manual Trigger
+
 ```bash
 # Via GitHub CLI
 gh workflow run agent-orchestrator.yml -f agent_type=backend
@@ -67,6 +74,7 @@ gh workflow run agent-orchestrator.yml -f agent_type=backend
 ### Local Development
 
 #### Prerequisites
+
 ```bash
 # Ensure Node.js is installed
 node --version  # Should be 18+
@@ -94,6 +102,7 @@ node scripts/agent-manager.js
 ```
 
 #### Example Output
+
 ```bash
 $ node scripts/agent-manager.js all
 
@@ -184,6 +193,7 @@ The system behavior is controlled by `agent-config.json`:
 ## Integration with Development Workflow
 
 ### Pre-commit Hooks
+
 ```bash
 # Add to .git/hooks/pre-commit
 #!/bin/bash
@@ -192,7 +202,9 @@ node scripts/agent-manager.js frontend
 ```
 
 ### VS Code Integration
+
 Add to `.vscode/tasks.json`:
+
 ```json
 {
   "version": "2.0.0",
@@ -208,6 +220,7 @@ Add to `.vscode/tasks.json`:
 ```
 
 ### Package.json Scripts
+
 ```json
 {
   "scripts": {
@@ -221,11 +234,13 @@ Add to `.vscode/tasks.json`:
 ## Monitoring and Debugging
 
 ### GitHub Actions Logs
+
 - Go to **Actions** tab in GitHub repository
 - Click on **NeonHub Agent Orchestrator** workflow
 - View individual job logs for detailed output
 
 ### Local Debugging
+
 ```bash
 # Enable verbose output
 DEBUG=1 node scripts/agent-manager.js backend
@@ -240,16 +255,19 @@ cat qa-report.md
 ### Common Issues
 
 #### Agent Fails to Run
+
 1. Check Node.js version (requires 18+)
 2. Ensure dependencies are installed (`npm ci`)
 3. Verify file permissions on scripts
 
 #### Linting Errors
+
 1. Run `npm run lint -- --fix` to auto-fix
 2. Check ESLint configuration
 3. Review agent-specific quality gates
 
 #### Test Failures
+
 1. Run tests locally: `npm test`
 2. Check test coverage: `npm test -- --coverage`
 3. Review QA agent report for insights
@@ -257,18 +275,21 @@ cat qa-report.md
 ## Best Practices
 
 ### For Developers
+
 1. **Run agents locally** before pushing to catch issues early
 2. **Review agent reports** to understand code quality trends
 3. **Keep configuration updated** as project evolves
 4. **Use conventional commits** to trigger appropriate agents
 
 ### For Maintainers
+
 1. **Monitor agent execution** in GitHub Actions
 2. **Update quality gates** as standards evolve
 3. **Review and approve** agent-generated commits
 4. **Customize triggers** based on team workflow
 
 ### For CI/CD
+
 1. **Agents run automatically** on main branch pushes
 2. **Parallel execution** for faster feedback on PRs
 3. **Failure strategies** prevent broken builds
@@ -284,4 +305,4 @@ cat qa-report.md
 
 ---
 
-*The NeonHub Agent System continuously evolves to maintain the highest standards of code quality, documentation, and system reliability.* 
+_The NeonHub Agent System continuously evolves to maintain the highest standards of code quality, documentation, and system reliability._

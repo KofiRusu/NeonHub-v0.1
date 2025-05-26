@@ -65,10 +65,22 @@ app.get('/health', (_, res) => {
 });
 
 // Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  logger.error('Unhandled error:', err);
-  res.status(500).json({ message: 'Internal server error', error: process.env.NODE_ENV === 'development' ? err.message : undefined });
-});
+app.use(
+  (
+    err: any,
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction,
+  ) => {
+    logger.error('Unhandled error:', err);
+    res
+      .status(500)
+      .json({
+        message: 'Internal server error',
+        error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+      });
+  },
+);
 
 // Socket.io connection handler
 io.on('connection', (socket) => {
@@ -79,4 +91,4 @@ io.on('connection', (socket) => {
   });
 });
 
-export { app, server, io }; 
+export { app, server, io };

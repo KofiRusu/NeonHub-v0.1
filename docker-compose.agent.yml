@@ -27,4 +27,4 @@ services:
 
 networks:
   neonhub_network:
-    external: true 
+    external: true

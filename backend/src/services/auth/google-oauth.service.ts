@@ -24,7 +24,8 @@ export class GoogleOAuthService {
     this.client = new OAuth2Client(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/auth/google/callback'
+      process.env.GOOGLE_REDIRECT_URI ||
+        'http://localhost:3000/auth/google/callback',
     );
     this.prisma = prisma;
   }
@@ -37,7 +38,7 @@ export class GoogleOAuthService {
       access_type: 'offline',
       scope: [
         'https://www.googleapis.com/auth/userinfo.profile',
-        'https://www.googleapis.com/auth/userinfo.email'
+        'https://www.googleapis.com/auth/userinfo.email',
       ],
       include_granted_scopes: true,
     });
@@ -63,7 +64,7 @@ export class GoogleOAuthService {
   async getUserInfo(accessToken: string): Promise<GoogleUserInfo> {
     try {
       const response = await fetch(
-        `https://www.googleapis.com/oauth2/v2/userinfo?access_token=${accessToken}`
+        `https://www.googleapis.com/oauth2/v2/userinfo?access_token=${accessToken}`,
       );
 
       if (!response.ok) {
@@ -89,7 +90,7 @@ export class GoogleOAuthService {
     try {
       // Exchange code for tokens
       const tokens = await this.exchangeCodeForTokens(code);
-      
+
       if (!tokens.access_token) {
         throw new Error('No access token received');
       }
@@ -103,7 +104,7 @@ export class GoogleOAuthService {
 
       // Check if user exists in database
       let user = await this.prisma.user.findUnique({
-        where: { email: googleUser.email }
+        where: { email: googleUser.email },
       });
 
       let isNewUser = false;
@@ -116,8 +117,8 @@ export class GoogleOAuthService {
             name: googleUser.name,
             avatar: googleUser.picture,
             password: '', // OAuth users don't have passwords
-            role: 'USER'
-          }
+            role: 'USER',
+          },
         });
         isNewUser = true;
       } else {
@@ -126,8 +127,8 @@ export class GoogleOAuthService {
           where: { id: user.id },
           data: {
             name: googleUser.name,
-            avatar: googleUser.picture
-          }
+            avatar: googleUser.picture,
+          },
         });
       }
 
@@ -143,10 +144,10 @@ export class GoogleOAuthService {
           email: user.email,
           name: user.name,
           avatar: user.avatar,
-          role: user.role
+          role: user.role,
         },
         token: jwtToken,
-        isNewUser
+        isNewUser,
       };
     } catch (error) {
       console.error('OAuth authentication error:', error);
@@ -158,9 +159,9 @@ export class GoogleOAuthService {
    * Store OAuth credentials in database
    */
   private async storeOAuthCredentials(
-    userId: string, 
-    tokens: any, 
-    googleUser: GoogleUserInfo
+    userId: string,
+    tokens: any,
+    googleUser: GoogleUserInfo,
   ) {
     try {
       await this.prisma.integrationCredential.upsert({
@@ -168,8 +169,8 @@ export class GoogleOAuthService {
           userId_platform_accountIdentifier: {
             userId,
             platform: 'google',
-            accountIdentifier: googleUser.email
-          }
+            accountIdentifier: googleUser.email,
+          },
         },
         update: {
           authToken: tokens.access_token,
@@ -180,8 +181,8 @@ export class GoogleOAuthService {
           metadata: {
             googleId: googleUser.id,
             picture: googleUser.picture,
-            verified: googleUser.verified_email
-          }
+            verified: googleUser.verified_email,
+          },
         },
         create: {
           userId,
@@ -195,9 +196,9 @@ export class GoogleOAuthService {
           metadata: {
             googleId: googleUser.id,
             picture: googleUser.picture,
-            verified: googleUser.verified_email
-          }
-        }
+            verified: googleUser.verified_email,
+          },
+        },
       });
     } catch (error) {
       console.error('Error storing OAuth credentials:', error);
@@ -217,12 +218,12 @@ export class GoogleOAuthService {
       {
         userId: user.id,
         email: user.email,
-        role: user.role
+        role: user.role,
       },
       process.env.JWT_SECRET,
       {
-        expiresIn: '7d'
-      }
+        expiresIn: '7d',
+      },
     );
   }
 
@@ -234,8 +235,8 @@ export class GoogleOAuthService {
       const credentials = await this.prisma.integrationCredential.findFirst({
         where: {
           userId,
-          platform: 'google'
-        }
+          platform: 'google',
+        },
       });
 
       if (!credentials || !credentials.refreshToken) {
@@ -243,18 +244,21 @@ export class GoogleOAuthService {
       }
 
       this.client.setCredentials({
-        refresh_token: credentials.refreshToken
+        refresh_token: credentials.refreshToken,
       });
 
-      const { credentials: newCredentials } = await this.client.refreshAccessToken();
+      const { credentials: newCredentials } =
+        await this.client.refreshAccessToken();
 
       // Update stored credentials
       await this.prisma.integrationCredential.update({
         where: { id: credentials.id },
         data: {
           authToken: newCredentials.access_token || credentials.authToken,
-          expiry: newCredentials.expiry_date ? new Date(newCredentials.expiry_date) : credentials.expiry
-        }
+          expiry: newCredentials.expiry_date
+            ? new Date(newCredentials.expiry_date)
+            : credentials.expiry,
+        },
       });
 
       return true;
@@ -272,8 +276,8 @@ export class GoogleOAuthService {
       const credentials = await this.prisma.integrationCredential.findFirst({
         where: {
           userId,
-          platform: 'google'
-        }
+          platform: 'google',
+        },
       });
 
       if (!credentials) {
@@ -287,7 +291,7 @@ export class GoogleOAuthService {
 
       // Remove from database
       await this.prisma.integrationCredential.delete({
-        where: { id: credentials.id }
+        where: { id: credentials.id },
       });
 
       return true;
@@ -304,11 +308,11 @@ export class GoogleOAuthService {
     try {
       const ticket = await this.client.verifyIdToken({
         idToken,
-        audience: process.env.GOOGLE_CLIENT_ID
+        audience: process.env.GOOGLE_CLIENT_ID,
       });
 
       const payload = ticket.getPayload();
-      
+
       if (!payload) {
         return null;
       }
@@ -320,11 +324,11 @@ export class GoogleOAuthService {
         name: payload.name || '',
         given_name: payload.given_name || '',
         family_name: payload.family_name || '',
-        picture: payload.picture || ''
+        picture: payload.picture || '',
       };
     } catch (error) {
       console.error('Error verifying ID token:', error);
       return null;
     }
   }
-} 
+}

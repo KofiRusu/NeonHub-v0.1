@@ -15,8 +15,10 @@ class NeonHubAgentOrchestrator {
     this.config = this.loadConfig();
     this.failureTracking = new Map();
     this.lastRunTimes = new Map();
-    this.octokit = process.env.GITHUB_TOKEN ? new Octokit({ auth: process.env.GITHUB_TOKEN }) : null;
-    
+    this.octokit = process.env.GITHUB_TOKEN
+      ? new Octokit({ auth: process.env.GITHUB_TOKEN })
+      : null;
+
     // Setup git configuration
     this.setupGitConfig();
   }
@@ -33,8 +35,14 @@ class NeonHubAgentOrchestrator {
   setupGitConfig() {
     try {
       const globalSettings = this.config.global_settings;
-      execSync(`git config user.name "${globalSettings.git_config.user_name}"`, { stdio: 'inherit' });
-      execSync(`git config user.email "${globalSettings.git_config.user_email}"`, { stdio: 'inherit' });
+      execSync(
+        `git config user.name "${globalSettings.git_config.user_name}"`,
+        { stdio: 'inherit' },
+      );
+      execSync(
+        `git config user.email "${globalSettings.git_config.user_email}"`,
+        { stdio: 'inherit' },
+      );
     } catch (error) {
       console.warn('⚠️ Failed to setup git config:', error.message);
     }
@@ -53,14 +61,13 @@ class NeonHubAgentOrchestrator {
         console.log(`\n🔧 Running ${agentName} agent...`);
         const result = await this.runSingleAgent(agentName);
         results[agentName] = result;
-        
+
         // Reset failure count on success
         this.failureTracking.delete(agentName);
-        
       } catch (error) {
         console.error(`❌ ${agentName} agent failed:`, error.message);
         results[agentName] = { error: error.message };
-        
+
         // Track failures and handle escalation
         await this.handleAgentFailure(agentName, error);
       }
@@ -72,9 +79,11 @@ class NeonHubAgentOrchestrator {
   async runSingleAgent(agentName) {
     const agentConfig = this.config.agents[agentName];
     const startTime = Date.now();
-    
-    console.log(`  📋 Responsibilities: ${agentConfig.responsibilities.slice(0, 2).join(', ')}...`);
-    
+
+    console.log(
+      `  📋 Responsibilities: ${agentConfig.responsibilities.slice(0, 2).join(', ')}...`,
+    );
+
     // Check if agent is paused due to failures
     if (this.isAgentPaused(agentName)) {
       console.log(`  ⏸️ Agent paused due to consecutive failures`);
@@ -113,32 +122,32 @@ class NeonHubAgentOrchestrator {
 
     const duration = Date.now() - startTime;
     console.log(`  ✅ ${agentName} agent completed in ${duration}ms`);
-    
+
     this.lastRunTimes.set(agentName, new Date());
-    
-    return { 
-      status: 'success', 
+
+    return {
+      status: 'success',
       duration,
       hasChanges,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 
   async runArchitectureAgent(config) {
     console.log('  🏗️ Analyzing system architecture...');
-    
+
     let hasChanges = false;
-    
+
     // Check for architecture inconsistencies
     if (fs.existsSync('architecture.md')) {
       const architectureContent = fs.readFileSync('architecture.md', 'utf8');
-      
+
       // Update last modified date
       const updatedContent = architectureContent.replace(
         /Last updated: .*/,
-        `Last updated: ${new Date().toISOString().split('T')[0]}`
+        `Last updated: ${new Date().toISOString().split('T')[0]}`,
       );
-      
+
       if (updatedContent !== architectureContent) {
         fs.writeFileSync('architecture.md', updatedContent);
         hasChanges = true;
@@ -148,18 +157,18 @@ class NeonHubAgentOrchestrator {
 
     // Validate component relationships
     console.log('    🔍 Validating component relationships...');
-    
+
     // Run quality gates
     await this.runQualityGates(config.quality_gates, 'architecture');
-    
+
     return hasChanges;
   }
 
   async runBackendAgent(config) {
     console.log('  🔧 Analyzing backend code...');
-    
+
     let hasChanges = false;
-    
+
     if (fs.existsSync('backend')) {
       // Auto-fix linting issues
       try {
@@ -187,15 +196,15 @@ class NeonHubAgentOrchestrator {
     }
 
     await this.runQualityGates(config.quality_gates, 'backend');
-    
+
     return hasChanges;
   }
 
   async runFrontendAgent(config) {
     console.log('  🎨 Analyzing frontend code...');
-    
+
     let hasChanges = false;
-    
+
     if (fs.existsSync('frontend')) {
       // Auto-fix linting issues
       try {
@@ -217,19 +226,19 @@ class NeonHubAgentOrchestrator {
     }
 
     await this.runQualityGates(config.quality_gates, 'frontend');
-    
+
     return hasChanges;
   }
 
   async runDevOpsAgent(config) {
     console.log('  🚀 Validating infrastructure...');
-    
+
     let hasChanges = false;
-    
+
     // Validate GitHub Actions workflows
     const workflows = this.findFiles('.github/workflows', '.yml');
     console.log(`    📋 Found ${workflows.length} workflow files`);
-    
+
     // Validate Docker configurations
     if (fs.existsSync('docker-compose.yml')) {
       try {
@@ -242,22 +251,24 @@ class NeonHubAgentOrchestrator {
 
     // Check for security vulnerabilities
     console.log('    🔒 Security scan in progress...');
-    
+
     await this.runQualityGates(config.quality_gates, 'devops');
-    
+
     return hasChanges;
   }
 
   async runQAAgent(config) {
     console.log('  🧪 Analyzing test coverage...');
-    
+
     let hasChanges = false;
-    
+
     // Check backend test coverage
     if (fs.existsSync('backend')) {
       try {
         console.log('    📊 Backend test coverage analysis...');
-        execSync('cd backend && npm test -- --passWithNoTests', { stdio: 'pipe' });
+        execSync('cd backend && npm test -- --passWithNoTests', {
+          stdio: 'pipe',
+        });
         console.log('    ✅ Backend tests passing');
       } catch (error) {
         console.log('    ⚠️ Backend tests need attention');
@@ -268,7 +279,10 @@ class NeonHubAgentOrchestrator {
     if (fs.existsSync('frontend')) {
       try {
         console.log('    📊 Frontend test coverage analysis...');
-        execSync('cd frontend && npm test -- --watchAll=false --passWithNoTests', { stdio: 'pipe' });
+        execSync(
+          'cd frontend && npm test -- --watchAll=false --passWithNoTests',
+          { stdio: 'pipe' },
+        );
         console.log('    ✅ Frontend tests passing');
       } catch (error) {
         console.log('    ⚠️ Frontend tests need attention');
@@ -284,27 +298,27 @@ class NeonHubAgentOrchestrator {
     }
 
     await this.runQualityGates(config.quality_gates, 'qa');
-    
+
     return hasChanges;
   }
 
   async runDocsAgent(config) {
     console.log('  📚 Updating documentation...');
-    
+
     let hasChanges = false;
-    
+
     // Update README if needed
     if (fs.existsSync('README.md')) {
       let readme = fs.readFileSync('README.md', 'utf8');
       const timestamp = new Date().toISOString().split('T')[0];
-      
+
       // Update last modified section
       if (readme.includes('Last updated:')) {
         const updatedReadme = readme.replace(
           /Last updated: .*/,
-          `Last updated: ${timestamp}`
+          `Last updated: ${timestamp}`,
         );
-        
+
         if (updatedReadme !== readme) {
           fs.writeFileSync('README.md', updatedReadme);
           hasChanges = true;
@@ -319,15 +333,15 @@ class NeonHubAgentOrchestrator {
     console.log(`    📄 Found ${markdownFiles.length} markdown files`);
 
     await this.runQualityGates(config.quality_gates, 'docs');
-    
+
     return hasChanges;
   }
 
   async runQualityGates(gates, agentName) {
     if (!gates) return;
-    
+
     console.log(`    🔍 Running quality gates for ${agentName}...`);
-    
+
     for (const [gateName, command] of Object.entries(gates)) {
       try {
         execSync(command, { stdio: 'pipe' });
@@ -340,15 +354,15 @@ class NeonHubAgentOrchestrator {
 
   async autoCommitChanges(agentName, agentConfig) {
     if (!agentConfig.auto_commit?.enabled) return;
-    
+
     console.log(`  🔄 Auto-committing changes for ${agentName}...`);
-    
+
     try {
       // Stage all changes
       if (agentConfig.auto_commit.stage_all) {
         execSync('git add -A', { stdio: 'pipe' });
       }
-      
+
       // Check if there are changes to commit
       try {
         execSync('git diff --staged --quiet', { stdio: 'pipe' });
@@ -357,30 +371,40 @@ class NeonHubAgentOrchestrator {
       } catch (error) {
         // There are changes to commit (good!)
       }
-      
+
       // Generate change summary
       let changeSummary = '';
       try {
-        const diffOutput = execSync('git diff --staged --name-only', { encoding: 'utf8' });
-        const changedFiles = diffOutput.trim().split('\n').filter(f => f);
+        const diffOutput = execSync('git diff --staged --name-only', {
+          encoding: 'utf8',
+        });
+        const changedFiles = diffOutput
+          .trim()
+          .split('\n')
+          .filter((f) => f);
         if (changedFiles.length > 0) {
           changeSummary = `updated ${changedFiles.length} files`;
         }
       } catch (error) {
         changeSummary = 'routine update';
       }
-      
+
       // Use auto: prefix format with agent name and change summary
-      const commitMessage = changeSummary 
+      const commitMessage = changeSummary
         ? `auto: ${agentName} – ${changeSummary}`
         : `auto: chore(agent): routine update`;
-      
+
       // Commit changes with --no-verify to bypass hooks
-      execSync(`git commit --no-verify -m "${commitMessage}"`, { stdio: 'pipe' });
+      execSync(`git commit --no-verify -m "${commitMessage}"`, {
+        stdio: 'pipe',
+      });
       console.log(`  ✅ Changes committed: ${commitMessage}`);
-      
+
       // Push immediately if configured
-      if (agentConfig.auto_commit.push_immediately && !this.isCommitLoopRisk()) {
+      if (
+        agentConfig.auto_commit.push_immediately &&
+        !this.isCommitLoopRisk()
+      ) {
         try {
           execSync('git push origin main', { stdio: 'pipe' });
           console.log('  🚀 Changes pushed to remote');
@@ -388,7 +412,6 @@ class NeonHubAgentOrchestrator {
           console.log('  ⚠️ Push failed, will retry later');
         }
       }
-      
     } catch (error) {
       console.error(`  ❌ Auto-commit failed for ${agentName}:`, error.message);
     }
@@ -397,11 +420,18 @@ class NeonHubAgentOrchestrator {
   isCommitLoopRisk() {
     // Simple heuristic to prevent infinite loops
     try {
-      const lastCommits = execSync('git log --oneline -n 5', { encoding: 'utf8' });
-      const agentCommits = lastCommits.split('\n').filter(line => 
-        line.includes('auto-lint') || line.includes('auto-update') || line.includes('auto-fix')
-      );
-      
+      const lastCommits = execSync('git log --oneline -n 5', {
+        encoding: 'utf8',
+      });
+      const agentCommits = lastCommits
+        .split('\n')
+        .filter(
+          (line) =>
+            line.includes('auto-lint') ||
+            line.includes('auto-update') ||
+            line.includes('auto-fix'),
+        );
+
       // If more than 3 of the last 5 commits are from agents, consider it risky
       return agentCommits.length >= 3;
     } catch (error) {
@@ -412,15 +442,17 @@ class NeonHubAgentOrchestrator {
   async handleAgentFailure(agentName, error) {
     const agentConfig = this.config.agents[agentName];
     const failureHandling = agentConfig.failure_handling;
-    
+
     if (!failureHandling) return;
-    
+
     // Track consecutive failures
     const currentFailures = (this.failureTracking.get(agentName) || 0) + 1;
     this.failureTracking.set(agentName, currentFailures);
-    
-    console.log(`  🚨 Agent ${agentName} failure count: ${currentFailures}/${failureHandling.max_consecutive_failures}`);
-    
+
+    console.log(
+      `  🚨 Agent ${agentName} failure count: ${currentFailures}/${failureHandling.max_consecutive_failures}`,
+    );
+
     // Escalate if threshold reached
     if (currentFailures >= failureHandling.max_consecutive_failures) {
       await this.escalateAgentFailure(agentName, error, currentFailures);
@@ -430,13 +462,17 @@ class NeonHubAgentOrchestrator {
   async escalateAgentFailure(agentName, error, failureCount) {
     const agentConfig = this.config.agents[agentName];
     const escalationSettings = this.config.global_settings.escalation_settings;
-    
+
     console.log(`  🚨 Escalating ${agentName} agent failure...`);
-    
-    if (agentConfig.failure_handling.escalation_action === 'create_github_issue' && this.octokit) {
+
+    if (
+      agentConfig.failure_handling.escalation_action ===
+        'create_github_issue' &&
+      this.octokit
+    ) {
       try {
         const issueTemplate = escalationSettings.github_issue_template;
-        
+
         const title = issueTemplate.title.replace('{{agent_name}}', agentName);
         const body = issueTemplate.body_template
           .replace('{{agent_name}}', agentName)
@@ -444,59 +480,68 @@ class NeonHubAgentOrchestrator {
           .replace('{{last_error}}', error.message)
           .replace('{{timestamp}}', new Date().toISOString())
           .replace('{{error_log}}', error.stack || error.message);
-        
+
         const issue = await this.octokit.issues.create({
           owner: process.env.GITHUB_REPOSITORY_OWNER || 'neonhub',
           repo: process.env.GITHUB_REPOSITORY_NAME || 'NeonHub',
           title,
           body,
           labels: issueTemplate.labels,
-          assignees: issueTemplate.assignees.map(a => a.replace('@', '').replace('neonhub/', ''))
+          assignees: issueTemplate.assignees.map((a) =>
+            a.replace('@', '').replace('neonhub/', ''),
+          ),
         });
-        
+
         console.log(`  ✅ GitHub issue created: #${issue.data.number}`);
-        
       } catch (issueError) {
-        console.error(`  ❌ Failed to create GitHub issue:`, issueError.message);
+        console.error(
+          `  ❌ Failed to create GitHub issue:`,
+          issueError.message,
+        );
       }
     }
-    
+
     // Pause agent if configured
     if (agentConfig.failure_handling.pause_on_failure) {
       const pauseUntil = new Date();
-      pauseUntil.setMinutes(pauseUntil.getMinutes() + agentConfig.failure_handling.retry_delay_minutes);
+      pauseUntil.setMinutes(
+        pauseUntil.getMinutes() +
+          agentConfig.failure_handling.retry_delay_minutes,
+      );
       this.pausedAgents = this.pausedAgents || new Map();
       this.pausedAgents.set(agentName, pauseUntil);
-      
-      console.log(`  ⏸️ Agent ${agentName} paused until ${pauseUntil.toISOString()}`);
+
+      console.log(
+        `  ⏸️ Agent ${agentName} paused until ${pauseUntil.toISOString()}`,
+      );
     }
   }
 
   isAgentPaused(agentName) {
     if (!this.pausedAgents) return false;
-    
+
     const pauseUntil = this.pausedAgents.get(agentName);
     if (!pauseUntil) return false;
-    
+
     if (new Date() > pauseUntil) {
       this.pausedAgents.delete(agentName);
       return false;
     }
-    
+
     return true;
   }
 
   findTestFiles(directory) {
     if (!fs.existsSync(directory)) return [];
-    
+
     const testFiles = [];
     const findTestsRecursive = (dir) => {
       const files = fs.readdirSync(dir);
-      
+
       for (const file of files) {
         const fullPath = path.join(dir, file);
         const stat = fs.statSync(fullPath);
-        
+
         if (stat.isDirectory()) {
           findTestsRecursive(fullPath);
         } else if (file.includes('.test.') || file.includes('.spec.')) {
@@ -504,22 +549,22 @@ class NeonHubAgentOrchestrator {
         }
       }
     };
-    
+
     findTestsRecursive(directory);
     return testFiles;
   }
 
   findFiles(directory, extension) {
     if (!fs.existsSync(directory)) return [];
-    
+
     const files = [];
     const findFilesRecursive = (dir) => {
       const entries = fs.readdirSync(dir);
-      
+
       for (const entry of entries) {
         const fullPath = path.join(dir, entry);
         const stat = fs.statSync(fullPath);
-        
+
         if (stat.isDirectory()) {
           findFilesRecursive(fullPath);
         } else if (entry.endsWith(extension)) {
@@ -527,14 +572,14 @@ class NeonHubAgentOrchestrator {
         }
       }
     };
-    
+
     findFilesRecursive(directory);
     return files;
   }
 
   generateCoverageReport() {
     const timestamp = new Date().toISOString();
-    
+
     return `# QA Coverage Report
 
 **Generated**: ${timestamp}
@@ -566,9 +611,11 @@ class NeonHubAgentOrchestrator {
 
   generateStatusReport(results) {
     const timestamp = new Date().toISOString();
-    const successCount = Object.values(results).filter(r => r.status === 'success').length;
+    const successCount = Object.values(results).filter(
+      (r) => r.status === 'success',
+    ).length;
     const totalCount = Object.keys(results).length;
-    
+
     return `# NeonHub Agent Orchestrator Report
 
 **Timestamp**: ${timestamp}
@@ -577,11 +624,18 @@ class NeonHubAgentOrchestrator {
 
 ## Agent Status
 
-${Object.entries(results).map(([agent, result]) => {
-  const emoji = result.status === 'success' ? '✅' : result.status === 'paused' ? '⏸️' : '❌';
-  const duration = result.duration ? `(${result.duration}ms)` : '';
-  return `- ${emoji} **${agent}**: ${result.status} ${duration}`;
-}).join('\n')}
+${Object.entries(results)
+  .map(([agent, result]) => {
+    const emoji =
+      result.status === 'success'
+        ? '✅'
+        : result.status === 'paused'
+          ? '⏸️'
+          : '❌';
+    const duration = result.duration ? `(${result.duration}ms)` : '';
+    return `- ${emoji} **${agent}**: ${result.status} ${duration}`;
+  })
+  .join('\n')}
 
 ## Configuration Active
 
@@ -603,24 +657,23 @@ Agents will automatically run again in 5 minutes or on the next push to main.
 // CLI Interface
 async function main() {
   const orchestrator = new NeonHubAgentOrchestrator();
-  
+
   try {
     const results = await orchestrator.runAllAgents();
-    
+
     // Generate status report
     const report = orchestrator.generateStatusReport(results);
     fs.writeFileSync('agent-status.md', report);
-    
+
     console.log('\n📊 Final Results:');
     console.table(results);
-    
+
     console.log('\n🎉 Agent orchestration complete!');
     console.log('📄 Status report saved to agent-status.md');
-    
+
     // Exit with appropriate code
-    const hasErrors = Object.values(results).some(r => r.error);
+    const hasErrors = Object.values(results).some((r) => r.error);
     process.exit(hasErrors ? 1 : 0);
-    
   } catch (error) {
     console.error('❌ Agent orchestration failed:', error);
     process.exit(1);
@@ -633,4 +686,4 @@ module.exports = NeonHubAgentOrchestrator;
 // Run if called directly
 if (require.main === module) {
   main().catch(console.error);
-} 
+}

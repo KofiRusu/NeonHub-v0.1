@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { 
+import {
   getMessages,
   createMessage,
-  deleteMessage
+  deleteMessage,
 } from '../controllers/message.controller';
 import { protect } from '../middleware/auth.middleware';
 
@@ -29,4 +29,4 @@ router.post('/', protect, createMessage);
  */
 router.delete('/:id', protect, deleteMessage);
 
-export default router; 
+export default router;

@@ -1,3 +1,3 @@
 # Project Overview
 
-_TODO: Add detailed project overview_ 
+_TODO: Add detailed project overview_

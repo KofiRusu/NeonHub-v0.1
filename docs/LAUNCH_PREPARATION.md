@@ -50,14 +50,15 @@ The script will provide detailed output of each step, and will display admin cre
 
 After running the launch preparation script, the following demo accounts are available:
 
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | admin@neonhub.com | password123 |
-| User | user@neonhub.com | password123 |
+| Role              | Email                 | Password    |
+| ----------------- | --------------------- | ----------- |
+| Admin             | admin@neonhub.com     | password123 |
+| User              | user@neonhub.com      | password123 |
 | Marketing Manager | marketing@neonhub.com | password123 |
-| Content Creator | content@neonhub.com | password123 |
+| Content Creator   | content@neonhub.com   | password123 |
 
 The system is seeded with:
+
 - 3 projects
 - 3+ AI agents
 - Multiple marketing campaigns
@@ -70,6 +71,7 @@ The system is seeded with:
 ### 1. Real-time Agent Monitoring
 
 Show the real-time monitoring capabilities:
+
 - Navigate to Dashboard > Agents
 - Select an agent and click "Run"
 - Watch the real-time output in the terminal-like interface
@@ -78,6 +80,7 @@ Show the real-time monitoring capabilities:
 ### 2. Autonomous Agent Scheduling
 
 Demonstrate the scheduling system:
+
 - Navigate to Dashboard > Agents > [Agent Name] > Schedule
 - Show the current schedule
 - Create a new schedule (e.g., run every 5 minutes for demo purposes)
@@ -87,6 +90,7 @@ Demonstrate the scheduling system:
 ### 3. Marketing Campaign Management
 
 Show the marketing automation capabilities:
+
 - Navigate to Dashboard > Marketing > Campaigns
 - Select an existing campaign
 - Show how agents are attached to the campaign
@@ -95,6 +99,7 @@ Show the marketing automation capabilities:
 ### 4. Data Analysis and Insights
 
 Demonstrate the analytics features:
+
 - Navigate to Dashboard > Marketing > Trends
 - Show trend predictions from AI agents
 - Navigate to campaign analytics to show performance metrics
@@ -103,13 +108,14 @@ Demonstrate the analytics features:
 
 The launch preparation script schedules the following agents:
 
-| Agent | Schedule | Purpose |
-|-------|----------|---------|
-| Content Creator Pro | Hourly | Generates marketing content regularly |
-| Trend Analyzer | Daily at 08:00 | Provides daily market insights |
-| Social Media Manager | Every 4 hours | Manages social media posting and engagement |
+| Agent                | Schedule       | Purpose                                     |
+| -------------------- | -------------- | ------------------------------------------- |
+| Content Creator Pro  | Hourly         | Generates marketing content regularly       |
+| Trend Analyzer       | Daily at 08:00 | Provides daily market insights              |
+| Social Media Manager | Every 4 hours  | Manages social media posting and engagement |
 
 To modify these schedules:
+
 1. Navigate to Dashboard > Agents
 2. Select the agent
 3. Click on the Schedule tab
@@ -120,6 +126,7 @@ To modify these schedules:
 ### Database Connection Issues
 
 If the script reports database connection problems:
+
 - Verify DATABASE_URL in the .env file
 - Ensure PostgreSQL is running
 - Check network access to the database
@@ -127,6 +134,7 @@ If the script reports database connection problems:
 ### Agent Execution Failures
 
 If agents fail to execute:
+
 - Check agent configuration in the database
 - Verify any external API dependencies
 - Check execution logs for specific error messages
@@ -134,6 +142,7 @@ If agents fail to execute:
 ### WebSocket Connection Issues
 
 If real-time updates aren't working:
+
 - Ensure the WebSocket server is running
 - Check browser console for connection errors
 - Verify frontend configuration is pointing to the correct WebSocket URL
@@ -141,7 +150,8 @@ If real-time updates aren't working:
 ### Missing Environment Variables
 
 If the script reports missing environment variables:
+
 1. Create or update your `.env` file
 2. Required variables: DATABASE_URL, JWT_SECRET, PORT
 
-For additional support, contact the development team or refer to the project documentation. 
+For additional support, contact the development team or refer to the project documentation.

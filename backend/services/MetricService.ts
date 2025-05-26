@@ -158,11 +158,11 @@ export class MetricService {
    */
   async getCampaignMetrics(campaignId: string): Promise<Metric[]> {
     return this.prisma.metric.findMany({
-      where: { 
-        campaignId 
+      where: {
+        campaignId,
       },
-      orderBy: { 
-        timestamp: 'desc' 
+      orderBy: {
+        timestamp: 'desc',
       },
     });
   }
@@ -180,8 +180,8 @@ export class MetricService {
           equals: agentId,
         },
       },
-      orderBy: { 
-        timestamp: 'desc' 
+      orderBy: {
+        timestamp: 'desc',
       },
     });
   }
@@ -200,4 +200,4 @@ export function getMetricService(prisma: PrismaClient): MetricService {
     metricServiceInstance = new MetricService(prisma);
   }
   return metricServiceInstance;
-} 
+}

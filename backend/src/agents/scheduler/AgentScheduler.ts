@@ -10,7 +10,7 @@ export enum AgentPriority {
   LOW = 1,
   NORMAL = 2,
   HIGH = 3,
-  CRITICAL = 4
+  CRITICAL = 4,
 }
 
 /**
@@ -35,12 +35,12 @@ interface SchedulerOptions {
    * If true, any jobs that were scheduled to run while the server was down will be run on startup
    */
   runMissedOnStartup?: boolean;
-  
+
   /**
    * Whether to immediately start scheduling on instantiation
    */
   autoStart?: boolean;
-  
+
   /**
    * Default time in milliseconds to wait between checking for agents to run
    */
@@ -82,7 +82,7 @@ export class AgentScheduler {
 
   /**
    * Create a new agent scheduler
-   * 
+   *
    * @param prisma Prisma client instance
    * @param agentManager Agent manager instance
    * @param options Scheduler options
@@ -90,7 +90,7 @@ export class AgentScheduler {
   constructor(
     prisma: PrismaClient,
     agentManager: AgentManager,
-    options: SchedulerOptions = {}
+    options: SchedulerOptions = {},
   ) {
     this.prisma = prisma;
     this.agentManager = agentManager;
@@ -102,14 +102,14 @@ export class AgentScheduler {
       maxBackoffDelay: 300000,
       runMissedOnStartup: false,
       autoStart: false,
-      ...options
+      ...options,
     };
 
     if (this.options.autoStart) {
       this.start();
     }
   }
-  
+
   /**
    * Start the scheduler
    */
@@ -120,7 +120,9 @@ export class AgentScheduler {
     }
 
     this.isRunning = true;
-    logger.info(`Scheduler started, checking every ${this.options.checkInterval / 1000} seconds`);
+    logger.info(
+      `Scheduler started, checking every ${this.options.checkInterval / 1000} seconds`,
+    );
     logger.info(`Max concurrent agents: ${this.options.maxConcurrentAgents}`);
 
     // Load existing scheduled agents
@@ -139,7 +141,7 @@ export class AgentScheduler {
       this.processScheduledTasks();
     }, this.options.checkInterval);
   }
-  
+
   /**
    * Stop the scheduler
    */
@@ -166,10 +168,10 @@ export class AgentScheduler {
    * @param enabled Whether scheduling is enabled
    */
   async scheduleAgent(
-    agentId: string, 
-    cronExpression: string, 
+    agentId: string,
+    cronExpression: string,
     priority: AgentPriority = AgentPriority.NORMAL,
-    enabled = true
+    enabled = true,
   ): Promise<void> {
     try {
       // Validate cron expression
@@ -219,7 +221,7 @@ export class AgentScheduler {
    */
   unscheduleAgent(agentId: string): void {
     this.scheduledTasks.delete(agentId);
-    this.taskQueue = this.taskQueue.filter(task => task.agentId !== agentId);
+    this.taskQueue = this.taskQueue.filter((task) => task.agentId !== agentId);
     logger.info(`Agent ${agentId} unscheduled`);
   }
 
@@ -240,8 +242,10 @@ export class AgentScheduler {
       for (const agent of agents) {
         if (agent.scheduleExpression) {
           try {
-            const nextRunTime = agent.nextRunAt || this.calculateNextRunTime(agent.scheduleExpression);
-            
+            const nextRunTime =
+              agent.nextRunAt ||
+              this.calculateNextRunTime(agent.scheduleExpression);
+
             const task: ScheduledTask = {
               agentId: agent.id,
               agent,
@@ -270,7 +274,7 @@ export class AgentScheduler {
   private async processScheduledTasks(): Promise<void> {
     try {
       const now = new Date();
-      
+
       // Sort queue by priority and next run time
       this.taskQueue.sort((a, b) => {
         // First by priority (higher priority first)
@@ -282,14 +286,17 @@ export class AgentScheduler {
       });
 
       // Process tasks that are ready to run
-      const tasksToRun = this.taskQueue.filter(task => {
-        return task.nextRunTime <= now && 
-               (!task.backoffUntil || task.backoffUntil <= now) &&
-               !this.runningAgents.has(task.agentId);
+      const tasksToRun = this.taskQueue.filter((task) => {
+        return (
+          task.nextRunTime <= now &&
+          (!task.backoffUntil || task.backoffUntil <= now) &&
+          !this.runningAgents.has(task.agentId)
+        );
       });
 
       // Respect concurrency limit
-      const availableSlots = this.options.maxConcurrentAgents - this.runningAgents.size;
+      const availableSlots =
+        this.options.maxConcurrentAgents - this.runningAgents.size;
       const tasksToExecute = tasksToRun.slice(0, availableSlots);
 
       for (const task of tasksToExecute) {
@@ -310,7 +317,9 @@ export class AgentScheduler {
   private async executeTask(task: ScheduledTask): Promise<void> {
     try {
       this.runningAgents.add(task.agentId);
-      logger.info(`Executing scheduled agent ${task.agentId} (priority: ${task.priority})`);
+      logger.info(
+        `Executing scheduled agent ${task.agentId} (priority: ${task.priority})`,
+      );
 
       // Update agent status
       await this.prisma.aIAgent.update({
@@ -340,7 +349,10 @@ export class AgentScheduler {
    * @param task The failed task
    * @param error The error that occurred
    */
-  private async handleTaskFailure(task: ScheduledTask, error: any): Promise<void> {
+  private async handleTaskFailure(
+    task: ScheduledTask,
+    error: any,
+  ): Promise<void> {
     task.retryCount++;
     task.lastError = error instanceof Error ? error.message : String(error);
 
@@ -350,14 +362,21 @@ export class AgentScheduler {
       // Calculate backoff delay with exponential backoff
       const baseDelay = this.options.baseBackoffDelay;
       const maxDelay = this.options.maxBackoffDelay;
-      const delay = Math.min(baseDelay * Math.pow(2, task.retryCount - 1), maxDelay);
-      
+      const delay = Math.min(
+        baseDelay * Math.pow(2, task.retryCount - 1),
+        maxDelay,
+      );
+
       task.backoffUntil = new Date(Date.now() + delay);
-      
-      logger.warn(`Agent ${task.agentId} failed (attempt ${task.retryCount}/${maxRetries}), will retry in ${delay}ms`);
+
+      logger.warn(
+        `Agent ${task.agentId} failed (attempt ${task.retryCount}/${maxRetries}), will retry in ${delay}ms`,
+      );
     } else {
-      logger.error(`Agent ${task.agentId} failed after ${maxRetries} attempts, removing from schedule`);
-      
+      logger.error(
+        `Agent ${task.agentId} failed after ${maxRetries} attempts, removing from schedule`,
+      );
+
       // Update agent status to ERROR
       await this.prisma.aIAgent.update({
         where: { id: task.agentId },
@@ -376,7 +395,9 @@ export class AgentScheduler {
     for (const [agentId, task] of this.scheduledTasks) {
       if (task.agent.scheduleExpression && task.nextRunTime <= new Date()) {
         try {
-          const nextRunTime = this.calculateNextRunTime(task.agent.scheduleExpression);
+          const nextRunTime = this.calculateNextRunTime(
+            task.agent.scheduleExpression,
+          );
           task.nextRunTime = nextRunTime;
 
           // Update in database
@@ -385,7 +406,10 @@ export class AgentScheduler {
             data: { nextRunAt: nextRunTime },
           });
         } catch (error) {
-          logger.error(`Error updating next run time for agent ${agentId}:`, error);
+          logger.error(
+            `Error updating next run time for agent ${agentId}:`,
+            error,
+          );
         }
       }
     }
@@ -397,12 +421,14 @@ export class AgentScheduler {
   private async runMissedJobs(): Promise<void> {
     const now = new Date();
     const missedTasks = Array.from(this.scheduledTasks.values()).filter(
-      task => task.nextRunTime < now
+      (task) => task.nextRunTime < now,
     );
 
     if (missedTasks.length > 0) {
-      logger.info(`Found ${missedTasks.length} missed jobs, executing them now`);
-      
+      logger.info(
+        `Found ${missedTasks.length} missed jobs, executing them now`,
+      );
+
       for (const task of missedTasks) {
         if (this.runningAgents.size < this.options.maxConcurrentAgents) {
           await this.executeTask(task);
@@ -417,7 +443,7 @@ export class AgentScheduler {
    */
   private addToQueue(task: ScheduledTask): void {
     // Remove existing task if present
-    this.taskQueue = this.taskQueue.filter(t => t.agentId !== task.agentId);
+    this.taskQueue = this.taskQueue.filter((t) => t.agentId !== task.agentId);
     // Add new task
     this.taskQueue.push(task);
   }
@@ -429,13 +455,17 @@ export class AgentScheduler {
    */
   private getAgentPriority(agent: AIAgent): AgentPriority {
     const config = agent.configuration as any;
-    
+
     if (config?.priority) {
       switch (config.priority.toLowerCase()) {
-        case 'critical': return AgentPriority.CRITICAL;
-        case 'high': return AgentPriority.HIGH;
-        case 'low': return AgentPriority.LOW;
-        default: return AgentPriority.NORMAL;
+        case 'critical':
+          return AgentPriority.CRITICAL;
+        case 'high':
+          return AgentPriority.HIGH;
+        case 'low':
+          return AgentPriority.LOW;
+        default:
+          return AgentPriority.NORMAL;
       }
     }
 
@@ -457,7 +487,7 @@ export class AgentScheduler {
         return AgentPriority.NORMAL;
     }
   }
-  
+
   /**
    * Calculate the next run time for a cron expression
    * @param cronExpression Cron expression
@@ -471,7 +501,7 @@ export class AgentScheduler {
       throw new Error(`Invalid cron expression: ${cronExpression}`);
     }
   }
-  
+
   /**
    * Check if the scheduler is running
    */
@@ -511,7 +541,7 @@ export class AgentScheduler {
     backoffUntil?: Date;
     isRunning: boolean;
   }> {
-    return Array.from(this.scheduledTasks.values()).map(task => ({
+    return Array.from(this.scheduledTasks.values()).map((task) => ({
       agentId: task.agentId,
       agentName: task.agent.name,
       priority: task.priority,
@@ -522,4 +552,4 @@ export class AgentScheduler {
       isRunning: this.runningAgents.has(task.agentId),
     }));
   }
-} 
+}

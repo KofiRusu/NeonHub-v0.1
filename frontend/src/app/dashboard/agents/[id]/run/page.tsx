@@ -3,21 +3,33 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../../../../components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '../../../../../components/ui/card';
 import { Button } from '../../../../../components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../../components/ui/tabs';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '../../../../../components/ui/tabs';
 import { Badge } from '../../../../../components/ui/badge';
 import { Textarea } from '../../../../../components/ui/textarea';
-import { 
-  Play, 
-  AlertCircle, 
-  CheckCircle, 
-  Clock, 
-  Terminal, 
-  FileText, 
-  Info, 
+import {
+  Play,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  Terminal,
+  FileText,
+  Info,
   RefreshCw,
-  Loader2
+  Loader2,
 } from 'lucide-react';
 
 interface LogEntry {
@@ -74,12 +86,14 @@ export default function AgentRunPage() {
     fetchAgentDetails();
 
     // Initialize Socket.io connection
-    const socketInstance = io(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/agents`);
-    
+    const socketInstance = io(
+      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/agents`,
+    );
+
     socketInstance.on('connect', () => {
       setIsConnected(true);
       console.log('Connected to WebSocket server');
-      
+
       // Join room for this specific agent
       socketInstance.emit('join:agent', agentId);
     });
@@ -102,7 +116,7 @@ export default function AgentRunPage() {
       const startLog: LogEntry = {
         timestamp: new Date().toISOString(),
         level: 'info',
-        message: `Started execution for agent: ${data.name || agentId}`
+        message: `Started execution for agent: ${data.name || agentId}`,
       };
       setLogs([startLog]);
     });
@@ -110,7 +124,7 @@ export default function AgentRunPage() {
     socketInstance.on('agent:log', (data) => {
       console.log('Agent log:', data);
       if (data.log) {
-        setLogs(prev => [...prev, data.log]);
+        setLogs((prev) => [...prev, data.log]);
       }
     });
 
@@ -119,7 +133,7 @@ export default function AgentRunPage() {
       setIsRunning(false);
       setOutput({
         success: true,
-        data: data.data
+        data: data.data,
       });
       setDuration(data.duration);
 
@@ -127,9 +141,9 @@ export default function AgentRunPage() {
       const completeLog: LogEntry = {
         timestamp: new Date().toISOString(),
         level: 'info',
-        message: `Execution completed successfully in ${data.duration}ms`
+        message: `Execution completed successfully in ${data.duration}ms`,
       };
-      setLogs(prev => [...prev, completeLog]);
+      setLogs((prev) => [...prev, completeLog]);
     });
 
     socketInstance.on('agent:error', (data) => {
@@ -138,7 +152,7 @@ export default function AgentRunPage() {
       setError(data.error.message);
       setOutput({
         success: false,
-        error: data.error
+        error: data.error,
       });
 
       // Add error log
@@ -146,9 +160,9 @@ export default function AgentRunPage() {
         timestamp: new Date().toISOString(),
         level: 'error',
         message: `Execution failed: ${data.error.message}`,
-        context: { stack: data.error.stack }
+        context: { stack: data.error.stack },
       };
-      setLogs(prev => [...prev, errorLog]);
+      setLogs((prev) => [...prev, errorLog]);
     });
 
     setSocket(socketInstance);
@@ -194,7 +208,7 @@ export default function AgentRunPage() {
         },
         body: JSON.stringify({
           agentId,
-          context: contextData
+          context: contextData,
         }),
       });
 
@@ -206,7 +220,9 @@ export default function AgentRunPage() {
       // WebSocket events will handle the UI updates
     } catch (error) {
       console.error('Error running agent:', error);
-      setError(error instanceof Error ? error.message : 'An unknown error occurred');
+      setError(
+        error instanceof Error ? error.message : 'An unknown error occurred',
+      );
     }
   };
 
@@ -238,18 +254,22 @@ export default function AgentRunPage() {
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold">{agentName || 'Agent'} Execution</h1>
-          <p className="text-muted-foreground">Monitor agent execution and see real-time output</p>
+          <h1 className="text-3xl font-bold">
+            {agentName || 'Agent'} Execution
+          </h1>
+          <p className="text-muted-foreground">
+            Monitor agent execution and see real-time output
+          </p>
         </div>
         <div className="flex items-center gap-2">
           {isConnected ? (
             <Badge variant="outline" className="bg-green-100 text-green-800">
-              <span className="w-2 h-2 rounded-full bg-green-500 mr-1"></span> 
+              <span className="w-2 h-2 rounded-full bg-green-500 mr-1"></span>
               Connected
             </Badge>
           ) : (
             <Badge variant="outline" className="bg-red-100 text-red-800">
-              <span className="w-2 h-2 rounded-full bg-red-500 mr-1"></span> 
+              <span className="w-2 h-2 rounded-full bg-red-500 mr-1"></span>
               Disconnected
             </Badge>
           )}
@@ -266,20 +286,22 @@ export default function AgentRunPage() {
             <CardContent>
               <div className="mb-4">
                 <h3 className="text-sm font-medium mb-2">Context (JSON)</h3>
-                <Textarea 
-                  value={context} 
+                <Textarea
+                  value={context}
                   onChange={(e) => setContext(e.target.value)}
                   className={`h-60 font-mono text-sm ${!isValidJson ? 'border-red-500' : ''}`}
                   placeholder='{\n  "key": "value"\n}'
                 />
                 {!isValidJson && (
-                  <p className="text-red-500 text-xs mt-1">Invalid JSON format</p>
+                  <p className="text-red-500 text-xs mt-1">
+                    Invalid JSON format
+                  </p>
                 )}
               </div>
             </CardContent>
             <CardFooter>
-              <Button 
-                onClick={runAgent} 
+              <Button
+                onClick={runAgent}
                 disabled={isRunning || !isValidJson}
                 className="w-full"
               >
@@ -345,12 +367,14 @@ export default function AgentRunPage() {
                 Output
               </TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="logs">
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle>Execution Logs</CardTitle>
-                  <CardDescription>Real-time logs from agent execution</CardDescription>
+                  <CardDescription>
+                    Real-time logs from agent execution
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="bg-black text-white font-mono text-sm p-4 rounded-md h-[600px] overflow-y-auto">
@@ -362,8 +386,12 @@ export default function AgentRunPage() {
                     ) : (
                       logs.map((log, index) => (
                         <div key={index} className="mb-2">
-                          <span className="text-gray-400">[{formatTimestamp(log.timestamp)}]</span>{' '}
-                          <span className={`px-1.5 py-0.5 rounded text-xs ${getLogBadgeColor(log.level)}`}>
+                          <span className="text-gray-400">
+                            [{formatTimestamp(log.timestamp)}]
+                          </span>{' '}
+                          <span
+                            className={`px-1.5 py-0.5 rounded text-xs ${getLogBadgeColor(log.level)}`}
+                          >
                             {log.level.toUpperCase()}
                           </span>{' '}
                           <span>{log.message}</span>
@@ -380,18 +408,22 @@ export default function AgentRunPage() {
                 </CardContent>
               </Card>
             </TabsContent>
-            
+
             <TabsContent value="output">
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle>Agent Output</CardTitle>
-                  <CardDescription>Final result from agent execution</CardDescription>
+                  <CardDescription>
+                    Final result from agent execution
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="bg-gray-50 font-mono text-sm p-4 rounded-md border h-[600px] overflow-auto">
                     {output ? (
                       output.success ? (
-                        <pre className="whitespace-pre-wrap">{JSON.stringify(output.data, null, 2)}</pre>
+                        <pre className="whitespace-pre-wrap">
+                          {JSON.stringify(output.data, null, 2)}
+                        </pre>
                       ) : (
                         <div className="text-red-500">
                           <p className="font-bold mb-2">Error:</p>
@@ -406,7 +438,8 @@ export default function AgentRunPage() {
                     ) : (
                       <div className="text-gray-400 flex items-center justify-center h-full">
                         <Info className="h-4 w-4 mr-2" />
-                        No output available. Start agent execution to see results.
+                        No output available. Start agent execution to see
+                        results.
                       </div>
                     )}
                   </div>
@@ -418,4 +451,4 @@ export default function AgentRunPage() {
       </div>
     </div>
   );
-} 
+}

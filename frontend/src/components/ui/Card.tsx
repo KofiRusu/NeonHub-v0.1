@@ -8,7 +8,10 @@ interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const Card = ({ children, className, ...props }: CardProps) => {
   return (
-    <div className={cn('bg-white rounded-card shadow-card', className)} {...props}>
+    <div
+      className={cn('bg-white rounded-card shadow-card', className)}
+      {...props}
+    >
       {children}
     </div>
   );
@@ -57,4 +60,4 @@ Card.Header = CardHeader;
 Card.Body = CardBody;
 Card.Footer = CardFooter;
 
-export { Card, CardHeader, CardBody, CardFooter }; 
+export { Card, CardHeader, CardBody, CardFooter };

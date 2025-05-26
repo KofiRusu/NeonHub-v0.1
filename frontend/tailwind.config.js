@@ -62,9 +62,9 @@ module.exports = {
         dropdown: '0 10px 15px rgba(0, 0, 0, 0.1)',
       },
       borderRadius: {
-        'card': '0.5rem',
+        card: '0.5rem',
       },
     },
   },
   plugins: [],
-} 
+};

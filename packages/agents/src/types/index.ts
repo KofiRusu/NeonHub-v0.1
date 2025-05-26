@@ -25,7 +25,7 @@ export interface EventMetadata {
   traceId?: string;
 }
 
-export type EventType = 
+export type EventType =
   | 'campaign.created'
   | 'campaign.updated'
   | 'campaign.deleted'
@@ -103,7 +103,7 @@ export type ErrorSeverity = 'low' | 'medium' | 'high' | 'critical';
 // AGENT STATUS & HEALTH
 // ============================================================================
 
-export type AgentStatus = 
+export type AgentStatus =
   | 'idle'
   | 'running'
   | 'completed'
@@ -148,7 +148,7 @@ export interface AgentRegistryEntry {
   updatedAt: Date;
 }
 
-export type AgentType = 
+export type AgentType =
   | 'architecture'
   | 'backend'
   | 'frontend'
@@ -308,4 +308,4 @@ export interface AgentCapability {
 
 export * from './events';
 export * from './metrics';
-export * from './errors'; 
+export * from './errors';

@@ -1,4 +1,13 @@
-import { PrismaClient, AgentType, AgentStatus, CampaignType, CampaignStatus, ContentType, Platform, ContentStatus } from '@prisma/client';
+import {
+  PrismaClient,
+  AgentType,
+  AgentStatus,
+  CampaignType,
+  CampaignStatus,
+  ContentType,
+  Platform,
+  ContentStatus,
+} from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { AgentScheduler } from '../src/agents/scheduler/AgentScheduler';
 import { getAgentManager } from '../src/agents';
@@ -11,45 +20,45 @@ const prisma = new PrismaClient();
  */
 async function seed() {
   console.log('🌱 Starting database seed...');
-  
+
   try {
     // Clear existing data (optional - comment out in production)
     await clearExistingData();
-    
+
     // Create users
     const users = await createUsers();
-    
+
     // Create projects
     const projects = await createProjects(users);
-    
+
     // Create AI agents
     const agents = await createAgents(projects, users);
-    
+
     // Create campaigns
     const campaigns = await createCampaigns(projects, users, agents);
-    
+
     // Create content
     const content = await createContent(agents, campaigns, users);
-    
+
     // Create metrics
     await createMetrics(campaigns, projects);
-    
+
     // Create trend signals
     await createTrendSignals(agents);
-    
+
     // Schedule an agent to run hourly
     await scheduleAgentToRunHourly(agents[0].id);
-    
+
     // Create execution sessions
     await createExecutionSessions(agents);
-    
+
     console.log('✅ Seed completed successfully!');
-    
+
     // Log sample login credentials
     console.log('\n🔑 Sample Login Credentials:');
     console.log('Admin: admin@neonhub.com / password123');
     console.log('User: user@neonhub.com / password123');
-    
+
     // Final statistics
     console.log('\n📊 Seeded Data Statistics:');
     console.log(`👤 Users: ${users.length}`);
@@ -57,7 +66,6 @@ async function seed() {
     console.log(`🤖 Agents: ${agents.length}`);
     console.log(`📢 Campaigns: ${campaigns.length}`);
     console.log(`📝 Content Items: ${content.length}`);
-    
   } catch (error) {
     console.error('❌ Seed failed:', error);
     process.exit(1);
@@ -71,7 +79,7 @@ async function seed() {
  */
 async function clearExistingData() {
   console.log('🧹 Clearing existing data...');
-  
+
   // Order matters due to foreign key constraints
   await prisma.agentExecutionSession.deleteMany({});
   await prisma.metric.deleteMany({});
@@ -88,7 +96,7 @@ async function clearExistingData() {
   await prisma.task.deleteMany({});
   await prisma.project.deleteMany({});
   await prisma.user.deleteMany({});
-  
+
   console.log('✅ Data cleared');
 }
 
@@ -97,49 +105,55 @@ async function clearExistingData() {
  */
 async function createUsers() {
   console.log('👤 Creating users...');
-  
+
   const hashedPassword = await bcrypt.hash('password123', 10);
-  
+
   const users = [
     {
       name: 'Admin User',
       email: 'admin@neonhub.com',
       password: hashedPassword,
       role: 'ADMIN',
-      avatar: 'https://ui-avatars.com/api/?name=Admin+User&background=0D8ABC&color=fff',
+      avatar:
+        'https://ui-avatars.com/api/?name=Admin+User&background=0D8ABC&color=fff',
     },
     {
       name: 'Regular User',
       email: 'user@neonhub.com',
       password: hashedPassword,
       role: 'USER',
-      avatar: 'https://ui-avatars.com/api/?name=Regular+User&background=FF8066&color=fff',
+      avatar:
+        'https://ui-avatars.com/api/?name=Regular+User&background=FF8066&color=fff',
     },
     {
       name: 'Marketing Manager',
       email: 'marketing@neonhub.com',
       password: hashedPassword,
       role: 'USER',
-      avatar: 'https://ui-avatars.com/api/?name=Marketing+Manager&background=47A025&color=fff',
+      avatar:
+        'https://ui-avatars.com/api/?name=Marketing+Manager&background=47A025&color=fff',
     },
     {
       name: 'Content Creator',
       email: 'content@neonhub.com',
       password: hashedPassword,
       role: 'USER',
-      avatar: 'https://ui-avatars.com/api/?name=Content+Creator&background=9B5DE5&color=fff',
+      avatar:
+        'https://ui-avatars.com/api/?name=Content+Creator&background=9B5DE5&color=fff',
     },
   ];
-  
+
   const createdUsers = [];
   for (const user of users) {
-    createdUsers.push(await prisma.user.upsert({
-      where: { email: user.email },
-      update: user,
-      create: user,
-    }));
+    createdUsers.push(
+      await prisma.user.upsert({
+        where: { email: user.email },
+        update: user,
+        create: user,
+      }),
+    );
   }
-  
+
   console.log(`✅ Created ${createdUsers.length} users`);
   return createdUsers;
 }
@@ -149,14 +163,14 @@ async function createUsers() {
  */
 async function createProjects(users: any[]) {
   console.log('📁 Creating projects...');
-  
+
   const projects = [
     {
       name: 'Product Launch Campaign',
       description: 'Campaign for our new product launch in Q3',
       ownerId: users[0].id,
       members: {
-        connect: users.map(user => ({ id: user.id })),
+        connect: users.map((user) => ({ id: user.id })),
       },
     },
     {
@@ -164,26 +178,33 @@ async function createProjects(users: any[]) {
       description: 'Ongoing brand awareness campaign across multiple channels',
       ownerId: users[2].id,
       members: {
-        connect: [{ id: users[0].id }, { id: users[2].id }, { id: users[3].id }],
+        connect: [
+          { id: users[0].id },
+          { id: users[2].id },
+          { id: users[3].id },
+        ],
       },
     },
     {
       name: 'Content Marketing Strategy',
-      description: 'Development of our content marketing strategy for the next year',
+      description:
+        'Development of our content marketing strategy for the next year',
       ownerId: users[3].id,
       members: {
         connect: [{ id: users[1].id }, { id: users[3].id }],
       },
     },
   ];
-  
+
   const createdProjects = [];
   for (const project of projects) {
-    createdProjects.push(await prisma.project.create({
-      data: project,
-    }));
+    createdProjects.push(
+      await prisma.project.create({
+        data: project,
+      }),
+    );
   }
-  
+
   console.log(`✅ Created ${createdProjects.length} projects`);
   return createdProjects;
 }
@@ -193,11 +214,12 @@ async function createProjects(users: any[]) {
  */
 async function createAgents(projects: any[], users: any[]) {
   console.log('🤖 Creating AI agents...');
-  
+
   const agents = [
     {
       name: 'Content Creator Pro',
-      description: 'Advanced AI agent for generating marketing content across multiple formats',
+      description:
+        'Advanced AI agent for generating marketing content across multiple formats',
       agentType: AgentType.CONTENT_CREATOR,
       status: AgentStatus.IDLE,
       projectId: projects[0].id,
@@ -216,7 +238,8 @@ async function createAgents(projects: any[], users: any[]) {
     },
     {
       name: 'Trend Analyzer',
-      description: 'AI agent that analyzes market trends and provides actionable insights',
+      description:
+        'AI agent that analyzes market trends and provides actionable insights',
       agentType: AgentType.TREND_ANALYZER,
       status: AgentStatus.IDLE,
       projectId: projects[1].id,
@@ -227,8 +250,14 @@ async function createAgents(projects: any[], users: any[]) {
         retryDelay: 120000,
         sources: ['social_media', 'news_articles', 'competitor_analysis'],
         keywordGroups: [
-          { name: 'industry_terms', keywords: ['AI', 'machine learning', 'automation'] },
-          { name: 'competitor_brands', keywords: ['BrandX', 'CompetitorY', 'MarketLeader'] },
+          {
+            name: 'industry_terms',
+            keywords: ['AI', 'machine learning', 'automation'],
+          },
+          {
+            name: 'competitor_brands',
+            keywords: ['BrandX', 'CompetitorY', 'MarketLeader'],
+          },
         ],
         updateFrequency: 'daily',
         confidenceThreshold: 0.7,
@@ -246,12 +275,17 @@ async function createAgents(projects: any[], users: any[]) {
         autoRetry: true,
         retryDelay: 60000,
         templates: {
-          welcome: 'Welcome to our community! We\'re thrilled to have you join us.',
+          welcome:
+            "Welcome to our community! We're thrilled to have you join us.",
           promo: 'Limited time offer: {{offer_details}}',
-          newsletter: 'Here\'s what\'s new this month: {{content}}',
+          newsletter: "Here's what's new this month: {{content}}",
         },
         personalization: true,
-        subjectLineOptions: ['Check this out!', 'You don\'t want to miss this', 'Important update'],
+        subjectLineOptions: [
+          'Check this out!',
+          "You don't want to miss this",
+          'Important update',
+        ],
         testPercentage: 10,
       },
     },
@@ -267,21 +301,27 @@ async function createAgents(projects: any[], users: any[]) {
         autoRetry: true,
         retryDelay: 300000,
         keywordDensityTarget: 2.5,
-        primaryKeywords: ['digital marketing', 'AI marketing', 'content optimization'],
+        primaryKeywords: [
+          'digital marketing',
+          'AI marketing',
+          'content optimization',
+        ],
         secondaryKeywords: ['SEO tips', 'search ranking', 'organic traffic'],
         readabilityTarget: 'grade8',
         metaDescriptionLength: 155,
       },
     },
   ];
-  
+
   const createdAgents = [];
   for (const agent of agents) {
-    createdAgents.push(await prisma.aIAgent.create({
-      data: agent,
-    }));
+    createdAgents.push(
+      await prisma.aIAgent.create({
+        data: agent,
+      }),
+    );
   }
-  
+
   console.log(`✅ Created ${createdAgents.length} agents`);
   return createdAgents;
 }
@@ -291,18 +331,19 @@ async function createAgents(projects: any[], users: any[]) {
  */
 async function createCampaigns(projects: any[], users: any[], agents: any[]) {
   console.log('📢 Creating marketing campaigns...');
-  
+
   const today = new Date();
   const nextMonth = new Date(today);
   nextMonth.setMonth(nextMonth.getMonth() + 1);
-  
+
   const threeMonthsLater = new Date(today);
   threeMonthsLater.setMonth(threeMonthsLater.getMonth() + 3);
-  
+
   const campaigns = [
     {
       name: 'Summer Product Launch',
-      description: 'Launching our new summer product line with multi-channel campaign',
+      description:
+        'Launching our new summer product line with multi-channel campaign',
       status: CampaignStatus.ACTIVE,
       campaignType: CampaignType.INTEGRATED,
       goals: {
@@ -372,14 +413,16 @@ async function createCampaigns(projects: any[], users: any[], agents: any[]) {
       },
     },
   ];
-  
+
   const createdCampaigns = [];
   for (const campaign of campaigns) {
-    createdCampaigns.push(await prisma.campaign.create({
-      data: campaign,
-    }));
+    createdCampaigns.push(
+      await prisma.campaign.create({
+        data: campaign,
+      }),
+    );
   }
-  
+
   console.log(`✅ Created ${createdCampaigns.length} campaigns`);
   return createdCampaigns;
 }
@@ -389,13 +432,13 @@ async function createCampaigns(projects: any[], users: any[], agents: any[]) {
  */
 async function createContent(agents: any[], campaigns: any[], users: any[]) {
   console.log('📝 Creating sample content...');
-  
+
   const socialPost = `Excited to announce our summer product line! 🚀 \n\nOur team has been working tirelessly to create products that combine innovation with practicality. Stay tuned for the official launch next week! \n\n#ProductLaunch #Innovation #SummerCollection`;
-  
+
   const blogPost = `# Revolutionizing the Industry: Our Summer Product Line\n\nIn today's rapidly evolving market, staying ahead requires constant innovation. Our team has spent the last year developing a product line that doesn't just meet current needs but anticipates future challenges.\n\n## Key Features\n\n- Seamless integration with existing workflows\n- AI-powered productivity enhancements\n- Sustainable materials and manufacturing\n- Customizable options for diverse user needs\n\nThe development process involved extensive user research, multiple prototype iterations, and rigorous testing. "We wanted to create something that genuinely improves how people work," says our Head of Product Development.\n\n## Market Impact\n\nAnalysts predict our new line will disrupt the current market leaders, with projected adoption rates exceeding industry averages by 35%.\n\nStay tuned for more details as we approach the official launch date!`;
-  
+
   const emailTemplate = `Subject: Introducing Our Revolutionary Summer Product Line\n\nDear {{customer.firstName}},\n\nWe're thrilled to announce the upcoming launch of our summer product line, designed specifically to address the challenges you've shared with us.\n\nAs a valued customer, you'll get early access to:\n\n- Exclusive preview of all new products\n- Special pre-order pricing (25% off retail)\n- Complimentary personalized onboarding session\n\nMark your calendar for {{event.date}} when we'll be hosting a virtual launch event with live demos, Q&A with our product team, and special announcements.\n\nReserve your spot now: {{event.registrationLink}}\n\nWe can't wait to show you what we've been working on!\n\nBest regards,\n{{sender.name}}\n{{sender.title}}`;
-  
+
   const content = [
     {
       title: 'Summer Product Launch Announcement',
@@ -442,9 +485,17 @@ async function createContent(agents: any[], campaigns: any[], users: any[]) {
       platform: Platform.EMAIL,
       status: ContentStatus.APPROVED,
       metadata: {
-        scheduledDate: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString(),
+        scheduledDate: new Date(
+          new Date().setDate(new Date().getDate() + 7),
+        ).toISOString(),
         audience: 'existing_customers',
-        personalizationFields: ['customer.firstName', 'event.date', 'event.registrationLink', 'sender.name', 'sender.title'],
+        personalizationFields: [
+          'customer.firstName',
+          'event.date',
+          'event.registrationLink',
+          'sender.name',
+          'sender.title',
+        ],
         testResults: {
           openRate: 28.4,
           clickRate: 12.7,
@@ -457,7 +508,8 @@ async function createContent(agents: any[], campaigns: any[], users: any[]) {
     },
     {
       title: 'Market Trends in Our Industry - Q3 2023',
-      content: 'This comprehensive analysis examines emerging trends in our industry for Q3 2023, with data-driven insights and actionable recommendations.',
+      content:
+        'This comprehensive analysis examines emerging trends in our industry for Q3 2023, with data-driven insights and actionable recommendations.',
       contentType: ContentType.BLOG_POST,
       platform: Platform.WEBSITE,
       status: ContentStatus.DRAFT,
@@ -470,7 +522,12 @@ async function createContent(agents: any[], campaigns: any[], users: any[]) {
           { section: 'Actionable Insights', wordCount: 350 },
           { section: 'Conclusion', wordCount: 200 },
         ],
-        targetKeywords: ['market trends', 'industry analysis', 'Q3 2023', 'competitive landscape'],
+        targetKeywords: [
+          'market trends',
+          'industry analysis',
+          'Q3 2023',
+          'competitive landscape',
+        ],
         estimatedReadTime: '8 min',
       },
       agentId: agents[1].id,
@@ -479,15 +536,25 @@ async function createContent(agents: any[], campaigns: any[], users: any[]) {
     },
     {
       title: 'How Our New Product Solves Your Biggest Challenge',
-      content: 'A concise yet compelling narrative about our new product and how it addresses the key pain points expressed by our target audience.',
+      content:
+        'A concise yet compelling narrative about our new product and how it addresses the key pain points expressed by our target audience.',
       contentType: ContentType.AD_COPY,
       platform: Platform.FACEBOOK,
       status: ContentStatus.REVIEW,
       metadata: {
         variations: [
-          { headline: 'Struggling with X? Our solution is here!', body: 'Discover how our new product solves the biggest challenges in your industry.' },
-          { headline: 'Say goodbye to X forever', body: 'Our new product has revolutionized how professionals handle daily challenges.' },
-          { headline: 'X made simple', body: 'See why industry leaders are switching to our innovative new solution.' },
+          {
+            headline: 'Struggling with X? Our solution is here!',
+            body: 'Discover how our new product solves the biggest challenges in your industry.',
+          },
+          {
+            headline: 'Say goodbye to X forever',
+            body: 'Our new product has revolutionized how professionals handle daily challenges.',
+          },
+          {
+            headline: 'X made simple',
+            body: 'See why industry leaders are switching to our innovative new solution.',
+          },
         ],
         targetAudience: 'professionals aged 30-45',
         callToAction: 'Learn More',
@@ -497,14 +564,16 @@ async function createContent(agents: any[], campaigns: any[], users: any[]) {
       creatorId: users[2].id,
     },
   ];
-  
+
   const createdContent = [];
   for (const item of content) {
-    createdContent.push(await prisma.generatedContent.create({
-      data: item,
-    }));
+    createdContent.push(
+      await prisma.generatedContent.create({
+        data: item,
+      }),
+    );
   }
-  
+
   console.log(`✅ Created ${createdContent.length} content items`);
   return createdContent;
 }
@@ -514,9 +583,9 @@ async function createContent(agents: any[], campaigns: any[], users: any[]) {
  */
 async function createMetrics(campaigns: any[], projects: any[]) {
   console.log('📊 Creating metrics...');
-  
+
   const metrics = [];
-  
+
   // Campaign metrics
   for (const campaign of campaigns) {
     // Impressions
@@ -528,7 +597,7 @@ async function createMetrics(campaigns: any[], projects: any[]) {
       campaignId: campaign.id,
       timestamp: new Date(),
     });
-    
+
     // Click-through rate
     metrics.push({
       name: 'ctr',
@@ -538,7 +607,7 @@ async function createMetrics(campaigns: any[], projects: any[]) {
       campaignId: campaign.id,
       timestamp: new Date(),
     });
-    
+
     // Conversion rate
     metrics.push({
       name: 'conversion_rate',
@@ -548,7 +617,7 @@ async function createMetrics(campaigns: any[], projects: any[]) {
       campaignId: campaign.id,
       timestamp: new Date(),
     });
-    
+
     // Engagement rate
     metrics.push({
       name: 'engagement_rate',
@@ -559,7 +628,7 @@ async function createMetrics(campaigns: any[], projects: any[]) {
       timestamp: new Date(),
     });
   }
-  
+
   // Project-wide metrics
   for (const project of projects) {
     // Total reach
@@ -571,7 +640,7 @@ async function createMetrics(campaigns: any[], projects: any[]) {
       projectId: project.id,
       timestamp: new Date(),
     });
-    
+
     // Average session duration
     metrics.push({
       name: 'avg_session_duration',
@@ -581,7 +650,7 @@ async function createMetrics(campaigns: any[], projects: any[]) {
       projectId: project.id,
       timestamp: new Date(),
     });
-    
+
     // Return on ad spend
     metrics.push({
       name: 'roas',
@@ -592,12 +661,12 @@ async function createMetrics(campaigns: any[], projects: any[]) {
       timestamp: new Date(),
     });
   }
-  
+
   // Create all metrics in the database
   await prisma.metric.createMany({
     data: metrics,
   });
-  
+
   console.log(`✅ Created ${metrics.length} metrics`);
 }
 
@@ -606,19 +675,22 @@ async function createMetrics(campaigns: any[], projects: any[]) {
  */
 async function createTrendSignals(agents: any[]) {
   console.log('📈 Creating trend signals...');
-  
+
   // Find the trend analyzer agent
-  const trendAgent = agents.find(agent => agent.agentType === 'TREND_ANALYZER');
-  
+  const trendAgent = agents.find(
+    (agent) => agent.agentType === 'TREND_ANALYZER',
+  );
+
   if (!trendAgent) {
     console.warn('⚠️ No trend analyzer agent found, skipping trend signals');
     return;
   }
-  
+
   const signals = [
     {
       title: 'Rising Interest in Sustainable Products',
-      description: 'Analysis shows a 43% increase in search volume for terms related to sustainability and eco-friendly products in our industry over the past quarter.',
+      description:
+        'Analysis shows a 43% increase in search volume for terms related to sustainability and eco-friendly products in our industry over the past quarter.',
       source: 'search_trend_analysis',
       signalType: 'KEYWORD_TREND',
       confidence: 0.87,
@@ -633,7 +705,8 @@ async function createTrendSignals(agents: any[]) {
     },
     {
       title: 'Competitor X Launching New Product Line',
-      description: 'Social listening detected strong signals that Competitor X is preparing to launch a new product line targeting our core demographic.',
+      description:
+        'Social listening detected strong signals that Competitor X is preparing to launch a new product line targeting our core demographic.',
       source: 'social_listening',
       signalType: 'COMPETITION_MOVE',
       confidence: 0.76,
@@ -648,7 +721,8 @@ async function createTrendSignals(agents: any[]) {
     },
     {
       title: 'Emerging Customer Pain Point',
-      description: 'Customer feedback analysis reveals a growing frustration with current solutions\' inability to integrate with popular workflow tools.',
+      description:
+        "Customer feedback analysis reveals a growing frustration with current solutions' inability to integrate with popular workflow tools.",
       source: 'customer_feedback',
       signalType: 'SENTIMENT_SHIFT',
       confidence: 0.82,
@@ -663,7 +737,8 @@ async function createTrendSignals(agents: any[]) {
     },
     {
       title: 'Viral Content Opportunity: "Day in the Life"',
-      description: 'Content showing "day in the life" of professionals using productivity tools is gaining significant traction across platforms.',
+      description:
+        'Content showing "day in the life" of professionals using productivity tools is gaining significant traction across platforms.',
       source: 'content_analysis',
       signalType: 'VIRAL_CONTENT',
       confidence: 0.79,
@@ -678,7 +753,8 @@ async function createTrendSignals(agents: any[]) {
     },
     {
       title: 'Regulatory Changes Affecting Industry',
-      description: 'New regulations related to data privacy are being considered that could impact how products in our category operate and market themselves.',
+      description:
+        'New regulations related to data privacy are being considered that could impact how products in our category operate and market themselves.',
       source: 'regulatory_monitoring',
       signalType: 'REGULATORY_CHANGE',
       confidence: 0.91,
@@ -687,18 +763,22 @@ async function createTrendSignals(agents: any[]) {
         status: 'Proposed',
         timeline: 'Expected implementation in 6-8 months',
         impact: 'Moderate to significant',
-        affectedAreas: ['data collection', 'user consent', 'marketing practices'],
+        affectedAreas: [
+          'data collection',
+          'user consent',
+          'marketing practices',
+        ],
       },
       impact: 'CRITICAL',
       agentId: trendAgent.id,
     },
   ];
-  
+
   // Create all trend signals in the database
   await prisma.trendSignal.createMany({
     data: signals,
   });
-  
+
   console.log(`✅ Created ${signals.length} trend signals`);
 }
 
@@ -707,22 +787,22 @@ async function createTrendSignals(agents: any[]) {
  */
 async function scheduleAgentToRunHourly(agentId: string) {
   console.log('⏰ Scheduling an agent to run hourly...');
-  
+
   // Get the agent manager
   const agentManager = getAgentManager(prisma);
-  
+
   // Create an agent scheduler
   const agentScheduler = new AgentScheduler(prisma, agentManager, {
     autoStart: false,
   });
-  
+
   // Schedule the agent to run hourly using a cron expression
   await agentScheduler.scheduleAgent(
     agentId,
     '0 * * * *', // Run at the start of every hour
-    true
+    true,
   );
-  
+
   console.log(`✅ Scheduled agent ${agentId} to run hourly`);
 }
 
@@ -731,16 +811,16 @@ async function scheduleAgentToRunHourly(agentId: string) {
  */
 async function createExecutionSessions(agents: any[]) {
   console.log('📋 Creating agent execution sessions...');
-  
+
   const now = new Date();
   const yesterday = new Date(now);
   yesterday.setDate(yesterday.getDate() - 1);
-  
+
   const twoDaysAgo = new Date(now);
   twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-  
+
   const sessions = [];
-  
+
   // Create several execution sessions for each agent
   for (const agent of agents) {
     // Successful execution from yesterday
@@ -750,19 +830,44 @@ async function createExecutionSessions(agents: any[]) {
       completedAt: new Date(yesterday.getTime() - 3580000),
       success: true,
       duration: 1200000, // 20 minutes
-      outputSummary: 'Successfully generated content and analyzed market trends',
+      outputSummary:
+        'Successfully generated content and analyzed market trends',
       logs: [
-        { timestamp: new Date(yesterday.getTime() - 3600000), level: 'info', message: 'Agent execution started' },
-        { timestamp: new Date(yesterday.getTime() - 3590000), level: 'info', message: 'Processing input data' },
-        { timestamp: new Date(yesterday.getTime() - 3585000), level: 'info', message: 'Generating content' },
-        { timestamp: new Date(yesterday.getTime() - 3582000), level: 'info', message: 'Applying style and formatting' },
-        { timestamp: new Date(yesterday.getTime() - 3581000), level: 'info', message: 'Finalizing output' },
-        { timestamp: new Date(yesterday.getTime() - 3580000), level: 'info', message: 'Execution completed successfully' },
+        {
+          timestamp: new Date(yesterday.getTime() - 3600000),
+          level: 'info',
+          message: 'Agent execution started',
+        },
+        {
+          timestamp: new Date(yesterday.getTime() - 3590000),
+          level: 'info',
+          message: 'Processing input data',
+        },
+        {
+          timestamp: new Date(yesterday.getTime() - 3585000),
+          level: 'info',
+          message: 'Generating content',
+        },
+        {
+          timestamp: new Date(yesterday.getTime() - 3582000),
+          level: 'info',
+          message: 'Applying style and formatting',
+        },
+        {
+          timestamp: new Date(yesterday.getTime() - 3581000),
+          level: 'info',
+          message: 'Finalizing output',
+        },
+        {
+          timestamp: new Date(yesterday.getTime() - 3580000),
+          level: 'info',
+          message: 'Execution completed successfully',
+        },
       ],
       context: { mode: 'scheduled', priority: 'normal' },
       metrics: { processingTime: 1200, tokensGenerated: 2345, aiModelCalls: 8 },
     });
-    
+
     // Failed execution from yesterday
     sessions.push({
       agentId: agent.id,
@@ -772,17 +877,41 @@ async function createExecutionSessions(agents: any[]) {
       duration: 5000, // 5 seconds
       errorMessage: 'Failed to connect to external API',
       logs: [
-        { timestamp: new Date(yesterday.getTime() - 2400000), level: 'info', message: 'Agent execution started' },
-        { timestamp: new Date(yesterday.getTime() - 2399000), level: 'info', message: 'Processing input data' },
-        { timestamp: new Date(yesterday.getTime() - 2398000), level: 'warning', message: 'Slow response from external API' },
-        { timestamp: new Date(yesterday.getTime() - 2397000), level: 'error', message: 'Connection timeout when calling external API' },
-        { timestamp: new Date(yesterday.getTime() - 2396000), level: 'error', message: 'Failed to complete execution due to API error' },
-        { timestamp: new Date(yesterday.getTime() - 2395000), level: 'info', message: 'Execution failed' },
+        {
+          timestamp: new Date(yesterday.getTime() - 2400000),
+          level: 'info',
+          message: 'Agent execution started',
+        },
+        {
+          timestamp: new Date(yesterday.getTime() - 2399000),
+          level: 'info',
+          message: 'Processing input data',
+        },
+        {
+          timestamp: new Date(yesterday.getTime() - 2398000),
+          level: 'warning',
+          message: 'Slow response from external API',
+        },
+        {
+          timestamp: new Date(yesterday.getTime() - 2397000),
+          level: 'error',
+          message: 'Connection timeout when calling external API',
+        },
+        {
+          timestamp: new Date(yesterday.getTime() - 2396000),
+          level: 'error',
+          message: 'Failed to complete execution due to API error',
+        },
+        {
+          timestamp: new Date(yesterday.getTime() - 2395000),
+          level: 'info',
+          message: 'Execution failed',
+        },
       ],
       context: { mode: 'manual', priority: 'high' },
       metrics: { processingTime: 5000, errorCode: 'TIMEOUT_ERROR' },
     });
-    
+
     // Successful execution from two days ago
     sessions.push({
       agentId: agent.id,
@@ -792,29 +921,48 @@ async function createExecutionSessions(agents: any[]) {
       duration: 15000, // 15 seconds
       outputSummary: 'Generated marketing content based on latest trends',
       logs: [
-        { timestamp: new Date(twoDaysAgo.getTime()), level: 'info', message: 'Agent execution started' },
-        { timestamp: new Date(twoDaysAgo.getTime() + 5000), level: 'info', message: 'Analyzing recent trend data' },
-        { timestamp: new Date(twoDaysAgo.getTime() + 10000), level: 'info', message: 'Generating optimized content' },
-        { timestamp: new Date(twoDaysAgo.getTime() + 15000), level: 'info', message: 'Execution completed successfully' },
+        {
+          timestamp: new Date(twoDaysAgo.getTime()),
+          level: 'info',
+          message: 'Agent execution started',
+        },
+        {
+          timestamp: new Date(twoDaysAgo.getTime() + 5000),
+          level: 'info',
+          message: 'Analyzing recent trend data',
+        },
+        {
+          timestamp: new Date(twoDaysAgo.getTime() + 10000),
+          level: 'info',
+          message: 'Generating optimized content',
+        },
+        {
+          timestamp: new Date(twoDaysAgo.getTime() + 15000),
+          level: 'info',
+          message: 'Execution completed successfully',
+        },
       ],
       context: { mode: 'scheduled', priority: 'normal' },
-      metrics: { processingTime: 15000, tokensGenerated: 1250, aiModelCalls: 3 },
+      metrics: {
+        processingTime: 15000,
+        tokensGenerated: 1250,
+        aiModelCalls: 3,
+      },
     });
   }
-  
+
   // Create all execution sessions in the database
   for (const session of sessions) {
     await prisma.agentExecutionSession.create({
       data: session,
     });
   }
-  
+
   console.log(`✅ Created ${sessions.length} execution sessions`);
 }
 
 // Run the seed function
-seed()
-  .catch(e => {
-    console.error(e);
-    process.exit(1);
-  }); 
+seed().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

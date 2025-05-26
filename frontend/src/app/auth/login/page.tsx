@@ -28,7 +28,10 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <form onSubmit={handleSubmit} className="bg-white p-8 rounded shadow-md w-full max-w-md">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-8 rounded shadow-md w-full max-w-md"
+      >
         <h1 className="text-2xl mb-6 text-center">Log In to NeonHub</h1>
 
         {error && <p className="text-red-500 mb-4">{error}</p>}
@@ -38,7 +41,7 @@ export default function LoginPage() {
           <input
             type="email"
             value={email}
-            onChange={e => setEmail(e.target.value)}
+            onChange={(e) => setEmail(e.target.value)}
             required
             className="mt-1 block w-full border rounded p-2"
           />
@@ -49,7 +52,7 @@ export default function LoginPage() {
           <input
             type="password"
             value={password}
-            onChange={e => setPassword(e.target.value)}
+            onChange={(e) => setPassword(e.target.value)}
             required
             className="mt-1 block w-full border rounded p-2"
           />
@@ -64,9 +67,12 @@ export default function LoginPage() {
         </button>
 
         <p className="mt-4 text-center">
-          Don't have an account? <a href="/auth/register" className="text-blue-600 hover:underline">Register</a>
+          Don't have an account?{' '}
+          <a href="/auth/register" className="text-blue-600 hover:underline">
+            Register
+          </a>
         </p>
       </form>
     </div>
   );
-} 
+}

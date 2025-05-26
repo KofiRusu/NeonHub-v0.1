@@ -75,4 +75,4 @@
       "destination": "https://neonhub-api.vercel.app/api/:path*"
     }
   ]
-} 
+}

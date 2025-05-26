@@ -20,13 +20,13 @@ declare module 'express-serve-static-core' {
 export const protect = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     // Get token from header
     const authHeader = req.headers.authorization;
     const token = extractTokenFromHeader(authHeader);
-    
+
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -93,4 +93,4 @@ export const authorize = (...roles: string[]) => {
 
     next();
   };
-}; 
+};

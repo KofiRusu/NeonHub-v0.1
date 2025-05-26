@@ -23,7 +23,11 @@ export class AgentManager {
    * @param options Optional execution options
    * @returns The result of the agent execution
    */
-  async startAgent(agentId: string, campaignId?: string, options: AgentExecutionConfig = {}): Promise<any> {
+  async startAgent(
+    agentId: string,
+    campaignId?: string,
+    options: AgentExecutionConfig = {},
+  ): Promise<any> {
     // Check if agent is already running
     if (this.isAgentRunning(agentId)) {
       console.log(`Agent ${agentId} is already running`);
@@ -53,7 +57,7 @@ export class AgentManager {
       // Merge config with any passed options
       const config = {
         ...JSON.parse(JSON.stringify(agentData.configuration)),
-        ...options.config
+        ...options.config,
       };
 
       // Execute the agent with provided campaign ID and options
@@ -62,7 +66,7 @@ export class AgentManager {
         trackMetrics: options.trackMetrics !== false, // Default to true
         tokenUsage: options.tokenUsage,
         maxRetries: options.maxRetries,
-        retryDelay: options.retryDelay
+        retryDelay: options.retryDelay,
       });
 
       // Update agent status to COMPLETED
@@ -85,7 +89,7 @@ export class AgentManager {
       });
 
       // BaseAgent class handles session updates and metrics logging
-      
+
       // Remove from running agents
       this.runningAgents.delete(agentId);
 
@@ -172,7 +176,7 @@ export class AgentManager {
       lastRunAt: agentData.lastRunAt || undefined,
       currentSession: agentStatus?.currentSessionId || undefined,
       events: runningAgent?.getEvents() || [],
-      executionTime: agentStatus?.executionTime
+      executionTime: agentStatus?.executionTime,
     };
   }
 
@@ -192,7 +196,7 @@ export class AgentManager {
         agentId,
         status: status,
         executionTime: status.executionTime,
-        eventCount: status.eventCount
+        eventCount: status.eventCount,
       };
     });
   }
@@ -211,17 +215,21 @@ export class AgentManager {
     configuration?: any;
   }): Promise<AIAgent> {
     // Get default configuration for the agent type
-    const defaultConfig = this.agentFactory.getDefaultConfig(agentData.agentType);
-    
+    const defaultConfig = this.agentFactory.getDefaultConfig(
+      agentData.agentType,
+    );
+
     // Merge with provided configuration
     const configuration = {
       ...defaultConfig,
-      ...agentData.configuration
+      ...agentData.configuration,
     };
 
     // Validate configuration
     if (!this.agentFactory.validateConfig(agentData.agentType, configuration)) {
-      throw new Error(`Invalid configuration for agent type: ${agentData.agentType}`);
+      throw new Error(
+        `Invalid configuration for agent type: ${agentData.agentType}`,
+      );
     }
 
     return await this.prisma.aIAgent.create({
@@ -243,7 +251,10 @@ export class AgentManager {
    * @param configuration New configuration
    * @returns Updated agent
    */
-  async updateAgentConfiguration(agentId: string, configuration: any): Promise<AIAgent> {
+  async updateAgentConfiguration(
+    agentId: string,
+    configuration: any,
+  ): Promise<AIAgent> {
     const agent = await this.prisma.aIAgent.findUnique({
       where: { id: agentId },
     });
@@ -254,7 +265,9 @@ export class AgentManager {
 
     // Validate new configuration
     if (!this.agentFactory.validateConfig(agent.agentType, configuration)) {
-      throw new Error(`Invalid configuration for agent type: ${agent.agentType}`);
+      throw new Error(
+        `Invalid configuration for agent type: ${agent.agentType}`,
+      );
     }
 
     return await this.prisma.aIAgent.update({
@@ -282,7 +295,9 @@ export class AgentManager {
    * @param type Agent type
    * @returns Plugin information
    */
-  getPluginInfo(type: AgentType): { name: string; description: string; version: string } | null {
+  getPluginInfo(
+    type: AgentType,
+  ): { name: string; description: string; version: string } | null {
     return this.agentFactory.getPluginInfo(type);
   }
 
@@ -355,4 +370,4 @@ export class AgentManager {
       availableAgentTypes: this.agentFactory.getAvailableAgentTypes().length,
     };
   }
-} 
+}

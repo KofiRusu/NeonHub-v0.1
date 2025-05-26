@@ -8,7 +8,7 @@ jest.mock('../middleware/auth.middleware', () => ({
   protect: (req: any, res: any, next: any) => {
     req.user = { id: 'test-user-id' };
     next();
-  }
+  },
 }));
 
 describe('Campaign API Routes', () => {
@@ -22,18 +22,22 @@ describe('Campaign API Routes', () => {
       data: {
         name: 'Test User',
         email: 'campaign-test@example.com',
-        password: 'hashed-password'
-      }
+        password: 'hashed-password',
+      },
     });
 
-    authToken = generateJWT({ id: testUser.id, email: testUser.email, role: testUser.role });
+    authToken = generateJWT({
+      id: testUser.id,
+      email: testUser.email,
+      role: testUser.role,
+    });
 
     testProject = await prisma.project.create({
       data: {
         name: 'Test Project',
         description: 'Test project for campaign API tests',
-        ownerId: testUser.id
-      }
+        ownerId: testUser.id,
+      },
     });
 
     testCampaign = await prisma.campaign.create({
@@ -45,21 +49,21 @@ describe('Campaign API Routes', () => {
         targeting: {},
         status: 'DRAFT',
         ownerId: testUser.id,
-        projectId: testProject.id
-      }
+        projectId: testProject.id,
+      },
     });
   });
 
   afterAll(async () => {
     // Clean up test data
     await prisma.campaign.deleteMany({
-      where: { name: 'Test Campaign' }
+      where: { name: 'Test Campaign' },
     });
     await prisma.project.deleteMany({
-      where: { name: 'Test Project' }
+      where: { name: 'Test Project' },
     });
     await prisma.user.deleteMany({
-      where: { email: 'campaign-test@example.com' }
+      where: { email: 'campaign-test@example.com' },
     });
   });
 
@@ -98,4 +102,4 @@ describe('Campaign API Routes', () => {
     // TODO: Implement this test
     expect(true).toBe(true);
   });
-}); 
+});

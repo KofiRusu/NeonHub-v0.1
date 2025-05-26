@@ -8,35 +8,37 @@ const prisma = new PrismaClient();
 
 // Schema for campaign creation
 const createCampaignSchema = z.object({
-  name: z.string().min(2, "Campaign name must be at least 2 characters"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
+  name: z.string().min(2, 'Campaign name must be at least 2 characters'),
+  description: z.string().min(10, 'Description must be at least 10 characters'),
   type: z.enum([
-    'CONTENT_MARKETING', 
-    'EMAIL_CAMPAIGN', 
-    'SOCIAL_MEDIA', 
-    'SEO_OPTIMIZATION', 
-    'AD_CAMPAIGN', 
-    'PRODUCT_LAUNCH', 
-    'EVENT_PROMOTION', 
-    'BRAND_AWARENESS'
+    'CONTENT_MARKETING',
+    'EMAIL_CAMPAIGN',
+    'SOCIAL_MEDIA',
+    'SEO_OPTIMIZATION',
+    'AD_CAMPAIGN',
+    'PRODUCT_LAUNCH',
+    'EVENT_PROMOTION',
+    'BRAND_AWARENESS',
   ]),
-  target: z.string().min(5, "Target audience must be at least 5 characters"),
+  target: z.string().min(5, 'Target audience must be at least 5 characters'),
   budget: z.string().optional(),
-  goals: z.string().min(5, "Campaign goals must be at least 5 characters"),
+  goals: z.string().min(5, 'Campaign goals must be at least 5 characters'),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
 });
 
 // Schema for campaign update
 const updateCampaignSchema = createCampaignSchema.partial().extend({
-  status: z.enum(['DRAFT', 'ACTIVE', 'PAUSED', 'COMPLETED', 'CANCELLED']).optional(),
+  status: z
+    .enum(['DRAFT', 'ACTIVE', 'PAUSED', 'COMPLETED', 'CANCELLED'])
+    .optional(),
 });
 
 // Get all campaigns
 router.get('/', async (req, res) => {
   try {
     const userId = req.user.id;
-    
+
     const campaigns = await prisma.campaign.findMany({
       where: {
         userId,
@@ -70,7 +72,7 @@ router.get('/', async (req, res) => {
         },
       },
     });
-    
+
     return res.json(campaigns);
   } catch (error) {
     console.error('Error fetching campaigns:', error);
@@ -83,7 +85,7 @@ router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
-    
+
     const campaign = await prisma.campaign.findFirst({
       where: {
         id,
@@ -107,11 +109,11 @@ router.get('/:id', async (req, res) => {
         },
       },
     });
-    
+
     if (!campaign) {
       return res.status(404).json({ message: 'Campaign not found' });
     }
-    
+
     return res.json(campaign);
   } catch (error) {
     console.error('Error fetching campaign:', error);
@@ -122,9 +124,18 @@ router.get('/:id', async (req, res) => {
 // Create new campaign
 router.post('/', validateRequest(createCampaignSchema), async (req, res) => {
   try {
-    const { name, description, type, target, budget, goals, startDate, endDate } = req.body;
+    const {
+      name,
+      description,
+      type,
+      target,
+      budget,
+      goals,
+      startDate,
+      endDate,
+    } = req.body;
     const userId = req.user.id;
-    
+
     const campaign = await prisma.campaign.create({
       data: {
         name,
@@ -139,7 +150,7 @@ router.post('/', validateRequest(createCampaignSchema), async (req, res) => {
         userId,
       },
     });
-    
+
     return res.status(201).json(campaign);
   } catch (error) {
     console.error('Error creating campaign:', error);
@@ -151,9 +162,19 @@ router.post('/', validateRequest(createCampaignSchema), async (req, res) => {
 router.put('/:id', validateRequest(updateCampaignSchema), async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, type, target, budget, goals, startDate, endDate, status } = req.body;
+    const {
+      name,
+      description,
+      type,
+      target,
+      budget,
+      goals,
+      startDate,
+      endDate,
+      status,
+    } = req.body;
     const userId = req.user.id;
-    
+
     // Check if campaign exists and belongs to user
     const existingCampaign = await prisma.campaign.findFirst({
       where: {
@@ -161,11 +182,11 @@ router.put('/:id', validateRequest(updateCampaignSchema), async (req, res) => {
         userId,
       },
     });
-    
+
     if (!existingCampaign) {
       return res.status(404).json({ message: 'Campaign not found' });
     }
-    
+
     // Update campaign
     const campaign = await prisma.campaign.update({
       where: {
@@ -183,7 +204,7 @@ router.put('/:id', validateRequest(updateCampaignSchema), async (req, res) => {
         status,
       },
     });
-    
+
     return res.json(campaign);
   } catch (error) {
     console.error('Error updating campaign:', error);
@@ -196,7 +217,7 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
-    
+
     // Check if campaign exists and belongs to user
     const existingCampaign = await prisma.campaign.findFirst({
       where: {
@@ -204,18 +225,18 @@ router.delete('/:id', async (req, res) => {
         userId,
       },
     });
-    
+
     if (!existingCampaign) {
       return res.status(404).json({ message: 'Campaign not found' });
     }
-    
+
     // Delete campaign
     await prisma.campaign.delete({
       where: {
         id,
       },
     });
-    
+
     return res.status(204).send();
   } catch (error) {
     console.error('Error deleting campaign:', error);
@@ -228,7 +249,7 @@ router.get('/:id/metrics', async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
-    
+
     // Check if campaign exists and belongs to user
     const existingCampaign = await prisma.campaign.findFirst({
       where: {
@@ -236,11 +257,11 @@ router.get('/:id/metrics', async (req, res) => {
         userId,
       },
     });
-    
+
     if (!existingCampaign) {
       return res.status(404).json({ message: 'Campaign not found' });
     }
-    
+
     const metrics = await prisma.metric.findMany({
       where: {
         campaignId: id,
@@ -249,12 +270,14 @@ router.get('/:id/metrics', async (req, res) => {
         timestamp: 'desc',
       },
     });
-    
+
     return res.json(metrics);
   } catch (error) {
     console.error('Error fetching campaign metrics:', error);
-    return res.status(500).json({ message: 'Failed to fetch campaign metrics' });
+    return res
+      .status(500)
+      .json({ message: 'Failed to fetch campaign metrics' });
   }
 });
 
-export default router; 
+export default router;

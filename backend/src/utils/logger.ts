@@ -5,11 +5,11 @@ const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
   format: winston.format.combine(
     winston.format.timestamp({
-      format: 'YYYY-MM-DD HH:mm:ss'
+      format: 'YYYY-MM-DD HH:mm:ss',
     }),
     winston.format.errors({ stack: true }),
     winston.format.splat(),
-    winston.format.json()
+    winston.format.json(),
   ),
   defaultMeta: { service: 'neonhub-backend' },
   transports: [
@@ -17,17 +17,19 @@ const logger = winston.createLogger({
     new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
     // Write all logs with importance level of `info` or less to `combined.log`
     new winston.transports.File({ filename: 'logs/combined.log' }),
-  ]
+  ],
 });
 
 // If we're not in production then log to the console
 if (process.env.NODE_ENV !== 'production') {
-  logger.add(new winston.transports.Console({
-    format: winston.format.combine(
-      winston.format.colorize(),
-      winston.format.simple()
-    ),
-  }));
+  logger.add(
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.simple(),
+      ),
+    }),
+  );
 }
 
 // In test environment, silence logs unless explicitly enabled
@@ -38,7 +40,12 @@ if (process.env.NODE_ENV === 'test' && !process.env.ENABLE_LOGS) {
 export { logger };
 
 // Helper function to log API requests
-export const logAPIRequest = (method: string, path: string, status: number, responseTime: number) => {
+export const logAPIRequest = (
+  method: string,
+  path: string,
+  status: number,
+  responseTime: number,
+) => {
   logger.info({
     message: `API Request: ${method} ${path}`,
     method,
@@ -55,4 +62,4 @@ export const logError = (error: Error, context?: Record<string, any>) => {
     stack: error.stack,
     ...context,
   });
-}; 
+};

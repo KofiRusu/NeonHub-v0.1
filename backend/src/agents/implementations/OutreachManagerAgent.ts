@@ -1,4 +1,10 @@
-import { PrismaClient, AIAgent, OutreachStatus, ContactMethod, OutreachType } from '@prisma/client';
+import {
+  PrismaClient,
+  AIAgent,
+  OutreachStatus,
+  ContactMethod,
+  OutreachType,
+} from '@prisma/client';
 import { BaseAgent } from '../base/BaseAgent';
 
 interface OutreachConfig {
@@ -28,27 +34,29 @@ export class OutreachManagerAgent extends BaseAgent {
    */
   protected async executeImpl(config: OutreachConfig): Promise<any> {
     // Log start of outreach campaign
-    await this.logMessage(`Starting outreach campaign using ${config.contactMethod}`);
+    await this.logMessage(
+      `Starting outreach campaign using ${config.contactMethod}`,
+    );
 
     // Validate configuration
     if (!config.campaignId) {
-      throw new Error("Campaign ID is required");
+      throw new Error('Campaign ID is required');
     }
     if (!config.outreachType) {
-      throw new Error("Outreach type is required");
+      throw new Error('Outreach type is required');
     }
     if (!config.contactMethod) {
-      throw new Error("Contact method is required");
+      throw new Error('Contact method is required');
     }
     if (!config.targetAudience) {
-      throw new Error("Target audience is required");
+      throw new Error('Target audience is required');
     }
 
     try {
       // Get campaign details
       const campaign = await this.prisma.campaign.findUnique({
         where: { id: config.campaignId },
-        include: { owner: true }
+        include: { owner: true },
       });
 
       if (!campaign) {
@@ -57,7 +65,11 @@ export class OutreachManagerAgent extends BaseAgent {
 
       // In a real implementation, this would integrate with email/messaging APIs
       // For now, we'll just simulate the outreach
-      const outreachTasks = await this.createOutreachTasks(config, campaign.id, campaign.ownerId);
+      const outreachTasks = await this.createOutreachTasks(
+        config,
+        campaign.id,
+        campaign.ownerId,
+      );
 
       await this.logMessage(`Created ${outreachTasks.length} outreach tasks`);
 
@@ -67,7 +79,10 @@ export class OutreachManagerAgent extends BaseAgent {
         summary: this.generateOutreachSummary(outreachTasks, config),
       };
     } catch (error) {
-      await this.logMessage(`Error in outreach manager: ${error instanceof Error ? error.message : String(error)}`, 'error');
+      await this.logMessage(
+        `Error in outreach manager: ${error instanceof Error ? error.message : String(error)}`,
+        'error',
+      );
       throw error;
     }
   }
@@ -79,19 +94,27 @@ export class OutreachManagerAgent extends BaseAgent {
    * @param userId User ID of the campaign owner
    * @returns Created outreach tasks
    */
-  private async createOutreachTasks(config: OutreachConfig, campaignId: string, userId: string): Promise<any[]> {
+  private async createOutreachTasks(
+    config: OutreachConfig,
+    campaignId: string,
+    userId: string,
+  ): Promise<any[]> {
     // Check if agent should stop
     if (this.checkShouldStop()) {
-      throw new Error("Outreach task creation was stopped");
+      throw new Error('Outreach task creation was stopped');
     }
 
-    await this.logMessage(`Preparing outreach templates for ${config.targetAudience}...`);
+    await this.logMessage(
+      `Preparing outreach templates for ${config.targetAudience}...`,
+    );
 
     // Simulate API call and processing time
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise((resolve) => setTimeout(resolve, 1500));
 
     // Generate mock data for audience segments
-    const audienceSegments = this.generateAudienceSegments(config.targetAudience);
+    const audienceSegments = this.generateAudienceSegments(
+      config.targetAudience,
+    );
     const outreachTasks = [];
 
     // Create an outreach task for each audience segment
@@ -123,7 +146,10 @@ export class OutreachManagerAgent extends BaseAgent {
         outreachTasks.push(task);
         await this.logMessage(`Created outreach task for ${segment.name}`);
       } catch (error) {
-        await this.logMessage(`Failed to create outreach task for ${segment.name}: ${error instanceof Error ? error.message : String(error)}`, 'warning');
+        await this.logMessage(
+          `Failed to create outreach task for ${segment.name}: ${error instanceof Error ? error.message : String(error)}`,
+          'warning',
+        );
       }
     }
 
@@ -136,18 +162,26 @@ export class OutreachManagerAgent extends BaseAgent {
    * @param contact Contact information
    * @returns Personalized message
    */
-  private generatePersonalizedMessage(config: OutreachConfig, contact: any): string {
-    const template = config.messageTemplate || this.getDefaultTemplate(config.outreachType, config.contactMethod);
-    
+  private generatePersonalizedMessage(
+    config: OutreachConfig,
+    contact: any,
+  ): string {
+    const template =
+      config.messageTemplate ||
+      this.getDefaultTemplate(config.outreachType, config.contactMethod);
+
     // TODO: Implement real personalization logic with templates and variables
     // This would involve parsing the template and replacing variables
-    
+
     const personalized = template
       .replace('{{name}}', contact.name)
       .replace('{{company}}', contact.company)
       .replace('{{segment}}', contact.segment)
-      .replace('{{personalNote}}', this.generatePersonalNote(contact, config.personalizationLevel));
-    
+      .replace(
+        '{{personalNote}}',
+        this.generatePersonalNote(contact, config.personalizationLevel),
+      );
+
     return personalized;
   }
 
@@ -157,8 +191,8 @@ export class OutreachManagerAgent extends BaseAgent {
   private generatePersonalNote(contact: any, level = 'MEDIUM'): string {
     // TODO: In a real implementation, this would use an LLM to generate truly personalized notes
     // based on research about the contact, their recent activities, etc.
-    
-    switch(level) {
+
+    switch (level) {
       case 'HIGH':
         return `I noticed your recent post about ${contact.interests[0]} and thought it was insightful.`;
       case 'MEDIUM':
@@ -172,7 +206,10 @@ export class OutreachManagerAgent extends BaseAgent {
   /**
    * Get default message template based on outreach type and contact method
    */
-  private getDefaultTemplate(type: OutreachType, method: ContactMethod): string {
+  private getDefaultTemplate(
+    type: OutreachType,
+    method: ContactMethod,
+  ): string {
     if (type === 'COLD_OUTREACH' && method === 'EMAIL') {
       return `Subject: Opportunity for {{company}}
 
@@ -189,7 +226,7 @@ Would you be available for a quick 15-minute call next week?
 Best regards,
 The Team`;
     }
-    
+
     if (method === 'SOCIAL_DM') {
       return `Hi {{name}}, 
 
@@ -197,7 +234,7 @@ The Team`;
 
 I'd love to discuss how we might be able to help with your {{segment}} needs. Would you be open to a quick chat?`;
     }
-    
+
     // Default fallback template
     return `Hello {{name}},
 
@@ -214,13 +251,25 @@ Would you like to learn more?`;
   private generateAudienceSegments(targetAudience: string): any[] {
     // In a real implementation, this would come from a database or CRM
     const segments = [];
-    const industries = ['Technology', 'Healthcare', 'Finance', 'Retail', 'Education'];
-    const roles = ['CEO', 'CMO', 'Marketing Director', 'Digital Marketing Manager', 'Growth Lead'];
-    
+    const industries = [
+      'Technology',
+      'Healthcare',
+      'Finance',
+      'Retail',
+      'Education',
+    ];
+    const roles = [
+      'CEO',
+      'CMO',
+      'Marketing Director',
+      'Digital Marketing Manager',
+      'Growth Lead',
+    ];
+
     for (let i = 0; i < 5; i++) {
       const industry = industries[i % industries.length];
       const role = roles[i % roles.length];
-      
+
       segments.push({
         name: `Contact ${i + 1}`,
         email: `contact${i + 1}@example.com`,
@@ -229,17 +278,24 @@ Would you like to learn more?`;
         company: `${industry} Corp ${i + 1}`,
         segment: targetAudience,
         role: role,
-        interests: ['marketing automation', 'customer acquisition', 'data analytics'],
+        interests: [
+          'marketing automation',
+          'customer acquisition',
+          'data analytics',
+        ],
       });
     }
-    
+
     return segments;
   }
 
   /**
    * Generate a summary of outreach activities
    */
-  private generateOutreachSummary(tasks: any[], config: OutreachConfig): string {
+  private generateOutreachSummary(
+    tasks: any[],
+    config: OutreachConfig,
+  ): string {
     return `# Outreach Campaign Summary
 
 ## Overview
@@ -250,7 +306,7 @@ Would you like to learn more?`;
 
 ## Statistics
 - Total outreach tasks: ${tasks.length}
-- Scheduled for delivery: ${tasks.filter(t => t.status === 'SCHEDULED').length}
+- Scheduled for delivery: ${tasks.filter((t) => t.status === 'SCHEDULED').length}
 
 ## Next Steps
 1. Monitor delivery status and open rates
@@ -261,4 +317,4 @@ Would you like to learn more?`;
 - The maximum outreach per day is limited to ${config.maxOutreachPerDay || 'unlimited'} messages
 - Adjust personalization as needed based on initial response rates`;
   }
-} 
+}

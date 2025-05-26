@@ -6,8 +6,14 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Redirect unauthenticated users trying to access protected routes
-  const protectedPaths = ['/dashboard', '/projects', '/tasks', '/messages', '/documents'];
-  if (!token && protectedPaths.some(path => pathname.startsWith(path))) {
+  const protectedPaths = [
+    '/dashboard',
+    '/projects',
+    '/tasks',
+    '/messages',
+    '/documents',
+  ];
+  if (!token && protectedPaths.some((path) => pathname.startsWith(path))) {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
@@ -28,4 +34,4 @@ export const config = {
     '/documents/:path*',
     '/auth/:path*',
   ],
-}; 
+};

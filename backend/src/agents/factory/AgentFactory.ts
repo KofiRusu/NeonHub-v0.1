@@ -22,11 +22,15 @@ export class AgentPluginRegistry {
    */
   register(plugin: AgentPlugin): void {
     if (this.plugins.has(plugin.type)) {
-      console.warn(`Plugin for agent type ${plugin.type} is already registered. Overwriting...`);
+      console.warn(
+        `Plugin for agent type ${plugin.type} is already registered. Overwriting...`,
+      );
     }
-    
+
     this.plugins.set(plugin.type, plugin);
-    console.log(`Registered agent plugin: ${plugin.name} v${plugin.version} for type ${plugin.type}`);
+    console.log(
+      `Registered agent plugin: ${plugin.name} v${plugin.version} for type ${plugin.type}`,
+    );
   }
 
   /**
@@ -82,7 +86,10 @@ export class AgentFactory {
   private prisma: PrismaClient;
   private registry: AgentPluginRegistry;
 
-  constructor(prisma: PrismaClient, registry: AgentPluginRegistry = pluginRegistry) {
+  constructor(
+    prisma: PrismaClient,
+    registry: AgentPluginRegistry = pluginRegistry,
+  ) {
     this.prisma = prisma;
     this.registry = registry;
   }
@@ -95,14 +102,21 @@ export class AgentFactory {
    */
   createAgent(agentData: AIAgent): BaseAgent {
     const plugin = this.registry.get(agentData.agentType);
-    
+
     if (!plugin) {
-      throw new Error(`No plugin registered for agent type: ${agentData.agentType}`);
+      throw new Error(
+        `No plugin registered for agent type: ${agentData.agentType}`,
+      );
     }
 
     // Validate configuration if plugin provides validation
-    if (plugin.validateConfig && !plugin.validateConfig(agentData.configuration)) {
-      throw new Error(`Invalid configuration for agent type: ${agentData.agentType}`);
+    if (
+      plugin.validateConfig &&
+      !plugin.validateConfig(agentData.configuration)
+    ) {
+      throw new Error(
+        `Invalid configuration for agent type: ${agentData.agentType}`,
+      );
     }
 
     return plugin.create(this.prisma, agentData);
@@ -134,14 +148,16 @@ export class AgentFactory {
    * @param type The agent type
    * @returns Plugin information or null if not found
    */
-  getPluginInfo(type: AgentType): { name: string; description: string; version: string } | null {
+  getPluginInfo(
+    type: AgentType,
+  ): { name: string; description: string; version: string } | null {
     const plugin = this.registry.get(type);
     if (!plugin) return null;
 
     return {
       name: plugin.name,
       description: plugin.description,
-      version: plugin.version
+      version: plugin.version,
     };
   }
 
@@ -156,12 +172,12 @@ export class AgentFactory {
     version: string;
     defaultConfig: any;
   }> {
-    return this.registry.getAll().map(plugin => ({
+    return this.registry.getAll().map((plugin) => ({
       type: plugin.type,
       name: plugin.name,
       description: plugin.description,
       version: plugin.version,
-      defaultConfig: plugin.getDefaultConfig?.() || {}
+      defaultConfig: plugin.getDefaultConfig?.() || {},
     }));
   }
 
@@ -188,4 +204,4 @@ export { pluginRegistry };
 // Default factory instance
 export const createAgentFactory = (prisma: PrismaClient): AgentFactory => {
   return new AgentFactory(prisma);
-}; 
+};

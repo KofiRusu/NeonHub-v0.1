@@ -10,11 +10,14 @@ export class OpenAIService {
     });
   }
 
-  async generateContent(prompt: string, options: {
-    model?: string;
-    maxTokens?: number;
-    temperature?: number;
-  } = {}): Promise<{
+  async generateContent(
+    prompt: string,
+    options: {
+      model?: string;
+      maxTokens?: number;
+      temperature?: number;
+    } = {},
+  ): Promise<{
     content: string;
     usage: {
       promptTokens: number;
@@ -36,7 +39,7 @@ export class OpenAIService {
           promptTokens: response.usage?.prompt_tokens || 0,
           completionTokens: response.usage?.completion_tokens || 0,
           totalTokens: response.usage?.total_tokens || 0,
-        }
+        },
       };
     } catch (error) {
       console.error('OpenAI API Error:', error);
@@ -59,7 +62,7 @@ Response as JSON.`;
     const result = await this.generateContent(prompt, { maxTokens: 1500 });
     return {
       analysis: JSON.parse(result.content),
-      tokensUsed: result.usage
+      tokensUsed: result.usage,
     };
   }
 }

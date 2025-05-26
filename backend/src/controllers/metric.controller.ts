@@ -8,7 +8,8 @@ import { prisma } from '../index';
  */
 export const getMetrics = async (req: Request, res: Response) => {
   try {
-    const { projectId, campaignId, source, name, startDate, endDate } = req.query;
+    const { projectId, campaignId, source, name, startDate, endDate } =
+      req.query;
     const userId = req.user?.id;
 
     // Build where clause
@@ -22,17 +23,14 @@ export const getMetrics = async (req: Request, res: Response) => {
       const project = await prisma.project.findFirst({
         where: {
           id: projectId as string,
-          OR: [
-            { ownerId: userId },
-            { members: { some: { id: userId } } }
-          ]
-        }
+          OR: [{ ownerId: userId }, { members: { some: { id: userId } } }],
+        },
       });
 
       if (!project) {
         return res.status(403).json({
           success: false,
-          message: 'Not authorized to access this project'
+          message: 'Not authorized to access this project',
         });
       }
     }
@@ -47,21 +45,22 @@ export const getMetrics = async (req: Request, res: Response) => {
           id: campaignId as string,
           OR: [
             { ownerId: userId },
-            { project: { 
+            {
+              project: {
                 OR: [
                   { ownerId: userId },
-                  { members: { some: { id: userId } } }
-                ]
-              } 
-            }
-          ]
-        }
+                  { members: { some: { id: userId } } },
+                ],
+              },
+            },
+          ],
+        },
       });
 
       if (!campaign) {
         return res.status(403).json({
           success: false,
-          message: 'Not authorized to access this campaign'
+          message: 'Not authorized to access this campaign',
         });
       }
     }
@@ -92,28 +91,26 @@ export const getMetrics = async (req: Request, res: Response) => {
     // If no projectId or campaignId specified, limit to projects the user has access to
     if (!projectId && !campaignId) {
       where.OR = [
-        { 
-          project: { 
-            OR: [
-              { ownerId: userId },
-              { members: { some: { id: userId } } }
-            ]
-          } 
+        {
+          project: {
+            OR: [{ ownerId: userId }, { members: { some: { id: userId } } }],
+          },
         },
-        { 
-          campaign: { 
+        {
+          campaign: {
             OR: [
               { ownerId: userId },
-              { project: { 
+              {
+                project: {
                   OR: [
                     { ownerId: userId },
-                    { members: { some: { id: userId } } }
-                  ]
-                } 
-              }
-            ]
-          } 
-        }
+                    { members: { some: { id: userId } } },
+                  ],
+                },
+              },
+            ],
+          },
+        },
       ];
     }
 
@@ -124,31 +121,31 @@ export const getMetrics = async (req: Request, res: Response) => {
         campaign: {
           select: {
             id: true,
-            name: true
-          }
+            name: true,
+          },
         },
         project: {
           select: {
             id: true,
-            name: true
-          }
-        }
+            name: true,
+          },
+        },
       },
       orderBy: {
-        timestamp: 'desc'
-      }
+        timestamp: 'desc',
+      },
     });
 
     res.status(200).json({
       success: true,
       count: metrics.length,
-      data: metrics
+      data: metrics,
     });
   } catch (error) {
     console.error('Get metrics error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: 'Server error',
     });
   }
 };
@@ -178,12 +175,12 @@ export const getMetric = async (req: Request, res: Response) => {
                 ownerId: true,
                 members: {
                   select: {
-                    id: true
-                  }
-                }
-              }
-            }
-          }
+                    id: true,
+                  },
+                },
+              },
+            },
+          },
         },
         project: {
           select: {
@@ -192,18 +189,18 @@ export const getMetric = async (req: Request, res: Response) => {
             ownerId: true,
             members: {
               select: {
-                id: true
-              }
-            }
-          }
-        }
-      }
+                id: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!metric) {
       return res.status(404).json({
         success: false,
-        message: 'Metric not found'
+        message: 'Metric not found',
       });
     }
 
@@ -211,34 +208,34 @@ export const getMetric = async (req: Request, res: Response) => {
     let hasAccess = false;
 
     if (metric.project) {
-      hasAccess = 
-        metric.project.ownerId === userId || 
-        metric.project.members.some(member => member.id === userId);
+      hasAccess =
+        metric.project.ownerId === userId ||
+        metric.project.members.some((member) => member.id === userId);
     }
 
     if (!hasAccess && metric.campaign) {
-      hasAccess = 
-        metric.campaign.ownerId === userId || 
-        metric.campaign.project.ownerId === userId || 
-        metric.campaign.project.members.some(member => member.id === userId);
+      hasAccess =
+        metric.campaign.ownerId === userId ||
+        metric.campaign.project.ownerId === userId ||
+        metric.campaign.project.members.some((member) => member.id === userId);
     }
 
     if (!hasAccess) {
       return res.status(403).json({
         success: false,
-        message: 'Not authorized to access this metric'
+        message: 'Not authorized to access this metric',
       });
     }
 
     res.status(200).json({
       success: true,
-      data: metric
+      data: metric,
     });
   } catch (error) {
     console.error('Get metric error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: 'Server error',
     });
   }
 };
@@ -250,24 +247,24 @@ export const getMetric = async (req: Request, res: Response) => {
  */
 export const createMetric = async (req: Request, res: Response) => {
   try {
-    const { 
-      name, 
-      source, 
-      value, 
-      unit, 
-      dimension, 
-      projectId, 
-      campaignId, 
-      metadata 
+    const {
+      name,
+      source,
+      value,
+      unit,
+      dimension,
+      projectId,
+      campaignId,
+      metadata,
     } = req.body;
-    
+
     const userId = req.user?.id;
 
     // Validate required fields
     if (!name || !source || value === undefined) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide name, source, and value'
+        message: 'Please provide name, source, and value',
       });
     }
 
@@ -275,7 +272,7 @@ export const createMetric = async (req: Request, res: Response) => {
     if (!projectId && !campaignId) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide either projectId or campaignId'
+        message: 'Please provide either projectId or campaignId',
       });
     }
 
@@ -284,17 +281,14 @@ export const createMetric = async (req: Request, res: Response) => {
       const project = await prisma.project.findFirst({
         where: {
           id: projectId,
-          OR: [
-            { ownerId: userId },
-            { members: { some: { id: userId } } }
-          ]
-        }
+          OR: [{ ownerId: userId }, { members: { some: { id: userId } } }],
+        },
       });
 
       if (!project) {
         return res.status(403).json({
           success: false,
-          message: 'Not authorized to create metrics for this project'
+          message: 'Not authorized to create metrics for this project',
         });
       }
     }
@@ -305,21 +299,22 @@ export const createMetric = async (req: Request, res: Response) => {
           id: campaignId,
           OR: [
             { ownerId: userId },
-            { project: { 
+            {
+              project: {
                 OR: [
                   { ownerId: userId },
-                  { members: { some: { id: userId } } }
-                ]
-              } 
-            }
-          ]
-        }
+                  { members: { some: { id: userId } } },
+                ],
+              },
+            },
+          ],
+        },
       });
 
       if (!campaign) {
         return res.status(403).json({
           success: false,
-          message: 'Not authorized to create metrics for this campaign'
+          message: 'Not authorized to create metrics for this campaign',
         });
       }
     }
@@ -335,19 +330,19 @@ export const createMetric = async (req: Request, res: Response) => {
         projectId,
         campaignId,
         metadata: metadata || {},
-        timestamp: new Date()
-      }
+        timestamp: new Date(),
+      },
     });
 
     res.status(201).json({
       success: true,
-      data: metric
+      data: metric,
     });
   } catch (error) {
     console.error('Create metric error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: 'Server error',
     });
   }
 };
@@ -359,15 +354,8 @@ export const createMetric = async (req: Request, res: Response) => {
  */
 export const updateMetric = async (req: Request, res: Response) => {
   try {
-    const { 
-      name, 
-      source, 
-      value, 
-      unit, 
-      dimension,
-      metadata 
-    } = req.body;
-    
+    const { name, source, value, unit, dimension, metadata } = req.body;
+
     const metricId = req.params.id;
     const userId = req.user?.id;
 
@@ -380,10 +368,10 @@ export const updateMetric = async (req: Request, res: Response) => {
             ownerId: true,
             members: {
               select: {
-                id: true
-              }
-            }
-          }
+                id: true,
+              },
+            },
+          },
         },
         campaign: {
           select: {
@@ -393,20 +381,20 @@ export const updateMetric = async (req: Request, res: Response) => {
                 ownerId: true,
                 members: {
                   select: {
-                    id: true
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+                    id: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!existingMetric) {
       return res.status(404).json({
         success: false,
-        message: 'Metric not found'
+        message: 'Metric not found',
       });
     }
 
@@ -414,22 +402,24 @@ export const updateMetric = async (req: Request, res: Response) => {
     let hasAccess = false;
 
     if (existingMetric.project) {
-      hasAccess = 
-        existingMetric.project.ownerId === userId || 
-        existingMetric.project.members.some(member => member.id === userId);
+      hasAccess =
+        existingMetric.project.ownerId === userId ||
+        existingMetric.project.members.some((member) => member.id === userId);
     }
 
     if (!hasAccess && existingMetric.campaign) {
-      hasAccess = 
-        existingMetric.campaign.ownerId === userId || 
-        existingMetric.campaign.project.ownerId === userId || 
-        existingMetric.campaign.project.members.some(member => member.id === userId);
+      hasAccess =
+        existingMetric.campaign.ownerId === userId ||
+        existingMetric.campaign.project.ownerId === userId ||
+        existingMetric.campaign.project.members.some(
+          (member) => member.id === userId,
+        );
     }
 
     if (!hasAccess) {
       return res.status(403).json({
         success: false,
-        message: 'Not authorized to update this metric'
+        message: 'Not authorized to update this metric',
       });
     }
 
@@ -442,19 +432,19 @@ export const updateMetric = async (req: Request, res: Response) => {
         value,
         unit,
         dimension,
-        metadata
-      }
+        metadata,
+      },
     });
 
     res.status(200).json({
       success: true,
-      data: metric
+      data: metric,
     });
   } catch (error) {
     console.error('Update metric error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: 'Server error',
     });
   }
 };
@@ -475,26 +465,26 @@ export const deleteMetric = async (req: Request, res: Response) => {
       include: {
         project: {
           select: {
-            ownerId: true
-          }
+            ownerId: true,
+          },
         },
         campaign: {
           select: {
             ownerId: true,
             project: {
               select: {
-                ownerId: true
-              }
-            }
-          }
-        }
-      }
+                ownerId: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!metric) {
       return res.status(404).json({
         success: false,
-        message: 'Metric not found'
+        message: 'Metric not found',
       });
     }
 
@@ -506,32 +496,32 @@ export const deleteMetric = async (req: Request, res: Response) => {
     }
 
     if (!isOwner && metric.campaign) {
-      isOwner = 
-        metric.campaign.ownerId === userId || 
+      isOwner =
+        metric.campaign.ownerId === userId ||
         metric.campaign.project.ownerId === userId;
     }
 
     if (!isOwner) {
       return res.status(403).json({
         success: false,
-        message: 'Not authorized to delete this metric'
+        message: 'Not authorized to delete this metric',
       });
     }
 
     // Delete the metric
     await prisma.metric.delete({
-      where: { id: metricId }
+      where: { id: metricId },
     });
 
     res.status(200).json({
       success: true,
-      data: {}
+      data: {},
     });
   } catch (error) {
     console.error('Delete metric error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: 'Server error',
     });
   }
 };
@@ -543,7 +533,13 @@ export const deleteMetric = async (req: Request, res: Response) => {
  */
 export const getMetricsSummary = async (req: Request, res: Response) => {
   try {
-    const { projectId, campaignId, groupBy = 'day', startDate, endDate } = req.query;
+    const {
+      projectId,
+      campaignId,
+      groupBy = 'day',
+      startDate,
+      endDate,
+    } = req.query;
     const userId = req.user?.id;
 
     // Build where clause
@@ -552,75 +548,71 @@ export const getMetricsSummary = async (req: Request, res: Response) => {
     // Filter by project or campaign
     if (projectId) {
       where.projectId = projectId as string;
-      
+
       // Check access
       const project = await prisma.project.findFirst({
         where: {
           id: projectId as string,
-          OR: [
-            { ownerId: userId },
-            { members: { some: { id: userId } } }
-          ]
-        }
+          OR: [{ ownerId: userId }, { members: { some: { id: userId } } }],
+        },
       });
 
       if (!project) {
         return res.status(403).json({
           success: false,
-          message: 'Not authorized to access this project'
+          message: 'Not authorized to access this project',
         });
       }
     } else if (campaignId) {
       where.campaignId = campaignId as string;
-      
+
       // Check access
       const campaign = await prisma.campaign.findFirst({
         where: {
           id: campaignId as string,
           OR: [
             { ownerId: userId },
-            { project: { 
+            {
+              project: {
                 OR: [
                   { ownerId: userId },
-                  { members: { some: { id: userId } } }
-                ]
-              } 
-            }
-          ]
-        }
+                  { members: { some: { id: userId } } },
+                ],
+              },
+            },
+          ],
+        },
       });
 
       if (!campaign) {
         return res.status(403).json({
           success: false,
-          message: 'Not authorized to access this campaign'
+          message: 'Not authorized to access this campaign',
         });
       }
     } else {
       // If neither projectId nor campaignId provided, limit to accessible projects
       where.OR = [
-        { 
-          project: { 
-            OR: [
-              { ownerId: userId },
-              { members: { some: { id: userId } } }
-            ]
-          } 
+        {
+          project: {
+            OR: [{ ownerId: userId }, { members: { some: { id: userId } } }],
+          },
         },
-        { 
-          campaign: { 
+        {
+          campaign: {
             OR: [
               { ownerId: userId },
-              { project: { 
+              {
+                project: {
                   OR: [
                     { ownerId: userId },
-                    { members: { some: { id: userId } } }
-                  ]
-                } 
-              }
-            ]
-          } 
-        }
+                    { members: { some: { id: userId } } },
+                  ],
+                },
+              },
+            ],
+          },
+        },
       ];
     }
 
@@ -641,8 +633,8 @@ export const getMetricsSummary = async (req: Request, res: Response) => {
     const metrics = await prisma.metric.findMany({
       where,
       orderBy: {
-        timestamp: 'desc'
-      }
+        timestamp: 'desc',
+      },
     });
 
     // Process the results based on groupBy parameter
@@ -650,13 +642,13 @@ export const getMetricsSummary = async (req: Request, res: Response) => {
 
     res.status(200).json({
       success: true,
-      data: summary
+      data: summary,
     });
   } catch (error) {
     console.error('Get metrics summary error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: 'Server error',
     });
   }
 };
@@ -667,11 +659,11 @@ export const getMetricsSummary = async (req: Request, res: Response) => {
 function processMetricsSummary(metrics: any[], groupBy: string): any {
   const summary: Record<string, any> = {};
 
-  metrics.forEach(metric => {
+  metrics.forEach((metric) => {
     // Generate key based on groupBy
     let key;
     const date = new Date(metric.timestamp);
-    
+
     switch (groupBy) {
       case 'hour':
         key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:00`;
@@ -708,7 +700,7 @@ function processMetricsSummary(metrics: any[], groupBy: string): any {
         avg: 0,
         min: metric.value,
         max: metric.value,
-        metrics: []
+        metrics: [],
       };
     }
 
@@ -722,13 +714,13 @@ function processMetricsSummary(metrics: any[], groupBy: string): any {
       id: metric.id,
       name: metric.name,
       value: metric.value,
-      timestamp: metric.timestamp
+      timestamp: metric.timestamp,
     });
   });
 
   // Convert to array
-  return Object.keys(summary).map(key => ({
+  return Object.keys(summary).map((key) => ({
     key,
-    ...summary[key]
+    ...summary[key],
   }));
-} 
+}

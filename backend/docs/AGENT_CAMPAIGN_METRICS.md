@@ -36,21 +36,23 @@ const agentManager = getAgentManager(prisma);
 
 // Run with existing campaign
 const result = await agentManager.startAgent(
-  agentId,         // Agent ID
-  campaignId,      // Optional campaign ID
+  agentId, // Agent ID
+  campaignId, // Optional campaign ID
   {
-    config: {      // Agent-specific configuration
+    config: {
+      // Agent-specific configuration
       topic: 'How AI is transforming marketing',
       contentType: 'BLOG_POST',
     },
     trackMetrics: true,
-    tokenUsage: {  // Optional token usage tracking
+    tokenUsage: {
+      // Optional token usage tracking
       input: 350,
       output: 2200,
       total: 2550,
       model: 'gpt-4',
-    }
-  }
+    },
+  },
 );
 
 // Access campaign info from result
@@ -62,10 +64,13 @@ console.log(`Campaign ID: ${result.campaignId}`);
 The system includes several API endpoints for working with campaign-linked agents:
 
 #### Run an Agent as Part of a Campaign
+
 ```
 POST /api/agents/campaign/:agentId/run
 ```
+
 Request body:
+
 ```json
 {
   "campaignId": "optional-campaign-id",
@@ -82,11 +87,13 @@ Request body:
 ```
 
 #### Get Agent Campaign Metrics
+
 ```
 GET /api/agents/campaign/:agentId/metrics
 ```
 
 #### Get Campaigns Linked to an Agent
+
 ```
 GET /api/agents/campaign/:agentId/campaigns
 ```
@@ -99,6 +106,7 @@ Two scripts are provided to verify the functionality:
 2. `backend/scripts/run-agent-with-campaign.ts` - Complete example of running an agent with campaign tracking
 
 Run the scripts with:
+
 ```
 npx ts-node backend/scripts/run-agent-with-campaign.ts
 ```
@@ -118,8 +126,8 @@ When an agent is executed without a specific campaignId:
 The system tracks the following metrics:
 
 - **AGENT_EXECUTION_TIME**: Duration of agent execution in milliseconds
-- **TOKEN_USAGE**: Number of tokens used by AI models 
+- **TOKEN_USAGE**: Number of tokens used by AI models
 - **AGENT_SUCCESS_RATE**: Binary success/failure (1.0 or 0.0)
 - **CONTENT_PRODUCTION**: Amount of content produced (when applicable)
 - **TREND_DETECTION**: Number of trends detected (when applicable)
-- **CAMPAIGN_PERFORMANCE**: Overall campaign performance metrics 
+- **CAMPAIGN_PERFORMANCE**: Overall campaign performance metrics

@@ -10,9 +10,9 @@ export class WebSocketService {
   constructor(httpServer: any, prisma: PrismaClient) {
     this.io = new Server(httpServer, {
       cors: {
-        origin: process.env.FRONTEND_URL || "http://localhost:3000",
-        methods: ["GET", "POST"]
-      }
+        origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+        methods: ['GET', 'POST'],
+      },
     });
     this.prisma = prisma;
     this.setupEventHandlers();
@@ -40,7 +40,7 @@ export class WebSocketService {
     this.io.to(`agent-${agentId}`).emit('agent-status-update', {
       agentId,
       status,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
@@ -48,7 +48,7 @@ export class WebSocketService {
     this.io.to(`agent-${agentId}`).emit('agent-log', {
       agentId,
       log,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
@@ -56,7 +56,7 @@ export class WebSocketService {
     this.io.emit('campaign-update', {
       campaignId,
       update,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 }

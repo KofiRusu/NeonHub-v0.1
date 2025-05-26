@@ -61,4 +61,4 @@ router.get('/:id/analytics', protect, getCampaignAnalytics);
  */
 router.post('/:id/schedule', protect, scheduleCampaign);
 
-export default router; 
+export default router;

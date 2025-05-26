@@ -6,7 +6,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 // For now, this is a simple local file storage implementation
 // In production, you'd use a cloud storage service like AWS S3
-const UPLOAD_DIR = process.env.STORAGE_PATH || path.join(__dirname, '../../uploads');
+const UPLOAD_DIR =
+  process.env.STORAGE_PATH || path.join(__dirname, '../../uploads');
 
 // Ensure upload directory exists
 if (!fs.existsSync(UPLOAD_DIR)) {
@@ -34,10 +35,7 @@ export const getDocuments = async (req: Request, res: Response) => {
     const project = await prisma.project.findFirst({
       where: {
         id: projectId as string,
-        OR: [
-          { ownerId: userId },
-          { members: { some: { id: userId } } },
-        ],
+        OR: [{ ownerId: userId }, { members: { some: { id: userId } } }],
       },
     });
 
@@ -122,9 +120,9 @@ export const getDocument = async (req: Request, res: Response) => {
     }
 
     // Check if user has access to the project
-    const hasAccess = 
-      document.project.ownerId === userId || 
-      document.project.members.some(member => member.id === userId);
+    const hasAccess =
+      document.project.ownerId === userId ||
+      document.project.members.some((member) => member.id === userId);
 
     if (!hasAccess) {
       return res.status(403).json({
@@ -158,17 +156,15 @@ export const uploadDocument = async (req: Request, res: Response) => {
   try {
     // Note: In a real implementation, you'd use a multipart/form-data parser like multer
     // For simplicity, we're assuming the file data is sent in the request body
-    const { name, description, projectId, fileData, fileType, fileSize } = req.body;
+    const { name, description, projectId, fileData, fileType, fileSize } =
+      req.body;
     const userId = req.user?.id;
 
     // Check if user has access to the project
     const project = await prisma.project.findFirst({
       where: {
         id: projectId,
-        OR: [
-          { ownerId: userId },
-          { members: { some: { id: userId } } },
-        ],
+        OR: [{ ownerId: userId }, { members: { some: { id: userId } } }],
       },
     });
 
@@ -257,9 +253,9 @@ export const downloadDocument = async (req: Request, res: Response) => {
     }
 
     // Check if user has access to the project
-    const hasAccess = 
-      document.project.ownerId === userId || 
-      document.project.members.some(member => member.id === userId);
+    const hasAccess =
+      document.project.ownerId === userId ||
+      document.project.members.some((member) => member.id === userId);
 
     if (!hasAccess) {
       return res.status(403).json({
@@ -317,7 +313,8 @@ export const deleteDocument = async (req: Request, res: Response) => {
     }
 
     // Check if user is authorized to delete the document (uploader or project owner)
-    const canDelete = document.userId === userId || document.project.ownerId === userId;
+    const canDelete =
+      document.userId === userId || document.project.ownerId === userId;
 
     if (!canDelete) {
       return res.status(403).json({
@@ -350,4 +347,4 @@ export const deleteDocument = async (req: Request, res: Response) => {
       message: 'Server error',
     });
   }
-}; 
+};

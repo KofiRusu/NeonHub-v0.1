@@ -30,7 +30,7 @@ export class MetricService {
     executionId: string,
     campaignId?: string,
     success = true,
-    tokenUsage?: TokenUsage
+    tokenUsage?: TokenUsage,
   ): Promise<Metric> {
     // Create a new metric entry for the agent execution
     return this.prisma.metric.create({
@@ -50,4 +50,4 @@ export class MetricService {
       },
     });
   }
-} 
+}

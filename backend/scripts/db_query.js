@@ -1,8 +1,8 @@
 /**
  * Database query utility script
- * 
+ *
  * This script provides functionality similar to `prisma query` but using Prisma Client directly
- * 
+ *
  * Usage:
  *   node db_query.js "SELECT id, name FROM \"AIAgent\"..."
  *   node db_query.js --file query.sql
@@ -21,10 +21,10 @@ async function executeQuery(query) {
   try {
     // Execute the query
     const results = await prisma.$queryRawUnsafe(query);
-    
+
     // Output the results as JSON
     console.log(JSON.stringify(results, null, 2));
-    
+
     return results;
   } catch (error) {
     console.error('Error executing query:', error.message);
@@ -38,7 +38,7 @@ async function executeQuery(query) {
 async function main() {
   try {
     let query;
-    
+
     // Check if we're reading from a file
     if (process.argv[2] === '--file' && process.argv[3]) {
       query = fs.readFileSync(process.argv[3], 'utf8');
@@ -51,7 +51,7 @@ async function main() {
       console.error('  node db_query.js --file query.sql');
       process.exit(1);
     }
-    
+
     await executeQuery(query);
   } catch (error) {
     console.error('Query execution failed:', error);
@@ -67,4 +67,4 @@ if (require.main === module) {
 } else {
   // Export the executeQuery function for use in other scripts
   module.exports = { executeQuery };
-} 
+}

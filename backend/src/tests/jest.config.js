@@ -19,4 +19,4 @@ module.exports = {
     '/src/agents/implementations/CustomerSupportAgent.ts',
   ],
   verbose: true,
-}; 
+};

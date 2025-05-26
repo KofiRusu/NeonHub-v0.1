@@ -4,38 +4,74 @@
   "private": true,
   "scripts": {
     "build": "tsc",
+    "build:all": "npm run build && npm run build:backend && npm run build:frontend && npm run build:orchestrator",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "build:orchestrator": "cd services/orchestrator && npm run build",
     "start": "node dist/index.js",
-    "lint": "eslint . --ext .ts,.tsx",
+    "lint": "eslint . --ext .ts,.tsx --ignore-path .eslintignore",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix --ignore-path .eslintignore",
     "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "jest",
+    "test:unit": "jest --testPathPattern=unit",
+    "test:integration": "jest --testPathPattern=integration",
+    "test:e2e": "playwright test",
+    "test:coverage": "jest --coverage --coverageThreshold='{\"global\":{\"branches\":80,\"functions\":80,\"lines\":80,\"statements\":80}}'",
+    "test:ci": "npm run test:unit && npm run test:integration && npm run test:coverage",
+    "security:audit": "npm audit --audit-level=moderate",
+    "security:snyk": "npx snyk test",
+    "migrate:dev": "cd backend && npx prisma migrate dev",
+    "migrate:deploy": "cd backend && npx prisma migrate deploy",
     "orchestrate": "node scripts/orchestrate-development.js",
     "dev:autonomous": "npm run orchestrate",
     "agents": "node scripts/agent-orchestrator.js",
     "commitlint": "commitlint --from HEAD~1 --to HEAD --verbose",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "quality:check": "npm run lint && npm run format:check && npm run test:ci && npm run security:audit",
+    "quality:fix": "npm run lint:fix && npm run format",
+    "quality:auto-fix": "node scripts/auto-fix-quality.js",
+    "ci:setup": "npm ci && npm run migrate:dev",
+    "ci:test": "npm run quality:check && npm run test:e2e"
   },
   "dependencies": {
-    "express": "^4.18.2",
+    "@octokit/rest": "^20.0.2",
     "dotenv": "^16.0.3",
-    "@octokit/rest": "^20.0.2"
+    "express": "^4.18.2"
   },
   "devDependencies": {
-    "typescript": "^4.9.5",
-    "eslint": "^8.39.0",
-    "@typescript-eslint/parser": "^5.61.0",
-    "@typescript-eslint/eslint-plugin": "^5.61.0",
-    "prettier": "^2.8.8",
-    "jest": "^29.5.0",
-    "ts-jest": "^29.1.0",
-    "@types/jest": "^29.5.0",
-    "prisma": "^5.0.0",
-    "husky": "^8.0.0",
     "@commitlint/cli": "^17.0.0",
     "@commitlint/config-conventional": "^17.0.0",
-    "lint-staged": "^13.0.0"
+    "@playwright/test": "^1.52.0",
+    "@types/jest": "^29.5.0",
+    "@typescript-eslint/eslint-plugin": "^5.61.0",
+    "@typescript-eslint/parser": "^5.61.0",
+    "bc": "^0.1.1",
+    "codecov": "^3.8.2",
+    "eslint": "^8.39.0",
+    "eslint-config-prettier": "^10.1.5",
+    "husky": "^8.0.3",
+    "jest": "^29.5.0",
+    "lint-staged": "^13.3.0",
+    "prettier": "^3.5.3",
+    "prisma": "^5.0.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^4.9.5",
+    "wait-on": "^8.0.3"
   },
   "lint-staged": {
-    "*.{js,ts,tsx}": ["eslint --fix", "prettier --write"],
-    "*.{json,md}": ["prettier --write"]
+    "**/*.{ts,js,tsx}": [
+      "npm run lint:fix",
+      "npm run format:check"
+    ],
+    "**/*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged && npm run test:unit -- --maxfail=1 --disable-warnings -q",
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
   }
-} 
+}

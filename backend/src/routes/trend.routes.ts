@@ -9,30 +9,27 @@ const prisma = new PrismaClient();
 router.get('/', async (req, res) => {
   try {
     const userId = req.user.id;
-    
+
     // Support filtering
     const { signalType, impact, source } = req.query;
-    
+
     const whereClause: any = {};
-    
+
     if (signalType) {
       whereClause.signalType = signalType as string;
     }
-    
+
     if (impact) {
       whereClause.impact = impact as string;
     }
-    
+
     if (source) {
       whereClause.source = { contains: source as string };
     }
-    
+
     const trends = await prisma.trendSignal.findMany({
       where: whereClause,
-      orderBy: [
-        { createdAt: 'desc' },
-        { impact: 'desc' },
-      ],
+      orderBy: [{ createdAt: 'desc' }, { impact: 'desc' }],
       include: {
         agent: {
           select: {
@@ -43,7 +40,7 @@ router.get('/', async (req, res) => {
         },
       },
     });
-    
+
     return res.json(trends);
   } catch (error) {
     console.error('Error fetching trends:', error);
@@ -55,7 +52,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const trend = await prisma.trendSignal.findUnique({
       where: { id },
       include: {
@@ -68,11 +65,11 @@ router.get('/:id', async (req, res) => {
         },
       },
     });
-    
+
     if (!trend) {
       return res.status(404).json({ message: 'Trend not found' });
     }
-    
+
     return res.json(trend);
   } catch (error) {
     console.error('Error fetching trend:', error);
@@ -85,10 +82,10 @@ router.post('/predict', async (req, res) => {
   try {
     const userId = req.user.id;
     const { keywords, sources, industries } = req.body;
-    
+
     // Get agent manager
     const manager = getAgentManager(prisma);
-    
+
     // Find a TrendPredictor agent or create a temporary one
     let trendAgent = await prisma.aIAgent.findFirst({
       where: {
@@ -96,7 +93,7 @@ router.post('/predict', async (req, res) => {
         status: 'IDLE',
       },
     });
-    
+
     if (!trendAgent) {
       // Create a temporary agent
       trendAgent = await prisma.aIAgent.create({
@@ -108,13 +105,13 @@ router.post('/predict', async (req, res) => {
           configuration: {
             sources: sources || ['social_media', 'news', 'search_trends'],
             industries: industries || ['marketing', 'technology'],
-            keywords: keywords || ['AI', 'automation', 'personalization']
+            keywords: keywords || ['AI', 'automation', 'personalization'],
           },
           userId,
         },
       });
     }
-    
+
     // Run the agent to predict trends
     const context = {
       keywords,
@@ -122,9 +119,9 @@ router.post('/predict', async (req, res) => {
       industries,
       userId,
     };
-    
+
     const result = await manager.runAgent(trendAgent.id, context);
-    
+
     // If successful, fetch the latest trends for this user
     if (result.success) {
       const latestTrends = await prisma.trendSignal.findMany({
@@ -136,7 +133,7 @@ router.post('/predict', async (req, res) => {
         },
         take: 10,
       });
-      
+
       return res.json({
         success: true,
         trends: latestTrends,
@@ -151,7 +148,7 @@ router.post('/predict', async (req, res) => {
     }
   } catch (error) {
     console.error('Error running trend prediction:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
       message: 'Failed to run trend prediction',
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -163,33 +160,33 @@ router.post('/predict', async (req, res) => {
 router.post('/report', async (req, res) => {
   try {
     const { trendIds, title, format } = req.body;
-    
+
     if (!trendIds || trendIds.length === 0) {
       return res.status(400).json({
         success: false,
         message: 'Trend IDs are required',
       });
     }
-    
+
     // Fetch the requested trends
     const trends = await prisma.trendSignal.findMany({
       where: {
         id: { in: trendIds },
       },
     });
-    
+
     if (trends.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'No trends found with the provided IDs',
       });
     }
-    
+
     // Generate a simple report structure
     const report = {
       title: title || `Trend Report - ${new Date().toLocaleDateString()}`,
       generatedAt: new Date(),
-      trends: trends.map(trend => ({
+      trends: trends.map((trend) => ({
         id: trend.id,
         title: trend.title,
         description: trend.description,
@@ -199,12 +196,14 @@ router.post('/report', async (req, res) => {
         impact: trend.impact,
         createdAt: trend.createdAt,
       })),
-      summary: `This report covers ${trends.length} trends with an average confidence of ${
-        (trends.reduce((sum, trend) => sum + trend.confidence, 0) / trends.length * 100).toFixed(1)
-      }%.`,
+      summary: `This report covers ${trends.length} trends with an average confidence of ${(
+        (trends.reduce((sum, trend) => sum + trend.confidence, 0) /
+          trends.length) *
+        100
+      ).toFixed(1)}%.`,
       format: format || 'json',
     };
-    
+
     return res.json({
       success: true,
       report,
@@ -218,4 +217,4 @@ router.post('/report', async (req, res) => {
   }
 });
 
-export default router; 
+export default router;

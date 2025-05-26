@@ -24,7 +24,7 @@ export const getCampaigns = async (req: Request, res: Response) => {
     const campaigns = await campaignService.getCampaigns(
       req.user.id,
       projectId,
-      includeRelated
+      includeRelated,
     );
 
     res.status(200).json({
@@ -119,7 +119,8 @@ export const createCampaign = async (req: Request, res: Response) => {
     if (!name || !description || !campaignType || !projectId) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide name, description, campaign type, and project ID',
+        message:
+          'Please provide name, description, campaign type, and project ID',
       });
     }
 
@@ -399,7 +400,7 @@ export const scheduleCampaign = async (req: Request, res: Response) => {
     const campaign = await campaignService.scheduleCampaign(
       id,
       startDate ? new Date(startDate) : undefined,
-      endDate ? new Date(endDate) : undefined
+      endDate ? new Date(endDate) : undefined,
     );
 
     res.status(200).json({
@@ -413,4 +414,4 @@ export const scheduleCampaign = async (req: Request, res: Response) => {
       message: 'Server error',
     });
   }
-}; 
+};

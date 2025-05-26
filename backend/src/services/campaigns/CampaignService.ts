@@ -1,4 +1,11 @@
-import { PrismaClient, Campaign, AIAgent, CampaignStatus, CampaignType, Prisma } from '@prisma/client';
+import {
+  PrismaClient,
+  Campaign,
+  AIAgent,
+  CampaignStatus,
+  CampaignType,
+  Prisma,
+} from '@prisma/client';
 
 /**
  * Campaign creation data
@@ -72,10 +79,10 @@ export class CampaignService {
   async getCampaigns(
     userId: string,
     projectId?: string,
-    includeRelated = false
+    includeRelated = false,
   ): Promise<Campaign[]> {
     const where: Prisma.CampaignWhereInput = {
-      ownerId: userId
+      ownerId: userId,
     };
 
     // Add project filter if provided
@@ -88,38 +95,40 @@ export class CampaignService {
       orderBy: {
         createdAt: 'desc',
       },
-      include: includeRelated ? {
-        generatedContents: {
-          select: {
-            id: true,
-            title: true,
-            contentType: true,
-            status: true,
-          },
-          take: 3,
-        },
-        outreachTasks: {
-          select: {
-            id: true,
-            title: true,
-            status: true,
-          },
-          take: 3,
-        },
-        agents: {
-          select: {
-            id: true,
-            name: true,
-            agentType: true,
-          },
-        },
-        _count: {
-          select: {
-            generatedContents: true,
-            outreachTasks: true,
-          },
-        },
-      } : undefined,
+      include: includeRelated
+        ? {
+            generatedContents: {
+              select: {
+                id: true,
+                title: true,
+                contentType: true,
+                status: true,
+              },
+              take: 3,
+            },
+            outreachTasks: {
+              select: {
+                id: true,
+                title: true,
+                status: true,
+              },
+              take: 3,
+            },
+            agents: {
+              select: {
+                id: true,
+                name: true,
+                agentType: true,
+              },
+            },
+            _count: {
+              select: {
+                generatedContents: true,
+                outreachTasks: true,
+              },
+            },
+          }
+        : undefined,
     });
   }
 
@@ -131,28 +140,30 @@ export class CampaignService {
    */
   async getCampaign(
     campaignId: string,
-    includeRelated = false
+    includeRelated = false,
   ): Promise<Campaign | null> {
     return this.prisma.campaign.findUnique({
       where: { id: campaignId },
-      include: includeRelated ? {
-        generatedContents: {
-          orderBy: {
-            createdAt: 'desc',
-          },
-        },
-        outreachTasks: {
-          orderBy: {
-            createdAt: 'desc',
-          },
-        },
-        metrics: {
-          orderBy: {
-            timestamp: 'desc',
-          },
-        },
-        agents: true,
-      } : undefined,
+      include: includeRelated
+        ? {
+            generatedContents: {
+              orderBy: {
+                createdAt: 'desc',
+              },
+            },
+            outreachTasks: {
+              orderBy: {
+                createdAt: 'desc',
+              },
+            },
+            metrics: {
+              orderBy: {
+                timestamp: 'desc',
+              },
+            },
+            agents: true,
+          }
+        : undefined,
     });
   }
 
@@ -169,9 +180,12 @@ export class CampaignService {
       data: {
         ...campaignData,
         status: data.status || 'DRAFT',
-        agents: agentIds && agentIds.length > 0 ? {
-          connect: agentIds.map(id => ({ id }))
-        } : undefined,
+        agents:
+          agentIds && agentIds.length > 0
+            ? {
+                connect: agentIds.map((id) => ({ id })),
+              }
+            : undefined,
       },
     });
 
@@ -186,7 +200,7 @@ export class CampaignService {
    */
   async updateCampaign(
     campaignId: string,
-    data: UpdateCampaignData
+    data: UpdateCampaignData,
   ): Promise<Campaign> {
     const { agentIds, ...campaignData } = data;
 
@@ -200,26 +214,26 @@ export class CampaignService {
       });
 
       if (currentCampaign) {
-        const currentAgentIds = currentCampaign.agents.map(agent => agent.id);
-        
+        const currentAgentIds = currentCampaign.agents.map((agent) => agent.id);
+
         // Determine which agents to disconnect
         const agentsToDisconnect = currentAgentIds.filter(
-          id => !agentIds.includes(id)
+          (id) => !agentIds.includes(id),
         );
-        
+
         // Determine which agents to connect
         const agentsToConnect = agentIds.filter(
-          id => !currentAgentIds.includes(id)
+          (id) => !currentAgentIds.includes(id),
         );
-        
+
         // Update campaign with agent connections/disconnections
         return this.prisma.campaign.update({
           where: { id: campaignId },
           data: {
             ...campaignData,
             agents: {
-              disconnect: agentsToDisconnect.map(id => ({ id })),
-              connect: agentsToConnect.map(id => ({ id })),
+              disconnect: agentsToDisconnect.map((id) => ({ id })),
+              connect: agentsToConnect.map((id) => ({ id })),
             },
           },
         });
@@ -252,7 +266,7 @@ export class CampaignService {
    */
   async getOrCreateCampaignForAgent(
     agentData: AIAgent,
-    campaignId?: string
+    campaignId?: string,
   ): Promise<Campaign> {
     // If campaign ID is provided, connect to that campaign
     if (campaignId) {
@@ -260,10 +274,10 @@ export class CampaignService {
       if (!campaign) {
         throw new Error(`Campaign with ID ${campaignId} not found`);
       }
-      
+
       // Connect agent to campaign if not already connected
       await this.connectAgentToCampaign(agentData.id, campaignId);
-      
+
       return campaign;
     }
 
@@ -284,25 +298,27 @@ export class CampaignService {
     }
 
     // Create a new campaign based on agent type
-    const campaignType = this.determineCampaignTypeFromAgent(agentData.agentType);
-    
+    const campaignType = this.determineCampaignTypeFromAgent(
+      agentData.agentType,
+    );
+
     const newCampaign = await this.prisma.campaign.create({
       data: {
         name: `${agentData.name} Campaign`,
         description: `Campaign created from ${agentData.name} agent run`,
         campaignType,
         status: 'ACTIVE',
-        goals: { 
-          primary: "Automated campaign creation",
+        goals: {
+          primary: 'Automated campaign creation',
           automated: true,
-          agentDriven: true
+          agentDriven: true,
         },
-        targetAudience: "Auto-generated by agent",
+        targetAudience: 'Auto-generated by agent',
         ownerId: agentData.managerId,
         projectId: agentData.projectId,
         agents: {
-          connect: { id: agentData.id }
-        }
+          connect: { id: agentData.id },
+        },
       },
     });
 
@@ -314,17 +330,20 @@ export class CampaignService {
    * @param agentId The agent ID
    * @param campaignId The campaign ID
    */
-  async connectAgentToCampaign(agentId: string, campaignId: string): Promise<void> {
+  async connectAgentToCampaign(
+    agentId: string,
+    campaignId: string,
+  ): Promise<void> {
     // Check if already connected
     const campaign = await this.prisma.campaign.findFirst({
       where: {
         id: campaignId,
         agents: {
           some: {
-            id: agentId
-          }
-        }
-      }
+            id: agentId,
+          },
+        },
+      },
     });
 
     if (campaign) {
@@ -337,9 +356,9 @@ export class CampaignService {
       where: { id: campaignId },
       data: {
         agents: {
-          connect: { id: agentId }
-        }
-      }
+          connect: { id: agentId },
+        },
+      },
     });
   }
 
@@ -348,14 +367,17 @@ export class CampaignService {
    * @param agentId Agent ID
    * @param campaignId Campaign ID
    */
-  async disconnectAgentFromCampaign(agentId: string, campaignId: string): Promise<void> {
+  async disconnectAgentFromCampaign(
+    agentId: string,
+    campaignId: string,
+  ): Promise<void> {
     await this.prisma.campaign.update({
       where: { id: campaignId },
       data: {
         agents: {
-          disconnect: { id: agentId }
-        }
-      }
+          disconnect: { id: agentId },
+        },
+      },
     });
   }
 
@@ -364,10 +386,13 @@ export class CampaignService {
    * @param campaignId Campaign ID
    * @param status New status
    */
-  async updateCampaignStatus(campaignId: string, status: CampaignStatus): Promise<Campaign> {
+  async updateCampaignStatus(
+    campaignId: string,
+    status: CampaignStatus,
+  ): Promise<Campaign> {
     return this.prisma.campaign.update({
       where: { id: campaignId },
-      data: { status }
+      data: { status },
     });
   }
 
@@ -384,16 +409,16 @@ export class CampaignService {
         generatedContents: true,
         metrics: {
           orderBy: {
-            timestamp: 'desc'
-          }
+            timestamp: 'desc',
+          },
         },
         _count: {
           select: {
             generatedContents: true,
-            outreachTasks: true
-          }
-        }
-      }
+            outreachTasks: true,
+          },
+        },
+      },
     });
 
     if (!campaign) {
@@ -409,7 +434,7 @@ export class CampaignService {
     let revenueGenerated = 0;
 
     // Aggregate metrics
-    metrics.forEach(metric => {
+    metrics.forEach((metric) => {
       const data = metric.data as any;
       if (data.impressions) impressions += Number(data.impressions);
       if (data.clicks) clicks += Number(data.clicks);
@@ -423,14 +448,14 @@ export class CampaignService {
     if (campaign.budget) {
       const budget = Number(campaign.budget);
       if (budget > 0) {
-        roi = (revenueGenerated - budget) / budget * 100;
+        roi = ((revenueGenerated - budget) / budget) * 100;
       }
     }
 
     // Format metrics over time for visualization
-    const metricsOverTime = metrics.map(metric => ({
+    const metricsOverTime = metrics.map((metric) => ({
       timestamp: metric.timestamp,
-      metrics: metric.data
+      metrics: metric.data,
     }));
 
     return {
@@ -442,7 +467,7 @@ export class CampaignService {
       engagements,
       revenueGenerated,
       roi,
-      metricsOverTime
+      metricsOverTime,
     };
   }
 
@@ -456,28 +481,28 @@ export class CampaignService {
   async scheduleCampaign(
     campaignId: string,
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
   ): Promise<Campaign> {
     const now = new Date();
-    
+
     // Determine status based on dates
     let status: CampaignStatus = 'SCHEDULED';
-    
+
     if (startDate && startDate <= now) {
       status = 'ACTIVE';
     }
-    
+
     if (endDate && endDate <= now) {
       status = 'COMPLETED';
     }
-    
+
     return this.prisma.campaign.update({
       where: { id: campaignId },
       data: {
         startDate,
         endDate,
-        status
-      }
+        status,
+      },
     });
   }
 
@@ -488,18 +513,18 @@ export class CampaignService {
    */
   private determineCampaignTypeFromAgent(agentType: string): CampaignType {
     const typeMap: { [key: string]: CampaignType } = {
-      'CONTENT_CREATOR': 'CONTENT_MARKETING',
-      'SOCIAL_MEDIA_MANAGER': 'SOCIAL_MEDIA',
-      'EMAIL_MARKETER': 'EMAIL_CAMPAIGN',
-      'SEO_SPECIALIST': 'SEO_OPTIMIZATION',
-      'PERFORMANCE_OPTIMIZER': 'AD_CAMPAIGN',
-      'OUTREACH_MANAGER': 'AFFILIATE',
-      'AUDIENCE_RESEARCHER': 'BRAND_AWARENESS',
-      'TREND_ANALYZER': 'INTEGRATED',
-      'COPYWRITER': 'CONTENT_MARKETING',
-      'CUSTOMER_SUPPORT': 'PR'
+      CONTENT_CREATOR: 'CONTENT_MARKETING',
+      SOCIAL_MEDIA_MANAGER: 'SOCIAL_MEDIA',
+      EMAIL_MARKETER: 'EMAIL_CAMPAIGN',
+      SEO_SPECIALIST: 'SEO_OPTIMIZATION',
+      PERFORMANCE_OPTIMIZER: 'AD_CAMPAIGN',
+      OUTREACH_MANAGER: 'AFFILIATE',
+      AUDIENCE_RESEARCHER: 'BRAND_AWARENESS',
+      TREND_ANALYZER: 'INTEGRATED',
+      COPYWRITER: 'CONTENT_MARKETING',
+      CUSTOMER_SUPPORT: 'PR',
     };
 
     return (typeMap[agentType] || 'INTEGRATED') as CampaignType;
   }
-} 
+}

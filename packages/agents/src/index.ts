@@ -18,5 +18,5 @@ export type {
   AgentConfiguration,
   ExecutionContext,
   ExecutionResult,
-  ValidationResult
-} from './types'; 
+  ValidationResult,
+} from './types';
