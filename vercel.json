@@ -1,0 +1,78 @@
+{
+  "version": 2,
+  "name": "neonhub",
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/next",
+      "config": {
+        "distDir": ".next"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/$1",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      }
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/$1"
+    }
+  ],
+  "env": {
+    "NEXT_PUBLIC_APP_NAME": "NeonHub",
+    "NEXT_PUBLIC_APP_VERSION": "@VERCEL_GIT_COMMIT_SHA",
+    "NEXT_PUBLIC_BACKEND_URL": "@backend-url",
+    "NODE_ENV": "production"
+  },
+  "build": {
+    "env": {
+      "NEXT_PUBLIC_BACKEND_URL": "@backend-url",
+      "DATABASE_URL": "@database-url",
+      "OPENAI_API_KEY": "@openai-api-key",
+      "ANTHROPIC_API_KEY": "@anthropic-api-key",
+      "GOOGLE_CLIENT_ID": "@google-client-id",
+      "GOOGLE_CLIENT_SECRET": "@google-client-secret",
+      "GITHUB_CLIENT_ID": "@github-client-id",
+      "GITHUB_CLIENT_SECRET": "@github-client-secret",
+      "JWT_SECRET": "@jwt-secret",
+      "REDIS_URL": "@redis-url"
+    }
+  },
+  "functions": {
+    "frontend/src/app/api/**/*.ts": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://neonhub-api.vercel.app/api/:path*"
+    }
+  ]
+} 

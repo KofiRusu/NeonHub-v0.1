@@ -9,11 +9,13 @@
     "format": "prettier --write .",
     "test": "jest",
     "orchestrate": "node scripts/orchestrate-development.js",
-    "dev:autonomous": "npm run orchestrate"
+    "dev:autonomous": "npm run orchestrate",
+    "agents": "node scripts/agent-orchestrator.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "dotenv": "^16.0.3"
+    "dotenv": "^16.0.3",
+    "@octokit/rest": "^20.0.2"
   },
   "devDependencies": {
     "typescript": "^4.9.5",
