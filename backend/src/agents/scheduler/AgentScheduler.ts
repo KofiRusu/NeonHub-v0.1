@@ -24,6 +24,7 @@ interface ScheduledTask {
   retryCount: number;
   lastError?: string;
   backoffUntil?: Date;
+  isManualRun?: boolean;
 }
 
 /**
@@ -551,5 +552,46 @@ export class AgentScheduler {
       backoffUntil: task.backoffUntil,
       isRunning: this.runningAgents.has(task.agentId),
     }));
+  }
+
+  /**
+   * Run an agent immediately
+   * @param agentId Agent ID
+   * @returns Promise resolving when agent execution starts
+   */
+  async runAgentNow(agentId: string): Promise<void> {
+    try {
+      // Check if the agent exists
+      const agent = await this.prisma.aIAgent.findUnique({
+        where: { id: agentId },
+      });
+
+      if (!agent) {
+        throw new Error(`Agent with ID ${agentId} not found`);
+      }
+
+      // If the agent is already running, don't run it again
+      if (this.runningAgents.has(agentId)) {
+        logger.warn(`Agent ${agentId} is already running`);
+        return;
+      }
+
+      // Create a temporary task
+      const task: ScheduledTask = {
+        agentId,
+        agent,
+        nextRunTime: new Date(),
+        priority: this.getAgentPriority(agent),
+        retryCount: 0,
+        isManualRun: true,
+      };
+
+      // Execute the task immediately
+      logger.info(`Starting immediate execution of agent ${agentId}`);
+      return this.executeTask(task);
+    } catch (error) {
+      logger.error(`Error running agent ${agentId} immediately:`, error);
+      throw error;
+    }
   }
 }

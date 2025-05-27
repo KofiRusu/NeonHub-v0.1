@@ -35,7 +35,8 @@ export class OutreachManagerAgent extends BaseAgent {
   protected async executeImpl(config: OutreachConfig): Promise<any> {
     // Log start of outreach campaign
     await this.logMessage(
-      `Starting outreach campaign using ${config.contactMethod}`,
+      'info',
+      `Starting outreach campaign for ${config.targeting} via ${config.contactMethod}`
     );
 
     // Validate configuration
@@ -71,7 +72,7 @@ export class OutreachManagerAgent extends BaseAgent {
         campaign.ownerId,
       );
 
-      await this.logMessage(`Created ${outreachTasks.length} outreach tasks`);
+      await this.logMessage('info', `Created ${outreachTasks.length} outreach tasks`);
 
       return {
         status: 'success',
@@ -80,8 +81,8 @@ export class OutreachManagerAgent extends BaseAgent {
       };
     } catch (error) {
       await this.logMessage(
-        `Error in outreach manager: ${error instanceof Error ? error.message : String(error)}`,
         'error',
+        `Error in outreach manager: ${error instanceof Error ? error.message : String(error)}`
       );
       throw error;
     }
@@ -105,14 +106,15 @@ export class OutreachManagerAgent extends BaseAgent {
     }
 
     await this.logMessage(
-      `Preparing outreach templates for ${config.targeting}...`,
+      'info',
+      `Preparing outreach templates for ${config.targeting}...`
     );
 
     // Simulate API call and processing time
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
     // Generate mock data for audience segments
-    const audienceSegments = this.generateAudienceSegments(
+    const audienceSegments = await this.generateAudienceSegments(
       config.targeting,
     );
     const outreachTasks = [];
@@ -121,20 +123,22 @@ export class OutreachManagerAgent extends BaseAgent {
     for (const segment of audienceSegments) {
       const taskData = {
         campaignId,
+        title: `Outreach to ${segment.name} via ${config.contactMethod}`,
         outreachType: config.outreachType,
         contactMethod: config.contactMethod,
         status: 'SCHEDULED' as OutreachStatus,
-        targetName: segment.name,
-        targetEmail: segment.email,
-        targetPhone: segment.phone,
-        targetSocialProfile: segment.socialProfile,
-        message: this.generatePersonalizedMessage(config, segment),
-        scheduledDate: new Date(Date.now() + Math.random() * 86400000), // Random time in next 24h
-        metadata: {
-          personalizationLevel: config.personalizationLevel,
+        leadInfo: {
+          name: segment.name,
+          email: segment.email,
+          phone: segment.phone,
+          socialProfile: segment.socialProfile,
+          company: segment.company,
+          role: segment.role,
           segment: segment.segment,
-          campaign: campaignId,
+          interests: segment.interests
         } as any,
+        message: this.generatePersonalizedMessage(config, segment),
+        scheduledAt: new Date(Date.now() + Math.random() * 86400000), // Random time in next 24h
         responseHandlerId: userId,
       };
 
@@ -144,11 +148,11 @@ export class OutreachManagerAgent extends BaseAgent {
           data: taskData,
         });
         outreachTasks.push(task);
-        await this.logMessage(`Created outreach task for ${segment.name}`);
+        await this.logMessage('info', `Created outreach task for ${segment.name}`);
       } catch (error) {
         await this.logMessage(
-          `Failed to create outreach task for ${segment.name}: ${error instanceof Error ? error.message : String(error)}`,
           'warning',
+          `Failed to create outreach task for ${segment.name}: ${error instanceof Error ? error.message : String(error)}`
         );
       }
     }
@@ -210,7 +214,7 @@ export class OutreachManagerAgent extends BaseAgent {
     type: OutreachType,
     method: ContactMethod,
   ): string {
-    if (type === 'COLD_OUTREACH' && method === 'EMAIL') {
+    if (type === OutreachType.COLD_EMAIL && method === ContactMethod.EMAIL) {
       return `Subject: Opportunity for {{company}}
 
 Dear {{name}},
@@ -227,7 +231,7 @@ Best regards,
 The Team`;
     }
 
-    if (method === 'SOCIAL_DM') {
+    if (method === ContactMethod.TWITTER || method === ContactMethod.LINKEDIN) {
       return `Hi {{name}}, 
 
 {{personalNote}} 
@@ -248,7 +252,7 @@ Would you like to learn more?`;
   /**
    * Generate audience segments for simulation
    */
-  private generateAudienceSegments(targeting: string): any[] {
+  private async generateAudienceSegments(targeting: string): Promise<any[]> {
     // In a real implementation, this would come from a database or CRM
     const segments = [];
     const industries = [
@@ -285,6 +289,8 @@ Would you like to learn more?`;
         ],
       });
     }
+
+    await this.logMessage('info', `Generated ${segments.length} audience segments for targeting`);
 
     return segments;
   }

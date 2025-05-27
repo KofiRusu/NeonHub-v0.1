@@ -1,6 +1,6 @@
 import { PrismaClient, User } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import { generateJWT } from '../../utils/jwt';
+import { generateToken } from '../../utils/jwt';
 import axios from 'axios';
 
 /**
@@ -92,7 +92,7 @@ export class AuthService {
     });
 
     // Generate JWT token
-    const token = generateJWT(user);
+    const token = generateToken(user);
 
     return {
       user: {
@@ -132,7 +132,7 @@ export class AuthService {
     }
 
     // Generate JWT token
-    const token = generateJWT(user);
+    const token = generateToken(user);
 
     return {
       user: {
@@ -174,7 +174,7 @@ export class AuthService {
     const user = await this.findOrCreateOAuthUser(profile);
 
     // Generate JWT token
-    const token = generateJWT(user);
+    const token = generateToken(user);
 
     return {
       user: {

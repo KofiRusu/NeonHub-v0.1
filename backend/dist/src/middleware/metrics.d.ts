@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-declare const register: any;
+import client from 'prom-client';
+declare const register: client.Registry;
 /**
  * Middleware to track HTTP request metrics
  */

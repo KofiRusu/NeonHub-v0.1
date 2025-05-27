@@ -1,7 +1,8 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { PrismaClient, AgentType } from '@prisma/client';
 import { body, validationResult } from 'express-validator';
 import { getAgentManager } from '../../agents';
+import { requireAuth, AuthenticatedRequest } from '../../middleware/routeAuth';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -30,7 +31,7 @@ router.post(
     body('tone').isString().notEmpty().withMessage('Tone is required'),
     body('length').isString().notEmpty().withMessage('Length is required'),
   ],
-  async (req, res) => {
+  requireAuth(async (req: AuthenticatedRequest, res: Response) => {
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -84,7 +85,9 @@ router.post(
               tone: tone.toLowerCase(),
               platform: platform || 'WEBSITE',
             },
-            userId,
+            projectId: req.body.projectId,
+            managerId: userId,
+            scheduleEnabled: false,
           },
         });
       }
@@ -136,7 +139,7 @@ router.post(
         error: error instanceof Error ? error.stack : null,
       });
     }
-  },
+  }),
 );
 
 /**
@@ -150,7 +153,7 @@ router.post(
     body('content').isString().notEmpty().withMessage('Content is required'),
     body('feedback').isString().notEmpty().withMessage('Feedback is required'),
   ],
-  async (req, res) => {
+  requireAuth(async (req: AuthenticatedRequest, res: Response) => {
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -187,7 +190,19 @@ router.post(
             configuration: {
               mode: 'improvement',
             },
-            userId,
+            projectId: req.body.projectId || '1', // Default project
+            managerId: userId,
+            scheduleEnabled: false,
+          },
+        });
+      }
+
+      // If contentId is provided, fetch the content from database
+      let existingContent;
+      if (contentId) {
+        existingContent = await prisma.generatedContent.findUnique({
+          where: {
+            id: contentId,
           },
         });
       }
@@ -196,19 +211,32 @@ router.post(
       const context = {
         originalContent: content,
         feedback,
-        contentId,
-        task: 'improve',
+        metadata: existingContent?.metadata || {},
       };
 
       // Run the agent to improve content
       const result = await manager.runAgent(contentAgent.id, context);
 
       if (result.success) {
-        // If successful, return the improved content
+        // If contentId was provided, update the existing content
+        if (contentId && existingContent) {
+          await prisma.generatedContent.update({
+            where: {
+              id: contentId,
+            },
+            data: {
+              content: result.data.content,
+              status: 'DRAFT', // Reset to draft after improvement
+            },
+          });
+        }
+
+        // Return the improved content
         return res.json({
           success: true,
-          content: result.data.content,
-          improvements: result.data.improvements,
+          originalContent: content,
+          improvedContent: result.data.content,
+          changes: result.data.changes || [],
           message: 'Content improved successfully',
         });
       } else {
@@ -229,7 +257,7 @@ router.post(
         error: error instanceof Error ? error.stack : null,
       });
     }
-  },
+  }),
 );
 
 export default router;

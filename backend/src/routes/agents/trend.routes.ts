@@ -1,7 +1,8 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { PrismaClient, AgentType } from '@prisma/client';
 import { body, validationResult } from 'express-validator';
 import { getAgentManager } from '../../agents';
+import { requireAuth, AuthenticatedRequest } from '../../middleware/routeAuth';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -31,7 +32,7 @@ router.post(
       .isString()
       .withMessage('Timeframe must be a string'),
   ],
-  async (req, res) => {
+  requireAuth(async (req: AuthenticatedRequest, res: Response) => {
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -44,6 +45,7 @@ router.post(
 
     try {
       const { industries, keywords, sources, timeframe } = req.body;
+      
       const userId = req.user.id;
 
       // Get agent manager
@@ -71,7 +73,9 @@ router.post(
               keywords: keywords || ['AI', 'automation', 'personalization'],
               timeframe: timeframe || 'recent',
             },
-            userId,
+            projectId: req.body.projectId,
+            managerId: userId,
+            scheduleEnabled: false,
           },
         });
       }
@@ -123,7 +127,7 @@ router.post(
         error: error instanceof Error ? error.stack : null,
       });
     }
-  },
+  }),
 );
 
 /**
@@ -137,7 +141,7 @@ router.post(
     body('topic').isString().notEmpty().withMessage('Topic is required'),
     body('depth').optional().isString().withMessage('Depth must be a string'),
   ],
-  async (req, res) => {
+  requireAuth(async (req: AuthenticatedRequest, res: Response) => {
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -150,6 +154,7 @@ router.post(
 
     try {
       const { topic, depth, sources } = req.body;
+      
       const userId = req.user.id;
 
       // Get agent manager
@@ -176,7 +181,9 @@ router.post(
               sources: sources || ['social_media', 'news', 'search_trends'],
               depth: depth || 'medium',
             },
-            userId,
+            projectId: req.body.projectId,
+            managerId: userId,
+            scheduleEnabled: false,
           },
         });
       }
@@ -186,16 +193,15 @@ router.post(
         topic,
         depth,
         sources,
-        task: 'analyze_specific',
       };
 
-      // Run the agent to analyze the trend
+      // Run the agent to analyze the specific trend
       const result = await manager.runAgent(trendAgent.id, context);
 
       if (result.success) {
         return res.json({
           success: true,
-          analysis: result.data.analysis,
+          analysis: result.data,
           message: 'Trend analysis completed successfully',
         });
       } else {
@@ -216,7 +222,7 @@ router.post(
         error: error instanceof Error ? error.stack : null,
       });
     }
-  },
+  }),
 );
 
 export default router;

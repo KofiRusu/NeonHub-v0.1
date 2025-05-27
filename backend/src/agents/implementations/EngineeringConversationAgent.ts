@@ -4,14 +4,31 @@ import { AgentExecutionConfig } from '../types';
 import OpenAI from 'openai';
 
 /**
+ * Interface for engineering conversation agent configuration
+ */
+interface EngineeringConversationConfig extends AgentExecutionConfig {
+  conversationHistory?: Array<{role: string, content: string}>;
+  initialPrompt?: string;
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
+  conversationId?: string;
+  domainQuestion?: string;
+}
+
+/**
  * Agent specifically designed to handle specialized engineering domain conversations
  */
 export class EngineeringConversationAgent extends BaseAgent {
   private domainContext: string;
   private openai: OpenAI;
+  private currentSession: any;
+  private agent: AIAgent;
 
   constructor(prisma: PrismaClient, agent: AIAgent) {
     super(prisma, agent);
+    
+    this.agent = agent;
 
     // Parse agent configuration
     const config = agent.configuration as any;
@@ -24,118 +41,132 @@ export class EngineeringConversationAgent extends BaseAgent {
   }
 
   /**
-   * Execute the engineering conversation agent
-   * @param config Configuration options
-   * @param options Execution options
+   * Implementation of the conversation agent logic
+   * @param config Conversation configuration
+   * @returns The conversation result
    */
-  async execute(config: any, options: AgentExecutionConfig = {}): Promise<any> {
-    // Start an execution session
-    await this.startSession(options);
+  protected async executeImpl(config: EngineeringConversationConfig): Promise<any> {
+    this.logMessage('info', 'Starting engineering conversation');
 
-    try {
-      this.log(
-        `Starting engineering conversation in domain: ${this.domainContext}`,
-      );
+    // Initialize conversation session
+    const conversationHistory = config.conversationHistory || [];
+    const initialPrompt = config.initialPrompt || this.getDefaultPrompt();
+    
+    // Create session if it doesn't exist
+    if (!this.currentSession) {
+      this.currentSession = await this.createSession(config);
+    }
 
-      // Get conversation history or initialize new conversation
-      const conversationHistory = config.conversationHistory || [];
-      const initialPrompt = config.initialPrompt || this.getDefaultPrompt();
-
-      // If this is a new conversation, add the system message
-      if (conversationHistory.length === 0) {
-        conversationHistory.push({
-          role: 'system',
-          content: this.getSystemPrompt(),
-        });
-
-        // Add the initial prompt as a user message
-        conversationHistory.push({
-          role: 'user',
-          content: initialPrompt,
-        });
-      }
-
-      // Process the conversation using OpenAI
+    // If there's a specific domain question, process it
+    if (config.domainQuestion) {
+      this.logMessage('info', `Processing domain question: ${config.domainQuestion}`);
+      
+      // Build conversation with history + new question
+      const messages = [
+        { role: 'system', content: initialPrompt },
+        ...conversationHistory,
+        { role: 'user', content: config.domainQuestion }
+      ];
+      
+      // Call OpenAI API
       const completion = await this.openai.chat.completions.create({
         model: config.model || 'gpt-4',
-        messages: conversationHistory,
+        messages: messages.map(msg => ({
+          role: msg.role as 'system' | 'user' | 'assistant',
+          content: msg.content
+        })),
         temperature: config.temperature || 0.7,
         max_tokens: config.maxTokens || 1500,
       });
-
-      // Get the assistant's response
-      const responseMessage = completion.choices[0].message;
-
-      // Add the response to the conversation history
-      conversationHistory.push(responseMessage);
-
-      // Store the updated conversation history
-      await this.storeConversationHistory(conversationHistory);
-
-      // Prepare result
-      const result = {
-        response: responseMessage.content,
+      
+      // Get the response
+      const response = completion.choices[0]?.message?.content;
+      
+      // Add to conversation history
+      conversationHistory.push(
+        { role: 'user', content: config.domainQuestion },
+        { role: 'assistant', content: response || 'No response generated' }
+      );
+      
+      // Update session
+      await this.updateSession({
         conversationId: config.conversationId || this.generateConversationId(),
-        conversationHistory: conversationHistory,
-        domain: this.domainContext,
+        conversationHistory,
+        lastActivity: new Date()
+      });
+      
+      this.logMessage('info', 'Generated engineering response');
+      
+      return {
+        status: 'success',
+        response,
+        conversationHistory,
+        sessionId: this.currentSession.id
       };
-
-      // Complete the session successfully
-      await this.completeSession(true);
-
-      return result;
-    } catch (error) {
-      // Log the error
-      this.log(`Error in engineering conversation: ${error.message}`, 'error');
-
-      // Complete the session with error
-      await this.completeSession(false, error.message);
-
-      throw error;
     }
+    
+    return {
+      status: 'error',
+      error: new Error('No domain question provided')
+    };
   }
-
+  
   /**
-   * Get the default system prompt based on the engineering domain
-   */
-  private getSystemPrompt(): string {
-    return `You are a specialized assistant focused on ${this.domainContext}. 
-You provide expert guidance, answer technical questions, and help with development tasks in this domain.
-Be concise, practical, and solution-oriented in your responses.
-When providing code examples, ensure they follow best practices for ${this.domainContext}.`;
-  }
-
-  /**
-   * Get a default initial prompt based on the domain
+   * Get the default prompt for the engineering conversation
    */
   private getDefaultPrompt(): string {
-    return `I'm starting a new development conversation focused on ${this.domainContext}. Please provide an overview of key considerations, best practices, and the latest technologies in this domain.`;
+    return `You are an expert in ${this.domainContext}. 
+    Provide detailed, accurate, and practical answers to technical questions in this domain.
+    Cite relevant technical standards, best practices, or methodologies where appropriate.
+    If you're uncertain about something, be clear about the limitations of your knowledge.`;
   }
-
+  
+  /**
+   * Create a new conversation session
+   */
+  private async createSession(config: EngineeringConversationConfig): Promise<any> {
+    // In a real implementation, this would create a session in the database
+    this.logMessage('info', 'Creating new engineering conversation session');
+    
+    return {
+      id: this.generateConversationId(),
+      createdAt: new Date(),
+      lastActivity: new Date(),
+      conversationHistory: config.conversationHistory || []
+    };
+  }
+  
+  /**
+   * Update an existing conversation session
+   */
+  private async updateSession(sessionData: any): Promise<void> {
+    // In a real implementation, this would update the session in the database
+    this.logMessage('info', `Updating session ${sessionData.conversationId}`);
+    
+    this.currentSession = {
+      ...this.currentSession,
+      ...sessionData
+    };
+  }
+  
   /**
    * Generate a unique conversation ID
    */
   private generateConversationId(): string {
-    return `conv_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    return `eng-conv-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
   }
-
+  
   /**
-   * Store the conversation history in the database
+   * Access the current session 
    */
-  private async storeConversationHistory(
-    conversationHistory: any[],
-  ): Promise<void> {
-    // Get the agent ID
-    const agentId = this.agent.id;
-
-    // Store the conversation using the agent execution session
-    await this.prisma.agentExecutionSession.update({
-      where: { id: this.currentSession.id },
-      data: {
-        context: {
-          conversationHistory: conversationHistory,
-        },
-      },
-    });
+  public session(): any {
+    return this.currentSession;
+  }
+  
+  /**
+   * Stop the agent execution
+   */
+  protected async stopImpl(): Promise<void> {
+    this.logMessage('info', 'Stopping engineering conversation agent');
   }
 }

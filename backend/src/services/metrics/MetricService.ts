@@ -1,5 +1,14 @@
-import { PrismaClient, Metric, MetricSource } from '@prisma/client';
+import { PrismaClient, Metric } from '@prisma/client';
 import { TokenUsage } from '../../agents/types';
+
+// Add MetricSource enum since it's not in Prisma
+export enum MetricSource {
+  AGENT = 'AGENT',
+  CAMPAIGN = 'CAMPAIGN',
+  CONTENT = 'CONTENT',
+  USER = 'USER',
+  SYSTEM = 'SYSTEM'
+}
 
 /**
  * Service for handling metrics collection and analysis
@@ -35,15 +44,16 @@ export class MetricService {
     // Create a new metric entry for the agent execution
     return this.prisma.metric.create({
       data: {
-        metricSource: 'AGENT' as MetricSource,
-        sourceId: agentId,
+        name: 'agent_execution_time',
+        source: 'AGENT',
+        value: executionTime,
+        unit: 'ms',
         projectId,
         campaignId,
-        timestamp: new Date(),
-        data: {
-          executionTime,
-          executionId,
+        metadata: {
+          agentId,
           agentType,
+          sessionId: executionId,
           success,
           tokenUsage: tokenUsage || null,
         } as any,

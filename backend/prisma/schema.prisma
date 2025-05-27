@@ -410,6 +410,7 @@ enum SignalType {
   REGULATORY_CHANGE
   VIRAL_CONTENT
   MARKET_OPPORTUNITY
+  INSIGHT
 }
 
 enum TrendImpact {

@@ -2,20 +2,18 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import { logger } from '../utils/logger';
-import { verifyToken } from '../utils/jwt';
+import { verifyToken, extractTokenFromHeader, generateToken } from '../utils/jwt';
 
 const prisma = new PrismaClient();
 
 // Extend Express Request interface to include user property
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id: string;
-        email: string;
-        role: string;
-      };
-    }
+declare module 'express' {
+  interface Request {
+    user?: {
+      id: string;
+      email: string;
+      role: string;
+    };
   }
 }
 
@@ -23,47 +21,41 @@ declare global {
  * Authenticate user JWT token and add user data to request
  */
 export const authenticateToken = async (
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
     const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(' ')[1];
+    const token = extractTokenFromHeader(authHeader);
 
     if (!token) {
       return res.status(401).json({ message: 'Authentication required' });
     }
 
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) {
-      logger.error('JWT_SECRET is not defined in environment variables');
-      return res.status(500).json({ message: 'Internal server error' });
+    const decoded = verifyToken(token);
+    
+    if (!decoded) {
+      return res.status(403).json({ message: 'Invalid or expired token' });
     }
 
-    jwt.verify(token, jwtSecret, async (err: any, decoded: any) => {
-      if (err) {
-        return res.status(403).json({ message: 'Invalid or expired token' });
-      }
-
-      // Find user in database to ensure they still exist
-      const user = await prisma.user.findUnique({
-        where: { id: decoded.id },
-      });
-
-      if (!user) {
-        return res.status(403).json({ message: 'User no longer exists' });
-      }
-
-      // Add user data to request
-      req.user = {
-        id: decoded.id,
-        email: decoded.email,
-        role: decoded.role,
-      };
-
-      next();
+    // Find user in database to ensure they still exist
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
     });
+
+    if (!user) {
+      return res.status(403).json({ message: 'User no longer exists' });
+    }
+
+    // Add user data to request
+    req.user = {
+      id: decoded.id,
+      email: decoded.email,
+      role: decoded.role,
+    };
+
+    next();
   } catch (error) {
     logger.error('Error in authentication middleware:', error);
     return res.status(500).json({ message: 'Internal server error' });
@@ -74,7 +66,7 @@ export const authenticateToken = async (
  * Middleware to check if user has admin role
  */
 export const adminOnly = (
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction,
 ) => {
@@ -91,19 +83,13 @@ export const generateJWT = (
   user: { id: string; email: string; role: string },
   expiresIn = '7d',
 ) => {
-  const jwtSecret = process.env.JWT_SECRET;
-  if (!jwtSecret) {
-    throw new Error('JWT_SECRET is not defined in environment variables');
-  }
-
-  return jwt.sign(
+  return generateToken(
     {
       id: user.id,
       email: user.email,
       role: user.role,
     },
-    jwtSecret,
-    { expiresIn },
+    expiresIn
   );
 };
 
@@ -114,16 +100,14 @@ export const protect = (req: Request, res: Response, next: NextFunction) => {
   try {
     // Get token from header
     const authHeader = req.headers.authorization;
+    const token = extractTokenFromHeader(authHeader);
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!token) {
       return res.status(401).json({
         success: false,
         message: 'Not authorized to access this route',
       });
     }
-    
-    // Get token from Bearer header
-    const token = authHeader.split(' ')[1];
     
     // Verify token
     const decoded = verifyToken(token);

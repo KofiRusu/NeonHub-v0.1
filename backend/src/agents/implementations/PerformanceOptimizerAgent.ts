@@ -34,7 +34,8 @@ export class PerformanceOptimizerAgent extends BaseAgent {
   protected async executeImpl(config: PerformanceConfig): Promise<any> {
     // Log start of performance optimization
     await this.logMessage(
-      `Starting performance optimization for campaign ${config.campaignId}`,
+      'info',
+      `Starting performance optimization for campaign ${config.campaignId}`
     );
 
     // Validate configuration
@@ -77,7 +78,8 @@ export class PerformanceOptimizerAgent extends BaseAgent {
       );
 
       await this.logMessage(
-        `Created ${storedMetrics.length} optimization recommendations`,
+        'info',
+        `Generated ${optimizations.length} optimization recommendations`
       );
 
       return {
@@ -92,8 +94,8 @@ export class PerformanceOptimizerAgent extends BaseAgent {
       };
     } catch (error) {
       await this.logMessage(
-        `Error in performance optimizer: ${error instanceof Error ? error.message : String(error)}`,
         'error',
+        `Error in performance optimizer: ${error instanceof Error ? error.message : String(error)}`
       );
       throw error;
     }
@@ -114,7 +116,7 @@ export class PerformanceOptimizerAgent extends BaseAgent {
       throw new Error('Performance optimization was stopped');
     }
 
-    await this.logMessage(`Fetching metrics for campaign ${campaignId}...`);
+    await this.logMessage('info', `Fetching metrics for campaign ${campaignId}...`);
 
     // In a real implementation, this would fetch actual metrics from ad platforms
     // or from our own database if we're already storing them
@@ -250,7 +252,7 @@ export class PerformanceOptimizerAgent extends BaseAgent {
       throw new Error('Optimization generation was stopped');
     }
 
-    await this.logMessage(`Analyzing metrics and generating optimizations...`);
+    await this.logMessage('info', `Analyzing metrics and generating optimizations...`);
 
     // Simulate AI processing time
     await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -390,10 +392,9 @@ export class PerformanceOptimizerAgent extends BaseAgent {
           name: `${platform} Performance Metrics`,
           value: metrics.spend,
           unit: 'USD',
-          type: 'CAMPAIGN_PERFORMANCE',
           source: platform,
           campaignId,
-          data: metrics as any,
+          metadata: metrics as any,
           projectId:
             (
               await this.prisma.campaign.findUnique({
@@ -412,10 +413,9 @@ export class PerformanceOptimizerAgent extends BaseAgent {
           name: `${platform} Optimization Recommendations`,
           value: platformOptimization.recommendations.length,
           unit: 'count',
-          type: 'OPTIMIZATION',
           source: 'PERFORMANCE_OPTIMIZER',
           campaignId,
-          data: platformOptimization.recommendations as any,
+          metadata: platformOptimization.recommendations as any,
           projectId:
             (
               await this.prisma.campaign.findUnique({
@@ -550,5 +550,12 @@ If all recommendations are implemented, projected improvements:
         );
       }, 0) * 100
     ).toFixed(2)}%`;
+  }
+
+  /**
+   * Stop any ongoing execution
+   */
+  protected async stopImpl(): Promise<void> {
+    await this.logMessage('info', 'Stopping performance optimizer agent execution');
   }
 }

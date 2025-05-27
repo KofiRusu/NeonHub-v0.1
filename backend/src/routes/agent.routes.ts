@@ -484,15 +484,16 @@ router.delete('/:id/schedule', async (req: Request, res: Response) => {
 });
 
 /**
- * @route   POST /api/agents/:id/run-now
+ * @route   POST /api/agents/:id/run
  * @desc    Run an agent immediately
  * @access  Private
  */
-router.post('/:id/run-now', async (req: Request, res: Response) => {
+router.post('/:id/run', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const { context } = req.body;
 
-    // Get the agent
+    // Check if the agent exists
     const agent = await prisma.aIAgent.findUnique({
       where: { id },
     });
@@ -507,21 +508,22 @@ router.post('/:id/run-now', async (req: Request, res: Response) => {
     // Get the agent scheduler
     const agentScheduler = getAgentScheduler(prisma);
 
-    // Start running the agent (don't wait for it to complete)
-    agentScheduler.runAgentNow(id).catch((error) => {
+    // Run the agent using the scheduler's manual run method
+    agentScheduler.runAgentNow(id).catch((error: Error) => {
       console.error(`Error running agent ${id}:`, error);
     });
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Agent execution started',
+      agentId: id,
     });
   } catch (error) {
-    console.error('Run agent now error:', error);
-    res.status(500).json({
+    console.error('Error scheduling agent run:', error);
+    return res.status(500).json({
       success: false,
-      message:
-        error instanceof Error ? error.message : 'An unexpected error occurred',
+      message: 'Failed to run agent',
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });

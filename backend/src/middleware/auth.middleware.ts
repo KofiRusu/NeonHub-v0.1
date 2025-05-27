@@ -1,7 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
-import { verifyJWT, extractTokenFromHeader } from '../utils/jwt';
-import { prisma } from '../index';
+import { verifyToken, extractTokenFromHeader } from '../utils/jwt';
+import { PrismaClient } from '@prisma/client';
+import { logger } from '../utils/logger';
 import { getAuthService } from '../services';
+
+const prisma = new PrismaClient();
 
 // Extend Express Request interface to include user
 declare module 'express-serve-static-core' {
@@ -15,61 +18,78 @@ declare module 'express-serve-static-core' {
 }
 
 /**
- * Middleware to protect routes by requiring authentication
+ * Authentication middleware that verifies the JWT token
+ * and attaches the user object to the request
  */
 export const protect = async (
   req: Request,
   res: Response,
-  next: NextFunction,
-) => {
+  next: NextFunction
+): Promise<void> => {
   try {
-    // Get token from header
-    const authHeader = req.headers.authorization;
-    const token = extractTokenFromHeader(authHeader);
+    const token = extractTokenFromHeader(req.headers.authorization);
 
     if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Not authorized to access this route',
-      });
+      res.status(401).json({ message: 'Authentication required' });
+      return;
     }
 
-    // Verify token
-    const decoded = verifyJWT(token);
+    const decoded = verifyToken(token);
 
-    if (!decoded) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid token',
-      });
+    if (!decoded || !decoded.id) {
+      res.status(401).json({ message: 'Invalid token' });
+      return;
     }
 
-    // Check if user still exists
-    const authService = getAuthService(prisma);
-    const user = await authService.getUserById(decoded.id);
+    // Find user by ID
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+      },
+    });
 
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'User no longer exists',
-      });
+      res.status(401).json({ message: 'User not found' });
+      return;
     }
 
-    // Add user to request object
+    // Attach user to request object
     req.user = {
-      id: decoded.id,
-      email: decoded.email,
-      role: decoded.role,
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      ...decoded
     };
 
     next();
   } catch (error) {
-    console.error('Authentication error:', error);
-    return res.status(401).json({
-      success: false,
-      message: 'Not authorized to access this route',
-    });
+    logger.error('Authentication error:', error);
+    res.status(401).json({ message: 'Authentication failed' });
   }
+};
+
+/**
+ * Middleware to check if user has admin role
+ */
+export const requireAdmin = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  if (!req.user) {
+    res.status(401).json({ message: 'Authentication required' });
+    return;
+  }
+
+  if (req.user.role !== 'ADMIN') {
+    res.status(403).json({ message: 'Admin privileges required' });
+    return;
+  }
+
+  next();
 };
 
 /**

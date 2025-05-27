@@ -25,7 +25,8 @@ export class TrendAnalyzerAgent extends BaseAgent {
   protected async executeImpl(config: TrendAnalysisConfig): Promise<any> {
     // Log start of trend analysis
     await this.logMessage(
-      `Starting trend analysis for ${config.industry} industry`,
+      'info',
+      `Starting trend analysis for ${config.industry} industry`
     );
 
     // Validate configuration
@@ -54,11 +55,10 @@ export class TrendAnalyzerAgent extends BaseAgent {
               signalType: trend.signalType,
               impact: trend.impact,
               source: trend.source,
-              relevance: trend.relevance,
               confidence: trend.confidence,
-              aiAgentId: this.agentData.id,
-              projectId: config.projectId,
-              metadata: {
+              agentId: this.agentData.id,
+              rawData: {
+                relevance: trend.relevance,
                 keywords: config.keywords,
                 industry: config.industry,
                 timeframe: config.timeframe,
@@ -69,7 +69,7 @@ export class TrendAnalyzerAgent extends BaseAgent {
         ),
       );
 
-      await this.logMessage(`Created ${signals.length} trend signals`);
+      await this.logMessage('info', `Created ${signals.length} trend signals`);
 
       return {
         status: 'success',
@@ -78,8 +78,8 @@ export class TrendAnalyzerAgent extends BaseAgent {
       };
     } catch (error) {
       await this.logMessage(
-        `Error analyzing trends: ${error instanceof Error ? error.message : String(error)}`,
         'error',
+        `Error analyzing trends: ${error instanceof Error ? error.message : String(error)}`
       );
       throw error;
     }
@@ -106,7 +106,7 @@ export class TrendAnalyzerAgent extends BaseAgent {
       throw new Error('Trend analysis was stopped');
     }
 
-    await this.logMessage('Analyzing industry trends...');
+    await this.logMessage('info', 'Analyzing industry trends...');
 
     // Simulate API call and processing time
     await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -152,7 +152,7 @@ export class TrendAnalyzerAgent extends BaseAgent {
       confidence: 75 + Math.floor(Math.random() * 15),
     });
 
-    await this.logMessage(`Identified ${trends.length} potential trends`);
+    await this.logMessage('info', `Identified ${trends.length} potential trends`);
     return trends;
   }
 

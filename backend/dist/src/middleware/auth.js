@@ -3,10 +3,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateJWT = exports.adminOnly = exports.authenticateToken = void 0;
+exports.restrictTo = exports.protect = exports.generateJWT = exports.adminOnly = exports.authenticateToken = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const client_1 = require("@prisma/client");
 const logger_1 = require("../utils/logger");
+const jwt_1 = require("../utils/jwt");
 const prisma = new client_1.PrismaClient();
 /**
  * Authenticate user JWT token and add user data to request
@@ -74,4 +75,63 @@ const generateJWT = (user, expiresIn = '7d') => {
     }, jwtSecret, { expiresIn });
 };
 exports.generateJWT = generateJWT;
+/**
+ * Middleware to protect routes that require authentication
+ */
+const protect = (req, res, next) => {
+    try {
+        // Get token from header
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({
+                success: false,
+                message: 'Not authorized to access this route',
+            });
+        }
+        // Get token from Bearer header
+        const token = authHeader.split(' ')[1];
+        // Verify token
+        const decoded = (0, jwt_1.verifyToken)(token);
+        if (!decoded) {
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid token',
+            });
+        }
+        // Add user to request
+        req.user = decoded;
+        next();
+    }
+    catch (error) {
+        logger_1.logger.error('Auth middleware error:', error);
+        return res.status(401).json({
+            success: false,
+            message: 'Not authorized to access this route',
+        });
+    }
+};
+exports.protect = protect;
+/**
+ * Middleware to restrict access to specific roles
+ */
+const restrictTo = (...roles) => {
+    return (req, res, next) => {
+        // Check if user exists and has a role
+        if (!req.user || !req.user.role) {
+            return res.status(403).json({
+                success: false,
+                message: 'Forbidden: Insufficient permissions',
+            });
+        }
+        // Check if user role is allowed
+        if (!roles.includes(req.user.role)) {
+            return res.status(403).json({
+                success: false,
+                message: 'Forbidden: Insufficient permissions for this role',
+            });
+        }
+        next();
+    };
+};
+exports.restrictTo = restrictTo;
 //# sourceMappingURL=auth.js.map

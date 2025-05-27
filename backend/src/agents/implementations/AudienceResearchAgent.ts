@@ -1,4 +1,4 @@
-import { PrismaClient, AIAgent } from '@prisma/client';
+import { PrismaClient, AIAgent, SignalType } from '@prisma/client';
 import { BaseAgent } from '../base/BaseAgent';
 
 interface AudienceResearchConfig {
@@ -27,9 +27,7 @@ export class AudienceResearchAgent extends BaseAgent {
    */
   protected async executeImpl(config: AudienceResearchConfig): Promise<any> {
     // Log start of audience research
-    await this.logMessage(
-      `Starting audience research for ${config.industry} in ${config.targetMarket}`,
-    );
+    await this.logMessage('info', `Starting audience research for ${config.industry} industry`);
 
     // Validate configuration
     if (!config.industry) {
@@ -71,15 +69,14 @@ export class AudienceResearchAgent extends BaseAgent {
             data: {
               title: `Audience Segment: ${segment.name}`,
               description: segment.description,
-              signalType: 'INSIGHT',
+              signalType: 'INSIGHT' as SignalType,
               impact: segment.impact,
               source: 'AUDIENCE_RESEARCH',
-              relevance: segment.relevanceScore,
               confidence: segment.confidenceScore,
-              aiAgentId: this.agentData.id,
-              projectId: config.projectId,
-              metadata: {
+              agentId: this.agentData.id,
+              rawData: {
                 segment: segment,
+                relevanceScore: segment.relevanceScore,
                 researchParams: {
                   industry: config.industry,
                   targetMarket: config.targetMarket,
@@ -93,7 +90,7 @@ export class AudienceResearchAgent extends BaseAgent {
         ),
       );
 
-      await this.logMessage(`Created ${signals.length} audience insights`);
+      await this.logMessage('info', `Created ${signals.length} audience insights`);
 
       // Assemble and return the complete research
       const researchResults = {
@@ -111,8 +108,8 @@ export class AudienceResearchAgent extends BaseAgent {
       };
     } catch (error) {
       await this.logMessage(
-        `Error in audience research: ${error instanceof Error ? error.message : String(error)}`,
         'error',
+        `Error in audience research: ${error instanceof Error ? error.message : String(error)}`
       );
       throw error;
     }
@@ -129,9 +126,7 @@ export class AudienceResearchAgent extends BaseAgent {
       throw new Error('Audience research was stopped');
     }
 
-    await this.logMessage(
-      `Researching demographics for ${config.targetMarket}...`,
-    );
+    await this.logMessage('info', `Researching demographics for ${config.targetMarket}...`);
 
     // Simulate API call and processing time
     await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -169,7 +164,7 @@ export class AudienceResearchAgent extends BaseAgent {
   private async analyzeBehavioralPatterns(
     config: AudienceResearchConfig,
   ): Promise<any> {
-    await this.logMessage(`Analyzing behavioral patterns...`);
+    await this.logMessage('info', `Analyzing behavioral patterns...`);
 
     // Simulate API call and processing time
     await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -204,7 +199,7 @@ export class AudienceResearchAgent extends BaseAgent {
   private async analyzeCompetitorAudience(
     config: AudienceResearchConfig,
   ): Promise<any> {
-    await this.logMessage(`Analyzing competitor audiences...`);
+    await this.logMessage('info', `Analyzing competitor audiences...`);
 
     // Simulate API call and processing time
     await new Promise((resolve) => setTimeout(resolve, 1800));
@@ -252,7 +247,7 @@ export class AudienceResearchAgent extends BaseAgent {
     behavioralData: any,
     competitorData: any | null,
   ): Promise<any[]> {
-    await this.logMessage(`Generating audience segments...`);
+    await this.logMessage('info', `Generating audience segments...`);
 
     // Simulate AI processing time
     await new Promise((resolve) => setTimeout(resolve, 2500));
@@ -344,7 +339,7 @@ export class AudienceResearchAgent extends BaseAgent {
       });
     }
 
-    await this.logMessage(`Generated ${segments.length} audience segments`);
+    await this.logMessage('info', `Generated ${segments.length} audience segments`);
     return segments;
   }
 
@@ -765,5 +760,12 @@ ${
           (Math.random() > 0.5 ? 1 : -1) * Math.floor(Math.random() * 20),
       ),
     }));
+  }
+
+  /**
+   * Stop any ongoing execution
+   */
+  protected async stopImpl(): Promise<void> {
+    await this.logMessage('info', 'Stopping audience research agent execution');
   }
 }

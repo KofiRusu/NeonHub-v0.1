@@ -14,9 +14,9 @@ import projectRoutes from './routes/project.routes';
 import taskRoutes from './routes/task.routes';
 import documentRoutes from './routes/document.routes';
 import messageRoutes from './routes/message.routes';
-import agentRoutes from './routes/agents/agent.routes';
-import campaignRoutes from './routes/campaigns.routes';
-import metricRoutes from './routes/metric.routes';
+import agentRoutes from './routes/agent.routes';
+import campaignRoutes from './routes/campaign.routes';
+import metricRoutes from './routes/metrics.routes';
 import feedbackRoutes from './routes/feedback.routes';
 
 // Create Express app

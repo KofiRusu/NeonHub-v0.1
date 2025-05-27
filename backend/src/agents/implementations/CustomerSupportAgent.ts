@@ -359,7 +359,7 @@ export class CustomerSupportAgent extends BaseAgent {
         'We regularly evaluate new feature requests as part of our product roadmap planning.';
     } else {
       mainResponse =
-        "I've reviewed your question and can help you with this. " +
+        'I\'ve reviewed your question and can help you with this. ' +
         'Our team is dedicated to providing the best possible experience and solution for our customers.';
     }
 
@@ -376,14 +376,14 @@ export class CustomerSupportAgent extends BaseAgent {
     let escalationMessage = '';
     if (needsEscalation) {
       escalationMessage =
-        "\n\nBased on the complexity of your issue, I've escalated this to our specialized support team. " +
+        '\n\nBased on the complexity of your issue, I\'ve escalated this to our specialized support team. ' +
         'A support representative will contact you directly within the next 24 hours to further assist you.';
     }
 
     // Closing message
     const closing =
-      "If you have any further questions, please don\'t hesitate to ask. " +
-      "We\'re always here to help!\n\nBest regards,\nSupport Team";
+      'If you have any further questions, please don\'t hesitate to ask. ' +
+      'We\'re always here to help!\n\nBest regards,\nSupport Team';
 
     // Assemble full response
     const fullResponse = `${greeting}\n\n${mainResponse}${articleReferences}${escalationMessage}\n\n${closing}`;

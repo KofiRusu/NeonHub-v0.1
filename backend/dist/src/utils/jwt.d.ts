@@ -1,21 +1,16 @@
 /**
- * Generate a JWT token for a user
- * @param user User data to include in the token
- * @param expiresIn Token expiration time (default: from env or 7 days)
- * @returns JWT token
+ * Generate a JWT token
+ * @param payload Data to encode in the token
+ * @param expiresIn Token expiration time
+ * @returns JWT token string
  */
-export declare const generateJWT: (user: {
-    id: string;
-    email: string;
-    role?: string;
-}, expiresIn?: string) => string;
+export declare const generateToken: (payload: any, expiresIn?: string) => string;
 /**
  * Verify a JWT token
  * @param token JWT token to verify
  * @returns Decoded token payload or null if invalid
  */
-export declare const verifyJWT: (token: string) => any | null;
-export declare const verifyToken: (token: string) => any | null;
+export declare const verifyToken: (token: string) => any;
 /**
  * Extract a token from the Authorization header
  * @param authHeader Authorization header value

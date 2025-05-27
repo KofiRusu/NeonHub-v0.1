@@ -343,12 +343,12 @@ export abstract class BaseAgent {
 
   /**
    * Log a message to the agent's execution log (legacy method for backward compatibility)
-   * @param message The message to log
    * @param level Log level
+   * @param message The message to log
    */
   protected async logMessage(
+    level: 'info' | 'warning' | 'error',
     message: string,
-    level: 'info' | 'warning' | 'error' = 'info',
   ): Promise<void> {
     this.logEvent(AgentEventType.CUSTOM_EVENT, message, undefined, level);
   }

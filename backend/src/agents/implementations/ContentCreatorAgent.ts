@@ -27,7 +27,7 @@ export class ContentCreatorAgent extends BaseAgent {
    */
   protected async executeImpl(config: ContentCreationConfig): Promise<any> {
     // Log start of content creation
-    await this.logMessage(`Starting content creation for ${config.topic}`);
+    await this.logMessage('info', `Starting content creation for ${config.topic}`);
 
     // Validate configuration
     if (!config.contentType) {
@@ -49,14 +49,15 @@ export class ContentCreatorAgent extends BaseAgent {
           content: content,
           contentType: config.contentType,
           status: 'DRAFT',
-          aiAgentId: this.agentData.id,
+          agentId: this.agentData.id,
           metadata: config as any,
           ...(config.campaignId ? { campaignId: config.campaignId } : {}),
         },
       });
 
       await this.logMessage(
-        `Content created successfully with ID: ${generatedContent.id}`,
+        'info',
+        `Content created successfully: "${config.contentType} about ${config.topic}" (${content.length} chars)`
       );
 
       return {
@@ -66,8 +67,8 @@ export class ContentCreatorAgent extends BaseAgent {
       };
     } catch (error) {
       await this.logMessage(
-        `Error creating content: ${error instanceof Error ? error.message : String(error)}`,
         'error',
+        `Error creating content: ${error instanceof Error ? error.message : String(error)}`
       );
       throw error;
     }
@@ -86,7 +87,7 @@ export class ContentCreatorAgent extends BaseAgent {
       throw new Error('Content creation was stopped');
     }
 
-    await this.logMessage('Generating content...');
+    await this.logMessage('info', 'Generating content...');
 
     // Simulate API call and processing time
     await new Promise((resolve) => setTimeout(resolve, 1500));

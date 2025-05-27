@@ -88,10 +88,7 @@ export class SEOAgent extends BaseAgent {
 
       // Analyze target keywords
       if (config.targetKeywords && config.targetKeywords.length > 0) {
-        this.logMessage(
-          'info',
-          `Analyzing ${config.targetKeywords.length} target keywords`,
-        );
+        this.logMessage('info', `Analyzing ${config.targetKeywords.length} target keywords`);
         results.keywordAnalysis = await this.analyzeKeywords(
           config.websiteUrl,
           config.targetKeywords,
@@ -100,10 +97,7 @@ export class SEOAgent extends BaseAgent {
 
       // Analyze pages
       if (config.pagesToOptimize && config.pagesToOptimize.length > 0) {
-        this.logMessage(
-          'info',
-          `Analyzing ${config.pagesToOptimize.length} pages`,
-        );
+        this.logMessage('info', `Analyzing ${config.pagesToOptimize.length} pages`);
         for (const page of config.pagesToOptimize) {
           await this.simulateProcessing(500);
           this.logMessage('info', `Analyzing page: ${page}`);
@@ -112,10 +106,7 @@ export class SEOAgent extends BaseAgent {
 
       // Check competitor sites
       if (config.competitorUrls && config.competitorUrls.length > 0) {
-        this.logMessage(
-          'info',
-          `Analyzing ${config.competitorUrls.length} competitor websites`,
-        );
+        this.logMessage('info', `Analyzing ${config.competitorUrls.length} competitor websites`);
         results.competitorAnalysis = await this.analyzeCompetitors(
           config.competitorUrls,
           config.targetKeywords,
@@ -164,6 +155,8 @@ export class SEOAgent extends BaseAgent {
         status: 'error',
         error: error instanceof Error ? error : new Error(String(error)),
       };
+    } finally {
+      this.logMessage('info', 'Stopping SEO agent execution');
     }
   }
 

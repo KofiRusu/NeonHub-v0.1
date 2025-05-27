@@ -177,26 +177,43 @@ export class CampaignService {
 
     // Create a new object with parsed budget
     const parsedData = { ...campaignData };
+    let numericBudget: number | null = null;
     
     // Parse budget to number if it's a string
     if (typeof parsedData.budget === 'string' && parsedData.budget.trim() !== '') {
       // Remove any currency symbols and commas
       const cleanedBudget = parsedData.budget.replace(/[$,]/g, '');
-      parsedData.budget = parseFloat(cleanedBudget);
+      // Assign to a new variable to avoid type errors
+      numericBudget = parseFloat(cleanedBudget);
     }
-
-    // Create campaign with properly typed budget
+    
+    // Create campaign data object with correctly typed fields
+    const campaignCreateData: any = {
+      ...parsedData,
+      budget: numericBudget,
+      // Ensure goals is always a valid JSON value
+      goals: parsedData.goals ? JSON.parse(JSON.stringify(parsedData.goals)) : {},
+      // Ensure targeting is a valid JSON value
+      targeting: typeof parsedData.targeting === 'string' ? 
+        { description: parsedData.targeting } : 
+        (parsedData.targeting || {}),
+      status: data.status || 'DRAFT',
+      agents:
+        agentIds && agentIds.length > 0
+          ? {
+              connect: agentIds.map((id) => ({ id })),
+            }
+          : undefined,
+    };
+    
+    // Remove budget if it's null to use the schema default
+    if (numericBudget === null) {
+      delete campaignCreateData.budget;
+    }
+    
+    // Create campaign with properly typed fields
     const campaign = await this.prisma.campaign.create({
-      data: {
-        ...parsedData,
-        status: data.status || 'DRAFT',
-        agents:
-          agentIds && agentIds.length > 0
-            ? {
-                connect: agentIds.map((id) => ({ id })),
-              }
-            : undefined,
-      },
+      data: campaignCreateData
     });
 
     return campaign;
@@ -216,12 +233,13 @@ export class CampaignService {
 
     // Create a new object with parsed budget
     const parsedData = { ...campaignData };
+    let numericBudget: number | null = null;
     
     // Parse budget to number if it's a string
     if (typeof parsedData.budget === 'string' && parsedData.budget.trim() !== '') {
       // Remove any currency symbols and commas
       const cleanedBudget = parsedData.budget.replace(/[$,]/g, '');
-      parsedData.budget = parseFloat(cleanedBudget);
+      numericBudget = parseFloat(cleanedBudget);
     }
 
     // First, get current agents to determine what needs to be connected/disconnected
@@ -246,11 +264,20 @@ export class CampaignService {
           (id) => !currentAgentIds.includes(id),
         );
 
-        // Update campaign with agent connections/disconnections
+        // Update campaign with agent connections/disconnections and typed budget
         return this.prisma.campaign.update({
           where: { id: campaignId },
           data: {
             ...parsedData,
+            budget: numericBudget !== null ? numericBudget : undefined,
+            // Ensure goals is always a valid JSON value if provided
+            goals: parsedData.goals ? JSON.parse(JSON.stringify(parsedData.goals)) : undefined,
+            // Ensure targeting is a valid JSON value
+            targeting: parsedData.targeting !== undefined ? 
+              (typeof parsedData.targeting === 'string' ? 
+                { description: parsedData.targeting } : 
+                parsedData.targeting) : 
+              undefined,
             agents: {
               disconnect: agentsToDisconnect.map((id) => ({ id })),
               connect: agentsToConnect.map((id) => ({ id })),
@@ -263,7 +290,18 @@ export class CampaignService {
     // If no agent changes or campaign not found, just update the campaign data
     return this.prisma.campaign.update({
       where: { id: campaignId },
-      data: parsedData,
+      data: {
+        ...parsedData,
+        budget: numericBudget !== null ? numericBudget : undefined,
+        // Ensure goals is always a valid JSON value if provided
+        goals: parsedData.goals ? JSON.parse(JSON.stringify(parsedData.goals)) : undefined,
+        // Ensure targeting is a valid JSON value
+        targeting: parsedData.targeting !== undefined ? 
+          (typeof parsedData.targeting === 'string' ? 
+            { description: parsedData.targeting } : 
+            parsedData.targeting) : 
+          undefined,
+      },
     });
   }
 
@@ -455,7 +493,8 @@ export class CampaignService {
 
     // Aggregate metrics
     metrics.forEach((metric) => {
-      const data = metric.data as any;
+      // Access the metadata field which contains our metrics data
+      const data = metric.metadata ? (metric.metadata as any) : {};
       if (data.impressions) impressions += Number(data.impressions);
       if (data.clicks) clicks += Number(data.clicks);
       if (data.conversions) conversions += Number(data.conversions);
@@ -475,7 +514,7 @@ export class CampaignService {
     // Format metrics over time for visualization
     const metricsOverTime = metrics.map((metric) => ({
       timestamp: metric.timestamp,
-      metrics: metric.data,
+      metrics: metric.metadata ? (metric.metadata as any) : {},
     }));
 
     return {
@@ -532,20 +571,31 @@ export class CampaignService {
    * @returns Appropriate campaign type
    */
   private determineCampaignTypeFromAgent(agentType: string): CampaignType {
-    const typeMap: { [key: string]: CampaignType } = {
-      CONTENT_CREATOR: 'CONTENT_MARKETING',
-      SOCIAL_MEDIA_MANAGER: 'SOCIAL_MEDIA',
-      EMAIL_MARKETER: 'EMAIL_CAMPAIGN',
-      SEO_SPECIALIST: 'SEO_OPTIMIZATION',
-      PERFORMANCE_OPTIMIZER: 'AD_CAMPAIGN',
-      OUTREACH_MANAGER: 'AFFILIATE',
-      AUDIENCE_RESEARCHER: 'BRAND_AWARENESS',
-      TREND_ANALYZER: 'INTEGRATED',
-      COPYWRITER: 'CONTENT_MARKETING',
-      CUSTOMER_SUPPORT: 'PR',
-    };
-
-    return (typeMap[agentType] || 'INTEGRATED') as CampaignType;
+    // Map agent types to valid CampaignType enum values
+    switch(agentType) {
+      case 'CONTENT_CREATOR':
+        return 'CONTENT_MARKETING';
+      case 'SOCIAL_MEDIA_MANAGER':
+        return 'SOCIAL_MEDIA';
+      case 'EMAIL_MARKETER':
+        return 'EMAIL';
+      case 'SEO_SPECIALIST':
+        return 'SEO';
+      case 'PERFORMANCE_OPTIMIZER':
+        return 'PPC';
+      case 'OUTREACH_MANAGER':
+        return 'AFFILIATE';
+      case 'AUDIENCE_RESEARCHER':
+        return 'PR';
+      case 'TREND_ANALYZER':
+        return 'INTEGRATED';
+      case 'COPYWRITER':
+        return 'CONTENT_MARKETING';
+      case 'CUSTOMER_SUPPORT':
+        return 'PR';
+      default:
+        return 'INTEGRATED';
+    }
   }
 
   // Method with relation references
@@ -623,6 +673,7 @@ export class CampaignService {
       },
     });
 
-    // ... existing code ...
+    // Return the campaigns
+    return campaigns;
   }
 }
