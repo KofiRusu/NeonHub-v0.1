@@ -1,7 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient, AgentType } from '@prisma/client';
 import { body, validationResult } from 'express-validator';
-import { getAgentManager, getAgentScheduler } from '../agents';
+import { getAgentManager } from '../agents';
+import { getScheduler } from '../services/schedulerSingleton';
 import { AgentResult } from '../agents/base/types';
 import contentRoutes from './agents/content.routes';
 import trendRoutes from './agents/trend.routes';
@@ -358,7 +359,7 @@ async function getDefaultUserId(): Promise<string> {
  */
 router.get('/sessions', async (_req: Request, res: Response) => {
   try {
-    const agentScheduler = getAgentScheduler(prisma);
+    const agentScheduler = getScheduler();
     const sessions = agentScheduler.getActiveSessions();
 
     res.json({
@@ -389,7 +390,7 @@ router.get('/sessions', async (_req: Request, res: Response) => {
  */
 router.get('/scheduler/status', async (_req: Request, res: Response) => {
   try {
-    const scheduler = getAgentScheduler(prisma);
+    const scheduler = getScheduler();
     const stats = scheduler.getStats();
 
     res.json({
@@ -440,7 +441,7 @@ router.post('/:id/run', async (req: Request, res: Response) => {
     }
 
     // Get the agent scheduler
-    const agentScheduler = getAgentScheduler(prisma);
+    const agentScheduler = getScheduler();
 
     // Run the agent using the scheduler's manual run method
     agentScheduler.runAgentNow(id).catch((error: Error) => {
