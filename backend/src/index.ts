@@ -24,9 +24,9 @@ import { setIo } from './controllers/message.controller';
 // Socket.io configuration
 import { configureAgentSocket, setSocketIO } from './socket/agentOutput';
 
-// Agent scheduler
-import { AgentScheduler } from './agents/scheduler/AgentScheduler';
-import { getAgentManager } from './agents';
+// Scheduler singleton and agent events
+import { schedulerSingleton } from './services/schedulerSingleton';
+import { initializeAgentEvents } from './socket/agentEvents';
 
 // Initialize environment variables
 dotenv.config();
@@ -54,16 +54,25 @@ setIo(io);
 const agentIo = configureAgentSocket(httpServer, prisma);
 setSocketIO(agentIo);
 
-// Initialize agent scheduler
-const agentManager = getAgentManager(prisma);
-const agentScheduler = new AgentScheduler(prisma, agentManager, {
-  runMissedOnStartup: true,
-  autoStart: true,
-  checkInterval: 30000, // Check every 30 seconds
-});
+// Initialize agent scheduler singleton
+async function initializeScheduler() {
+  try {
+    await schedulerSingleton.initialize();
+    console.log('Agent scheduler initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize agent scheduler:', error);
+    process.exit(1);
+  }
+}
 
-// Export agent scheduler for use in routes
-export { agentScheduler };
+// Initialize scheduler on startup
+initializeScheduler();
+
+// Initialize agent WebSocket events
+initializeAgentEvents(io);
+
+// Export scheduler helper for use in routes
+export const getAgentScheduler = () => schedulerSingleton.getScheduler();
 
 // Middleware
 app.use(cors());
@@ -92,6 +101,7 @@ app.get('/health', (req, res) => {
         timestamp: new Date(),
         uptime: process.uptime(),
         databaseConnected: true,
+        schedulerHealthy: schedulerSingleton.isHealthy(),
       });
     })
     .catch((err) => {
@@ -101,6 +111,7 @@ app.get('/health', (req, res) => {
         timestamp: new Date(),
         uptime: process.uptime(),
         databaseConnected: false,
+        schedulerHealthy: schedulerSingleton.isHealthy(),
         error: 'Database connection failed',
       });
     });
@@ -166,11 +177,13 @@ process.on('unhandledRejection', (err: Error) => {
 
 // Clean up Prisma on exit
 process.on('SIGINT', async () => {
+  await schedulerSingleton.stop();
   await prisma.$disconnect();
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
+  await schedulerSingleton.stop();
   await prisma.$disconnect();
   process.exit(0);
 });
