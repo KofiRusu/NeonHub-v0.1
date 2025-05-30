@@ -2,11 +2,8 @@ import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticate } from '../../middleware/auth';
 import { validateRequest } from '../../middleware/validation';
-import {
-  AgentScheduler,
-  AgentPriority,
-} from '../../agents/scheduler/AgentScheduler';
-import { AgentManager } from '../../agents/manager/AgentManager';
+import { AgentPriority } from '../../agents/scheduler/AgentScheduler';
+import { getScheduler } from '../../services/schedulerSingleton';
 import { body } from 'express-validator';
 import { logger } from '../../utils/logger';
 
@@ -28,20 +25,6 @@ const scheduleValidation = [
     .isBoolean()
     .withMessage('Enabled must be a boolean'),
 ];
-
-// Get scheduler instance (singleton pattern to be added)
-const getSchedulerInstance = (): AgentScheduler => {
-  // For now, create a new instance - will be replaced with singleton
-  const agentManager = new AgentManager(prisma);
-  return new AgentScheduler(prisma, agentManager, {
-    checkInterval: parseInt(process.env.SCHEDULER_CHECK_INTERVAL || '60000'),
-    maxConcurrentAgents: parseInt(process.env.SCHEDULER_MAX_CONCURRENT || '5'),
-    maxRetries: parseInt(process.env.SCHEDULER_MAX_RETRIES || '3'),
-    baseBackoffDelay: parseInt(process.env.SCHEDULER_BACKOFF_BASE || '1000'),
-    maxBackoffDelay: parseInt(process.env.SCHEDULER_BACKOFF_MAX || '300000'),
-    autoStart: true,
-  });
-};
 
 // Schedule a new run
 router.post(
@@ -74,7 +57,7 @@ router.post(
         CRITICAL: AgentPriority.CRITICAL,
       };
 
-      const scheduler = getSchedulerInstance();
+      const scheduler = getScheduler();
       await scheduler.scheduleAgent(
         agentId,
         cronExpression,
@@ -134,7 +117,7 @@ router.get('/', authenticate, async (req, res, next) => {
     }
 
     // Get additional task details from scheduler
-    const scheduler = getSchedulerInstance();
+    const scheduler = getScheduler();
     const taskDetails = scheduler
       .getTaskDetails()
       .filter((task) => task.agentId === agentId);
@@ -157,7 +140,7 @@ router.delete('/', authenticate, async (req, res, next) => {
   try {
     const { agentId } = req.params;
 
-    const scheduler = getSchedulerInstance();
+    const scheduler = getScheduler();
     scheduler.unscheduleAgent(agentId);
 
     // Update agent in database
@@ -185,7 +168,7 @@ router.delete('/', authenticate, async (req, res, next) => {
 // Get scheduler status
 router.get('/status', authenticate, async (req, res, next) => {
   try {
-    const scheduler = getSchedulerInstance();
+    const scheduler = getScheduler();
     const stats = scheduler.getStats();
 
     res.json({
