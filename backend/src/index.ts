@@ -14,6 +14,7 @@ import projectRoutes from './routes/project.routes';
 import taskRoutes from './routes/task.routes';
 import messageRoutes from './routes/message.routes';
 import documentRoutes from './routes/document.routes';
+import agentRoutes from './routes/agent.routes';
 
 // Middleware
 import { errorHandler } from './middleware/error.middleware';
@@ -90,6 +91,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/documents', documentRoutes);
+app.use('/api/agents', agentRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {
