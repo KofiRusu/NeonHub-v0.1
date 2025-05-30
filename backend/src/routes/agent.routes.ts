@@ -5,6 +5,7 @@ import { getAgentManager, getAgentScheduler } from '../agents';
 import { AgentResult } from '../agents/base/types';
 import contentRoutes from './agents/content.routes';
 import trendRoutes from './agents/trend.routes';
+import scheduleRouter from './agents/schedule';
 
 // Initialize router
 const router = Router();
@@ -15,6 +16,7 @@ const prisma = new PrismaClient();
 // Mount specialized agent routes
 router.use('/content', contentRoutes);
 router.use('/trend', trendRoutes);
+router.use('/:agentId/schedule', scheduleRouter);
 
 /**
  * @route   POST /api/agents/run
@@ -349,132 +351,29 @@ async function getDefaultUserId(): Promise<string> {
   return newUser.id;
 }
 
-// Add scheduling routes after the agent routes
-
 /**
- * @route   POST /api/agents/:id/schedule
- * @desc    Schedule an agent
+ * @route   GET /api/agents/sessions
+ * @desc    Get all active agent sessions
  * @access  Private
  */
-router.post(
-  '/:id/schedule',
-  [
-    body('expression')
-      .notEmpty()
-      .withMessage('Schedule expression is required'),
-    body('enabled')
-      .optional()
-      .isBoolean()
-      .withMessage('Enabled must be a boolean'),
-  ],
-  async (req: Request, res: Response) => {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        errors: errors.array(),
-        message: 'Validation failed',
-      });
-    }
-
-    try {
-      const { id } = req.params;
-      const { expression, enabled = true } = req.body;
-
-      // Get the agent
-      const agent = await prisma.aIAgent.findUnique({
-        where: { id },
-      });
-
-      if (!agent) {
-        return res.status(404).json({
-          success: false,
-          message: 'Agent not found',
-        });
-      }
-
-      // Get the agent scheduler
-      const agentScheduler = getAgentScheduler(prisma);
-
-      // Schedule the agent
-      await agentScheduler.scheduleAgent(id, expression, enabled);
-
-      // Get the updated agent
-      const updatedAgent = await prisma.aIAgent.findUnique({
-        where: { id },
-      });
-
-      res.json({
-        success: true,
-        agent: {
-          id: updatedAgent!.id,
-          name: updatedAgent!.name,
-          scheduleExpression: updatedAgent!.scheduleExpression,
-          scheduleEnabled: updatedAgent!.scheduleEnabled,
-          nextRunAt: updatedAgent!.nextRunAt,
-          lastRunAt: updatedAgent!.lastRunAt,
-        },
-        message: enabled
-          ? 'Agent scheduled successfully'
-          : 'Agent scheduling disabled',
-      });
-    } catch (error) {
-      console.error('Schedule agent error:', error);
-      res.status(500).json({
-        success: false,
-        message:
-          error instanceof Error
-            ? error.message
-            : 'An unexpected error occurred',
-      });
-    }
-  },
-);
-
-/**
- * @route   DELETE /api/agents/:id/schedule
- * @desc    Unschedule an agent
- * @access  Private
- */
-router.delete('/:id/schedule', async (req: Request, res: Response) => {
+router.get('/sessions', async (_req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-
-    // Get the agent
-    const agent = await prisma.aIAgent.findUnique({
-      where: { id },
-    });
-
-    if (!agent) {
-      return res.status(404).json({
-        success: false,
-        message: 'Agent not found',
-      });
-    }
-
-    // Get the agent scheduler
     const agentScheduler = getAgentScheduler(prisma);
-
-    // Unschedule the agent
-    agentScheduler.unscheduleAgent(id);
-
-    // Update the agent
-    await prisma.aIAgent.update({
-      where: { id },
-      data: {
-        scheduleEnabled: false,
-        scheduleExpression: null,
-        nextRunAt: null,
-      },
-    });
+    const sessions = agentScheduler.getActiveSessions();
 
     res.json({
       success: true,
-      message: 'Agent unscheduled successfully',
+      sessions: sessions.map((session: any) => ({
+        agentId: session.agentId,
+        sessionId: session.sessionId,
+        startTime: session.startTime,
+        status: session.status,
+        progress: session.progress || null,
+      })),
+      count: sessions.length,
     });
   } catch (error) {
-    console.error('Unschedule agent error:', error);
+    console.error('Get sessions error:', error);
     res.status(500).json({
       success: false,
       message:
@@ -482,6 +381,41 @@ router.delete('/:id/schedule', async (req: Request, res: Response) => {
     });
   }
 });
+
+/**
+ * @route   GET /api/agents/scheduler/status
+ * @desc    Get scheduler status and statistics
+ * @access  Private
+ */
+router.get('/scheduler/status', async (_req: Request, res: Response) => {
+  try {
+    const scheduler = getAgentScheduler(prisma);
+    const stats = scheduler.getStats();
+
+    res.json({
+      success: true,
+      status: 'running',
+      stats: {
+        totalScheduled: stats.totalScheduled,
+        activeAgents: stats.activeAgents,
+        totalRuns: stats.totalRuns,
+        successfulRuns: stats.successfulRuns,
+        failedRuns: stats.failedRuns,
+        queueLength: stats.queueLength,
+        isRunning: stats.isRunning,
+      },
+    });
+  } catch (error) {
+    console.error('Get scheduler status error:', error);
+    res.status(500).json({
+      success: false,
+      message:
+        error instanceof Error ? error.message : 'An unexpected error occurred',
+    });
+  }
+});
+
+// Add scheduling routes after the agent routes
 
 /**
  * @route   POST /api/agents/:id/run
