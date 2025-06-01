@@ -20,13 +20,13 @@ beforeEach(() => {
 export const generateId = () => uuidv4();
 
 // Helper to create a test agent
-export const createTestAgent = (overrides = {}) => ({
+export const createTestAgent = (overrides: Partial<any> = {}) => ({
   id: generateId(),
   name: 'Test Agent',
   description: 'Agent for testing',
   agentType: 'CONTENT_CREATOR' as AgentType,
   status: 'IDLE' as AgentStatus,
-  configuration: {},
+  configuration: {} as Record<string, any>,
   projectId: generateId(),
   managerId: generateId(),
   lastRunAt: null,
@@ -39,14 +39,14 @@ export const createTestAgent = (overrides = {}) => ({
 });
 
 // Helper to create a test campaign
-export const createTestCampaign = (overrides = {}) => ({
+export const createTestCampaign = (overrides: Partial<any> = {}) => ({
   id: generateId(),
   name: 'Test Campaign',
   description: 'Campaign for testing',
   status: 'ACTIVE' as CampaignStatus,
   campaignType: 'SOCIAL_MEDIA' as CampaignType,
-  goals: {},
-  targeting: {},
+  goals: {} as Record<string, any>,
+  targeting: {} as Record<string, any>,
   budget: null,
   startDate: null,
   endDate: null,
@@ -58,7 +58,7 @@ export const createTestCampaign = (overrides = {}) => ({
 });
 
 // Helper to create a test metric
-export const createTestMetric = (overrides = {}) => ({
+export const createTestMetric = (overrides: Partial<any> = {}) => ({
   id: generateId(),
   name: 'agent_execution_time',
   value: 1500,
@@ -67,13 +67,13 @@ export const createTestMetric = (overrides = {}) => ({
   dimension: null,
   campaignId: null,
   projectId: generateId(),
-  metadata: {},
+  metadata: {} as Record<string, any>,
   timestamp: new Date(),
   ...overrides,
 });
 
 // Helper to create a test execution session
-export const createTestExecutionSession = (overrides = {}) => ({
+export const createTestExecutionSession = (overrides: Partial<any> = {}) => ({
   id: generateId(),
   agentId: generateId(),
   startedAt: new Date(),
@@ -82,8 +82,8 @@ export const createTestExecutionSession = (overrides = {}) => ({
   duration: null,
   outputSummary: null,
   logs: [],
-  context: {},
-  metrics: {},
+  context: {} as Record<string, any>,
+  metrics: {} as Record<string, any>,
   errorMessage: null,
   createdAt: new Date(),
   ...overrides,

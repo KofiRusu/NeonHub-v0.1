@@ -360,18 +360,20 @@ async function getDefaultUserId(): Promise<string> {
 router.get('/sessions', async (_req: Request, res: Response) => {
   try {
     const agentScheduler = getScheduler();
-    const sessions = agentScheduler.getActiveSessions();
+    const taskDetails = agentScheduler.getTaskDetails();
 
     res.json({
       success: true,
-      sessions: sessions.map((session: any) => ({
-        agentId: session.agentId,
-        sessionId: session.sessionId,
-        startTime: session.startTime,
-        status: session.status,
-        progress: session.progress || null,
-      })),
-      count: sessions.length,
+      sessions: taskDetails
+        .filter((task) => task.isRunning)
+        .map((task) => ({
+          agentId: task.agentId,
+          sessionId: `session-${task.agentId}`,
+          startTime: new Date(),
+          status: 'running',
+          progress: null,
+        })),
+      count: taskDetails.filter((task) => task.isRunning).length,
     });
   } catch (error) {
     console.error('Get sessions error:', error);
@@ -397,12 +399,12 @@ router.get('/scheduler/status', async (_req: Request, res: Response) => {
       success: true,
       status: 'running',
       stats: {
-        totalScheduled: stats.totalScheduled,
-        activeAgents: stats.activeAgents,
-        totalRuns: stats.totalRuns,
-        successfulRuns: stats.successfulRuns,
-        failedRuns: stats.failedRuns,
-        queueLength: stats.queueLength,
+        totalScheduled: stats.scheduledTasksCount,
+        activeAgents: stats.runningAgentsCount,
+        totalRuns: 0, // Not available in current implementation
+        successfulRuns: 0, // Not available in current implementation
+        failedRuns: 0, // Not available in current implementation
+        queueLength: stats.queuedTasksCount,
         isRunning: stats.isRunning,
       },
     });

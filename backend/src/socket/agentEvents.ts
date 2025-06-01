@@ -55,7 +55,16 @@ export interface AgentScheduledEvent {
  * Initialize agent event handlers for Socket.IO
  */
 export function initializeAgentEvents(io: SocketIOServer): void {
-  // Subscribe to scheduler events
+  // TODO: AgentScheduler doesn't currently extend EventEmitter
+  // The event handling would need to be implemented differently
+  // For now, we'll just log that the events are initialized
+
+  logger.info(
+    'Agent WebSocket events initialized (event listeners not yet implemented)',
+  );
+
+  // The following code is commented out until AgentScheduler supports events:
+  /*
   const scheduler = schedulerSingleton.getScheduler();
 
   // Agent started event
@@ -89,8 +98,7 @@ export function initializeAgentEvents(io: SocketIOServer): void {
     logger.info(`Broadcasting agent scheduled event: ${data.agentId}`);
     io.emit(AgentEventType.AGENT_SCHEDULED, data);
   });
-
-  logger.info('Agent WebSocket events initialized');
+  */
 }
 
 /**
