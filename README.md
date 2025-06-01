@@ -43,34 +43,49 @@ tail -f logs/coordination-events.log
 
 For more details, see [ORCHESTRATOR_README.md](ORCHESTRATOR_README.md).
 
+## 🕐 Agent Scheduler
+
+NeonHub includes an advanced agent scheduling system with real-time monitoring and control:
+
+### Features
+
+- **⏰ Cron-based Scheduling**: Schedule agents using standard cron expressions
+- **⏸️ Pause/Resume Control**: Pause and resume individual agent jobs without affecting others
+- **📊 Real-time Monitoring**: Live WebSocket updates for agent execution status
+- **🔄 Automatic Retry**: Exponential backoff retry strategy for failed executions
+- **📈 Priority Queue**: Execute agents based on priority levels (LOW, NORMAL, HIGH, CRITICAL)
+- **🎯 Concurrency Control**: Configurable maximum concurrent agent executions
+
+### Quick Start
+
+```bash
+# Schedule an agent to run every 5 minutes
+curl -X POST http://localhost:5000/api/agents/{agentId}/schedule \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"cronExpression": "*/5 * * * *", "priority": "HIGH"}'
+
+# Pause a running job
+curl -X PATCH http://localhost:5000/api/agents/{agentId}/schedule/{jobId}/pause \
+  -H "Authorization: Bearer {token}"
+
+# Resume a paused job
+curl -X PATCH http://localhost:5000/api/agents/{agentId}/schedule/{jobId}/resume \
+  -H "Authorization: Bearer {token}"
+```
+
+### Monitoring Dashboard
+
+Access the scheduler monitoring dashboard at `/dashboard/agents/scheduler` to:
+- View all scheduled agents and their status
+- Monitor real-time execution progress
+- Pause/resume jobs with admin privileges
+- Track scheduler statistics and performance
+
+For detailed API documentation, see [docs/AGENT_SCHEDULING_API.md](docs/AGENT_SCHEDULING_API.md).
+
 ## Setup
 
 Install dependencies:
 
-```bash
-npm install
-```
-
-## Development
-
-Build and start the application:
-
-```bash
-npm run build
-npm start
-```
-
-## Testing
-
-Run unit tests:
-
-```bash
-npm run test
-```
-
-## Lint & Format
-
-```bash
-npm run lint
-npm run format
 ```
