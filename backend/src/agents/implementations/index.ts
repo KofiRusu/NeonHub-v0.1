@@ -114,7 +114,7 @@ const performanceOptimizerPlugin: AgentPlugin = {
 };
 
 const audienceResearchPlugin: AgentPlugin = {
-  type: AgentType.AUDIENCE_RESEARCHER,
+  type: 'AUDIENCE_RESEARCHER' as AgentType,
   name: 'Audience Research Agent',
   description: 'Researches and analyzes target audiences',
   version: '1.0.0',
@@ -140,7 +140,7 @@ const audienceResearchPlugin: AgentPlugin = {
 };
 
 const seoPlugin: AgentPlugin = {
-  type: AgentType.SEO_SPECIALIST,
+  type: 'SEO_SPECIALIST' as AgentType,
   name: 'SEO Specialist Agent',
   description: 'Optimizes content and strategies for search engines',
   version: '1.0.0',

@@ -360,18 +360,21 @@ async function getDefaultUserId(): Promise<string> {
 router.get('/sessions', async (_req: Request, res: Response) => {
   try {
     const agentScheduler = getScheduler();
-    const sessions = agentScheduler.getActiveSessions();
+    const taskDetails = agentScheduler.getTaskDetails();
+
+    // Filter to only running tasks
+    const runningSessions = taskDetails.filter((task) => task.isRunning);
 
     res.json({
       success: true,
-      sessions: sessions.map((session: any) => ({
-        agentId: session.agentId,
-        sessionId: session.sessionId,
-        startTime: session.startTime,
-        status: session.status,
-        progress: session.progress || null,
+      sessions: runningSessions.map((task) => ({
+        agentId: task.agentId,
+        agentName: task.agentName,
+        priority: task.priority,
+        isRunning: task.isRunning,
+        isPaused: task.isPaused,
       })),
-      count: sessions.length,
+      count: runningSessions.length,
     });
   } catch (error) {
     console.error('Get sessions error:', error);
@@ -395,14 +398,13 @@ router.get('/scheduler/status', async (_req: Request, res: Response) => {
 
     res.json({
       success: true,
-      status: 'running',
+      status: stats.isRunning ? 'running' : 'stopped',
       stats: {
-        totalScheduled: stats.totalScheduled,
-        activeAgents: stats.activeAgents,
-        totalRuns: stats.totalRuns,
-        successfulRuns: stats.successfulRuns,
-        failedRuns: stats.failedRuns,
-        queueLength: stats.queueLength,
+        totalScheduled: stats.scheduledTasksCount,
+        activeAgents: stats.runningAgentsCount,
+        queuedTasks: stats.queuedTasksCount,
+        maxConcurrentAgents: stats.maxConcurrentAgents,
+        pausedJobs: stats.pausedJobsCount,
         isRunning: stats.isRunning,
       },
     });

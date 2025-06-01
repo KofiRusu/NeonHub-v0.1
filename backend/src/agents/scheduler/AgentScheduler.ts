@@ -104,7 +104,11 @@ export class AgentScheduler {
           'Prisma client and AgentManager must be provided when creating the first instance',
         );
       }
-      AgentScheduler.instance = new AgentScheduler(prisma, agentManager, options);
+      AgentScheduler.instance = new AgentScheduler(
+        prisma,
+        agentManager,
+        options,
+      );
     }
     return AgentScheduler.instance;
   }
@@ -275,7 +279,7 @@ export class AgentScheduler {
               agent.nextRunAt ||
               this.calculateNextRunTime(agent.scheduleExpression);
 
-            const config = agent.configuration as any || {};
+            const config = (agent.configuration as any) || {};
             const task: ScheduledTask = {
               agentId: agent.id,
               agent,
@@ -287,7 +291,7 @@ export class AgentScheduler {
 
             this.scheduledTasks.set(agent.id, task);
             this.addToQueue(task);
-            
+
             // Restore paused state
             if (task.isPaused) {
               this.pausedJobs.set(agent.id, true);
@@ -382,7 +386,9 @@ export class AgentScheduler {
       task.backoffUntil = undefined;
 
       const duration = Date.now() - startTime;
-      logger.info(`Agent ${task.agentId} executed successfully in ${duration}ms`);
+      logger.info(
+        `Agent ${task.agentId} executed successfully in ${duration}ms`,
+      );
 
       // Emit WebSocket event for agent completed
       try {
@@ -393,23 +399,23 @@ export class AgentScheduler {
       }
     } catch (error) {
       logger.error(`Error executing agent ${task.agentId}:`, error);
-      
+
       // Emit WebSocket event for agent failed
       try {
         const wsService = WebSocketService.getInstance();
         wsService.emitAgentFailed(
-          task.agentId, 
-          task.jobId, 
-          error instanceof Error ? error.message : String(error)
+          task.agentId,
+          error instanceof Error ? error.message : String(error),
+          task.jobId,
         );
       } catch (wsError) {
         logger.warn('WebSocket service not available:', wsError);
       }
-      
+
       await this.handleTaskFailure(task, error);
     } finally {
       this.runningAgents.delete(task.agentId);
-      
+
       // Emit scheduler status update
       try {
         const wsService = WebSocketService.getInstance();
@@ -684,7 +690,7 @@ export class AgentScheduler {
   async pauseJob(agentId: string, jobId?: string): Promise<void> {
     const effectiveJobId = jobId || agentId;
     const task = this.scheduledTasks.get(agentId);
-    
+
     if (!task) {
       throw new Error(`No scheduled task found for agent ${agentId}`);
     }
@@ -698,15 +704,15 @@ export class AgentScheduler {
     task.isPaused = true;
     task.jobId = effectiveJobId;
     this.pausedJobs.set(effectiveJobId, true);
-    
+
     // Update database to reflect paused state
     await this.prisma.aIAgent.update({
       where: { id: agentId },
-      data: { 
+      data: {
         status: AgentStatus.IDLE,
         // Store pause state in configuration
         configuration: {
-          ...(task.agent.configuration as any || {}),
+          ...((task.agent.configuration as any) || {}),
           isPaused: true,
           pausedAt: new Date().toISOString(),
         },
@@ -714,7 +720,7 @@ export class AgentScheduler {
     });
 
     logger.info(`Paused job ${effectiveJobId} for agent ${agentId}`);
-    
+
     // Emit WebSocket event for agent paused
     try {
       const wsService = WebSocketService.getInstance();
@@ -726,33 +732,35 @@ export class AgentScheduler {
 
   /**
    * Resume a paused job
-   * @param agentId Agent ID  
+   * @param agentId Agent ID
    * @param jobId Job ID (optional, defaults to agentId)
    */
   async resumeJob(agentId: string, jobId?: string): Promise<void> {
     const effectiveJobId = jobId || agentId;
     const task = this.scheduledTasks.get(agentId);
-    
+
     if (!task) {
       throw new Error(`No scheduled task found for agent ${agentId}`);
     }
 
     if (!task.isPaused && !this.pausedJobs.has(effectiveJobId)) {
-      throw new Error(`Job ${effectiveJobId} for agent ${agentId} is not paused`);
+      throw new Error(
+        `Job ${effectiveJobId} for agent ${agentId} is not paused`,
+      );
     }
 
     // Remove paused state
     task.isPaused = false;
     this.pausedJobs.delete(effectiveJobId);
-    
+
     // Update database
     await this.prisma.aIAgent.update({
       where: { id: agentId },
-      data: { 
+      data: {
         status: AgentStatus.IDLE,
         // Remove pause state from configuration
         configuration: {
-          ...(task.agent.configuration as any || {}),
+          ...((task.agent.configuration as any) || {}),
           isPaused: false,
           resumedAt: new Date().toISOString(),
         },
@@ -761,7 +769,9 @@ export class AgentScheduler {
 
     // Recalculate next run time if it's in the past
     if (task.nextRunTime < new Date() && task.agent.scheduleExpression) {
-      task.nextRunTime = this.calculateNextRunTime(task.agent.scheduleExpression);
+      task.nextRunTime = this.calculateNextRunTime(
+        task.agent.scheduleExpression,
+      );
       await this.prisma.aIAgent.update({
         where: { id: agentId },
         data: { nextRunAt: task.nextRunTime },
@@ -769,7 +779,7 @@ export class AgentScheduler {
     }
 
     logger.info(`Resumed job ${effectiveJobId} for agent ${agentId}`);
-    
+
     // Emit WebSocket event for agent resumed
     try {
       const wsService = WebSocketService.getInstance();

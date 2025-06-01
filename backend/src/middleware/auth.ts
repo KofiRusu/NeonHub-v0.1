@@ -2,7 +2,11 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import { logger } from '../utils/logger';
-import { verifyToken, extractTokenFromHeader, generateToken } from '../utils/jwt';
+import {
+  verifyToken,
+  extractTokenFromHeader,
+  generateToken,
+} from '../utils/jwt';
 
 const prisma = new PrismaClient();
 
@@ -34,7 +38,7 @@ export const authenticateToken = async (
     }
 
     const decoded = verifyToken(token);
-    
+
     if (!decoded) {
       return res.status(403).json({ message: 'Invalid or expired token' });
     }
@@ -65,11 +69,7 @@ export const authenticateToken = async (
 /**
  * Middleware to check if user has admin role
  */
-export const adminOnly = (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const adminOnly = (req: Request, res: Response, next: NextFunction) => {
   if (req.user?.role !== 'ADMIN') {
     return res.status(403).json({ message: 'Admin access required' });
   }
@@ -89,7 +89,7 @@ export const generateJWT = (
       email: user.email,
       role: user.role,
     },
-    expiresIn
+    expiresIn,
   );
 };
 
@@ -101,27 +101,27 @@ export const protect = (req: Request, res: Response, next: NextFunction) => {
     // Get token from header
     const authHeader = req.headers.authorization;
     const token = extractTokenFromHeader(authHeader);
-    
+
     if (!token) {
       return res.status(401).json({
         success: false,
         message: 'Not authorized to access this route',
       });
     }
-    
+
     // Verify token
     const decoded = verifyToken(token);
-    
+
     if (!decoded) {
       return res.status(401).json({
         success: false,
         message: 'Invalid token',
       });
     }
-    
+
     // Add user to request
     req.user = decoded as { id: string; email: string; role: string };
-    
+
     next();
   } catch (error) {
     logger.error('Auth middleware error:', error);
@@ -144,7 +144,7 @@ export const restrictTo = (...roles: string[]) => {
         message: 'Forbidden: Insufficient permissions',
       });
     }
-    
+
     // Check if user role is allowed
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({
@@ -152,7 +152,12 @@ export const restrictTo = (...roles: string[]) => {
         message: 'Forbidden: Insufficient permissions for this role',
       });
     }
-    
+
     next();
   };
 };
+
+/**
+ * Alias for restrictTo for backward compatibility
+ */
+export const authorize = restrictTo;
