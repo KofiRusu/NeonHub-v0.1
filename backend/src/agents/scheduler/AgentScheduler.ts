@@ -2,6 +2,7 @@ import { PrismaClient, AIAgent, AgentStatus, AgentType } from '@prisma/client';
 import { CronExpressionParser } from 'cron-parser';
 import { AgentManager } from '../manager/AgentManager';
 import { logger } from '../../utils/logger';
+import { WebSocketService } from '../../services/websocket.service';
 
 /**
  * Priority levels for agent execution
@@ -351,6 +352,7 @@ export class AgentScheduler {
    * @param task The task to execute
    */
   private async executeTask(task: ScheduledTask): Promise<void> {
+    const startTime = Date.now();
     try {
       this.runningAgents.add(task.agentId);
       logger.info(
@@ -363,6 +365,14 @@ export class AgentScheduler {
         data: { status: AgentStatus.RUNNING, lastRunAt: new Date() },
       });
 
+      // Emit WebSocket event for agent started
+      try {
+        const wsService = WebSocketService.getInstance();
+        wsService.emitAgentStarted(task.agentId, task.jobId);
+      } catch (error) {
+        logger.warn('WebSocket service not available:', error);
+      }
+
       // Execute the agent
       await this.agentManager.startAgent(task.agentId);
 
@@ -371,12 +381,42 @@ export class AgentScheduler {
       task.lastError = undefined;
       task.backoffUntil = undefined;
 
-      logger.info(`Agent ${task.agentId} executed successfully`);
+      const duration = Date.now() - startTime;
+      logger.info(`Agent ${task.agentId} executed successfully in ${duration}ms`);
+
+      // Emit WebSocket event for agent completed
+      try {
+        const wsService = WebSocketService.getInstance();
+        wsService.emitAgentCompleted(task.agentId, task.jobId, duration);
+      } catch (error) {
+        logger.warn('WebSocket service not available:', error);
+      }
     } catch (error) {
       logger.error(`Error executing agent ${task.agentId}:`, error);
+      
+      // Emit WebSocket event for agent failed
+      try {
+        const wsService = WebSocketService.getInstance();
+        wsService.emitAgentFailed(
+          task.agentId, 
+          task.jobId, 
+          error instanceof Error ? error.message : String(error)
+        );
+      } catch (wsError) {
+        logger.warn('WebSocket service not available:', wsError);
+      }
+      
       await this.handleTaskFailure(task, error);
     } finally {
       this.runningAgents.delete(task.agentId);
+      
+      // Emit scheduler status update
+      try {
+        const wsService = WebSocketService.getInstance();
+        wsService.emitSchedulerStatus(this.getStats());
+      } catch (error) {
+        logger.warn('WebSocket service not available:', error);
+      }
     }
   }
 
@@ -674,6 +714,14 @@ export class AgentScheduler {
     });
 
     logger.info(`Paused job ${effectiveJobId} for agent ${agentId}`);
+    
+    // Emit WebSocket event for agent paused
+    try {
+      const wsService = WebSocketService.getInstance();
+      wsService.emitAgentPaused(agentId, effectiveJobId);
+    } catch (error) {
+      logger.warn('WebSocket service not available:', error);
+    }
   }
 
   /**
@@ -721,6 +769,14 @@ export class AgentScheduler {
     }
 
     logger.info(`Resumed job ${effectiveJobId} for agent ${agentId}`);
+    
+    // Emit WebSocket event for agent resumed
+    try {
+      const wsService = WebSocketService.getInstance();
+      wsService.emitAgentResumed(agentId, effectiveJobId);
+    } catch (error) {
+      logger.warn('WebSocket service not available:', error);
+    }
   }
 
   /**

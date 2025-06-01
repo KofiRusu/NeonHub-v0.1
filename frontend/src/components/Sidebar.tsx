@@ -14,6 +14,8 @@ import {
   User,
   ChevronDown,
   Megaphone,
+  Bot,
+  Calendar,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -112,6 +114,21 @@ export default function Sidebar() {
       href: '/dashboard',
       label: 'Dashboard',
       icon: <LayoutDashboard className="h-5 w-5" />,
+    },
+    {
+      href: '/dashboard/agents',
+      label: 'AI Agents',
+      icon: <Bot className="h-5 w-5" />,
+      subItems: [
+        {
+          href: '/dashboard/agents',
+          label: 'Agent List',
+        },
+        {
+          href: '/dashboard/agents/scheduler',
+          label: 'Scheduler',
+        },
+      ],
     },
     {
       href: '/projects',
