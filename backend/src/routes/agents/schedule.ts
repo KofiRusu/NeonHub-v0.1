@@ -202,141 +202,161 @@ router.get(
 );
 
 // Pause a scheduled job
-router.patch('/:jobId/pause', authenticate, async (req, res, next) => {
-  try {
-    const { agentId, jobId } = req.params;
+router.patch(
+  '/:jobId/pause',
+  authenticateToken,
+  async (
+    req: AgentRequest & { params: { jobId: string } },
+    res: Response,
+    next: NextFunction,
+  ) => {
+    try {
+      const { agentId, jobId } = req.params;
 
-    // Verify agent exists
-    const agent = await prisma.aIAgent.findUnique({
-      where: { id: agentId },
-    });
-
-    if (!agent) {
-      return res.status(404).json({
-        success: false,
-        error: 'Agent not found',
+      // Verify agent exists
+      const agent = await prisma.aIAgent.findUnique({
+        where: { id: agentId },
       });
-    }
 
-    const scheduler = getScheduler();
-    await scheduler.pauseJob(agentId, jobId);
-
-    logger.info(`Job ${jobId} for agent ${agentId} paused successfully`);
-
-    res.json({
-      success: true,
-      message: `Job ${jobId} paused successfully`,
-      data: {
-        agentId,
-        jobId,
-        status: 'paused',
-      },
-    });
-  } catch (err) {
-    logger.error(`Error pausing job:`, err);
-    
-    // Handle specific errors
-    if (err instanceof Error) {
-      if (err.message.includes('No scheduled task found')) {
+      if (!agent) {
         return res.status(404).json({
           success: false,
-          error: err.message,
+          error: 'Agent not found',
         });
       }
-      if (err.message.includes('while it is running')) {
-        return res.status(409).json({
-          success: false,
-          error: err.message,
-        });
+
+      const scheduler = getScheduler();
+      await scheduler.pauseJob(agentId, jobId);
+
+      logger.info(`Job ${jobId} for agent ${agentId} paused successfully`);
+
+      res.json({
+        success: true,
+        message: `Job ${jobId} paused successfully`,
+        data: {
+          agentId,
+          jobId,
+          status: 'paused',
+        },
+      });
+    } catch (err) {
+      logger.error(`Error pausing job:`, err);
+
+      // Handle specific errors
+      if (err instanceof Error) {
+        if (err.message.includes('No scheduled task found')) {
+          return res.status(404).json({
+            success: false,
+            error: err.message,
+          });
+        }
+        if (err.message.includes('while it is running')) {
+          return res.status(409).json({
+            success: false,
+            error: err.message,
+          });
+        }
       }
+
+      next(err);
     }
-    
-    next(err);
-  }
-});
+  },
+);
 
 // Resume a paused job
-router.patch('/:jobId/resume', authenticate, async (req, res, next) => {
-  try {
-    const { agentId, jobId } = req.params;
+router.patch(
+  '/:jobId/resume',
+  authenticateToken,
+  async (
+    req: AgentRequest & { params: { jobId: string } },
+    res: Response,
+    next: NextFunction,
+  ) => {
+    try {
+      const { agentId, jobId } = req.params;
 
-    // Verify agent exists
-    const agent = await prisma.aIAgent.findUnique({
-      where: { id: agentId },
-    });
-
-    if (!agent) {
-      return res.status(404).json({
-        success: false,
-        error: 'Agent not found',
+      // Verify agent exists
+      const agent = await prisma.aIAgent.findUnique({
+        where: { id: agentId },
       });
-    }
 
-    const scheduler = getScheduler();
-    await scheduler.resumeJob(agentId, jobId);
-
-    // Get updated agent info
-    const updatedAgent = await prisma.aIAgent.findUnique({
-      where: { id: agentId },
-      select: {
-        id: true,
-        name: true,
-        scheduleExpression: true,
-        scheduleEnabled: true,
-        nextRunAt: true,
-        status: true,
-      },
-    });
-
-    logger.info(`Job ${jobId} for agent ${agentId} resumed successfully`);
-
-    res.json({
-      success: true,
-      message: `Job ${jobId} resumed successfully`,
-      data: {
-        agentId,
-        jobId,
-        status: 'resumed',
-        nextRunAt: updatedAgent?.nextRunAt,
-      },
-    });
-  } catch (err) {
-    logger.error(`Error resuming job:`, err);
-    
-    // Handle specific errors
-    if (err instanceof Error) {
-      if (err.message.includes('No scheduled task found')) {
+      if (!agent) {
         return res.status(404).json({
           success: false,
-          error: err.message,
+          error: 'Agent not found',
         });
       }
-      if (err.message.includes('is not paused')) {
-        return res.status(400).json({
-          success: false,
-          error: err.message,
-        });
+
+      const scheduler = getScheduler();
+      await scheduler.resumeJob(agentId, jobId);
+
+      // Get updated agent info
+      const updatedAgent = await prisma.aIAgent.findUnique({
+        where: { id: agentId },
+        select: {
+          id: true,
+          name: true,
+          scheduleExpression: true,
+          scheduleEnabled: true,
+          nextRunAt: true,
+          status: true,
+        },
+      });
+
+      logger.info(`Job ${jobId} for agent ${agentId} resumed successfully`);
+
+      res.json({
+        success: true,
+        message: `Job ${jobId} resumed successfully`,
+        data: {
+          agentId,
+          jobId,
+          status: 'resumed',
+          nextRunAt: updatedAgent?.nextRunAt,
+        },
+      });
+    } catch (err) {
+      logger.error(`Error resuming job:`, err);
+
+      // Handle specific errors
+      if (err instanceof Error) {
+        if (err.message.includes('No scheduled task found')) {
+          return res.status(404).json({
+            success: false,
+            error: err.message,
+          });
+        }
+        if (err.message.includes('is not paused')) {
+          return res.status(400).json({
+            success: false,
+            error: err.message,
+          });
+        }
       }
+
+      next(err);
     }
-    
-    next(err);
-  }
-});
+  },
+);
 
 // Get paused jobs
-router.get('/paused', authenticate, async (req, res, next) => {
-  try {
-    const scheduler = getScheduler();
-    const pausedJobs = scheduler.getPausedJobs();
+router.get(
+  '/paused',
+  authenticateToken,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const scheduler = getScheduler();
+      const pausedJobs = scheduler.getPausedJobs();
 
-    res.json({
-      success: true,
-      data: pausedJobs,
-    });
-  } catch (err) {
-    logger.error('Error fetching paused jobs:', err);
-    next(err);
-  }
-});
+      res.json({
+        success: true,
+        data: pausedJobs,
+      });
+    } catch (err) {
+      logger.error('Error fetching paused jobs:', err);
+      next(err);
+    }
+  },
+);
 
 export default router;
