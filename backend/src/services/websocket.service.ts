@@ -49,10 +49,15 @@ export class WebSocketService {
     this.setupEventHandlers();
   }
 
-  static getInstance(httpServer?: any, prisma?: PrismaClient): WebSocketService {
+  static getInstance(
+    httpServer?: any,
+    prisma?: PrismaClient,
+  ): WebSocketService {
     if (!WebSocketService.instance) {
       if (!httpServer || !prisma) {
-        throw new Error('HTTP server and Prisma client required for first initialization');
+        throw new Error(
+          'HTTP server and Prisma client required for first initialization',
+        );
       }
       WebSocketService.instance = new WebSocketService(httpServer, prisma);
     }
@@ -104,10 +109,12 @@ export class WebSocketService {
       duration,
       timestamp: new Date().toISOString(),
     };
-    this.io.to(`agent-${agentId}`).emit(AgentSocketEvents.AGENT_COMPLETED, data);
+    this.io
+      .to(`agent-${agentId}`)
+      .emit(AgentSocketEvents.AGENT_COMPLETED, data);
   }
 
-  emitAgentFailed(agentId: string, jobId?: string, error: string) {
+  emitAgentFailed(agentId: string, error: string, jobId?: string) {
     const data: AgentEventData = {
       agentId,
       jobId,
@@ -118,7 +125,13 @@ export class WebSocketService {
     this.io.to(`agent-${agentId}`).emit(AgentSocketEvents.AGENT_FAILED, data);
   }
 
-  emitAgentProgress(agentId: string, progress: number, message?: string, currentStep?: string, totalSteps?: number) {
+  emitAgentProgress(
+    agentId: string,
+    progress: number,
+    message?: string,
+    currentStep?: string,
+    totalSteps?: number,
+  ) {
     const data: AgentProgressData = {
       agentId,
       progress,

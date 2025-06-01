@@ -59,9 +59,9 @@ class TestAgent extends BaseAgent {
   // Expose logMessage as public for testing
   public async testLogMessage(
     message: string,
-    level?: 'info' | 'warning' | 'error',
+    level: 'info' | 'warning' | 'error' = 'info',
   ): Promise<void> {
-    return this.logMessage(message, level);
+    return this.logMessage(level, message);
   }
 }
 
