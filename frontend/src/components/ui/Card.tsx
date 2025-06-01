@@ -60,4 +60,39 @@ Card.Header = CardHeader;
 Card.Body = CardBody;
 Card.Footer = CardFooter;
 
-export { Card, CardHeader, CardBody, CardFooter };
+// Export aliases for compatibility
+const CardContent = CardBody;
+const CardDescription = ({
+  children,
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLParagraphElement>) => (
+  <p className={cn('text-sm text-muted-foreground', className)} {...props}>
+    {children}
+  </p>
+);
+const CardTitle = ({
+  children,
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLHeadingElement>) => (
+  <h3
+    className={cn(
+      'text-2xl font-semibold leading-none tracking-tight',
+      className,
+    )}
+    {...props}
+  >
+    {children}
+  </h3>
+);
+
+export {
+  Card,
+  CardHeader,
+  CardBody,
+  CardFooter,
+  CardContent,
+  CardDescription,
+  CardTitle,
+};
