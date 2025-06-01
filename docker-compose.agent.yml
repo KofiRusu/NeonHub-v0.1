@@ -25,6 +25,49 @@ services:
     restart: unless-stopped
     command: sh -c "npm run prisma:migrate:deploy && node scripts/run_scheduler.js"
 
+  orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile.orchestrator
+    ports:
+      - "3030:3030"
+    environment:
+      - PORT=3030
+      - POLL_INTERVAL_MS=60000
+      - LOG_DIR=/app/logs
+      - LOG_FILE=coordination-events.log
+      - DEPLOY_COMMAND=node /app/AutoOpt/orchestrator/mock-vercel.js
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - agent-network
+
+  project-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    environment:
+      - ORCH_URL=http://orchestrator:3030/events
+    command: node /app/AutoOpt/scripts/project-agent.js
+    depends_on:
+      - orchestrator
+    networks:
+      - agent-network
+
+  ci-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    environment:
+      - ORCH_URL=http://orchestrator:3030/events
+    command: node /app/AutoOpt/scripts/ci-agent.js
+    depends_on:
+      - orchestrator
+    networks:
+      - agent-network
+
 networks:
   neonhub_network:
     external: true
+  agent-network:
+    driver: bridge

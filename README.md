@@ -20,6 +20,29 @@ Our comprehensive quality pipeline ensures code excellence through:
 - **📊 Code Quality**: SonarCloud analysis and metrics
 - **🌙 Nightly Checks**: Comprehensive testing across all browsers
 
+## 🤖 Autonomous Development
+
+NeonHub features an autonomous orchestration system that enables continuous overnight development:
+
+- **Orchestrator**: Coordinates agents and triggers deployments when conditions are met
+- **Project Agent**: Analyzes the codebase and reports project status
+- **CI Agent**: Runs tests, linting, and ensures quality standards
+
+To use the orchestration system:
+
+```bash
+# Start the orchestrator
+./start-orchestrator.sh
+
+# Run the agents
+./start_agents.sh
+
+# Monitor events
+tail -f logs/coordination-events.log
+```
+
+For more details, see [ORCHESTRATOR_README.md](ORCHESTRATOR_README.md).
+
 ## Setup
 
 Install dependencies:

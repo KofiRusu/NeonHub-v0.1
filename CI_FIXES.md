@@ -21,6 +21,7 @@
    - ✅ Fixed duplicate plugin configuration by adding "root": true to backend/.eslintrc.json
    - ✅ Fixed apostrophe escaping issues in CustomerSupportAgent.ts and seed.ts
    - ✅ Resolved syntax errors to make the CI pass
+   - ✅ Fixed improper namespace declaration in auth.ts by using proper module augmentation pattern
 
 ## Code Fixes
 
@@ -47,6 +48,8 @@
 5. **String Escaping**
    - ✅ Fixed apostrophe escaping in CustomerSupportAgent.ts (mainResponse and closing messages)
    - ✅ Fixed apostrophe escaping in seed.ts (templates and subjectLineOptions)
+   - ✅ Fixed apostrophe escaping in seed.ts (emailTemplate and blogPost strings)
+   - ✅ Removed unnecessary apostrophe escaping that was causing ESLint errors
    - ✅ Ensured all string literals with apostrophes use proper escaping
 
 ## Agent Implementation Fixes

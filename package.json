@@ -7,7 +7,7 @@
     "build:all": "npm run build && npm run build:backend && npm run build:frontend && npm run build:orchestrator",
     "build:backend": "cd backend && npm run build",
     "build:frontend": "cd frontend && npm run build",
-    "build:orchestrator": "cd services/orchestrator && npm run build",
+    "build:orchestrator": "cd AutoOpt/orchestrator && npm run build",
     "start": "node dist/index.js",
     "lint": "eslint . --ext .ts,.tsx --ignore-path .eslintignore",
     "lint:fix": "eslint . --ext .ts,.tsx --fix --ignore-path .eslintignore",
@@ -32,10 +32,15 @@
     "quality:fix": "npm run lint:fix && npm run format",
     "quality:auto-fix": "node scripts/auto-fix-quality.js",
     "ci:setup": "npm ci && npm run migrate:dev",
-    "ci:test": "npm run quality:check && npm run test:e2e"
+    "ci:test": "npm run quality:check && npm run test:e2e",
+    "orch:start": "./start-orchestrator.sh",
+    "orch:agents": "./start_agents.sh",
+    "orch:test": "./test-orchestrator.sh",
+    "orch:docker": "docker-compose -f docker-compose.agent.yml up"
   },
   "dependencies": {
     "@octokit/rest": "^20.0.2",
+    "axios": "^1.9.0",
     "dotenv": "^16.0.3",
     "express": "^4.18.2"
   },

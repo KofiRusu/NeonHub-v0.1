@@ -9,4 +9,31 @@ generator client {
 
 model Example {
   id Int @id @default(autoincrement())
+}
+
+model AgentRegistry {
+  id            String   @id @default(cuid())
+  name          String
+  endpoint      String
+  active        Boolean  @default(true)
+  lastHeartbeat DateTime @updatedAt
+  createdAt     DateTime @default(now())
+} 
+
+model Metric {
+  id         String   @id @default(uuid())
+  campaignId String?
+  agentId    String?
+  source     String   // e.g., "google_analytics", "adwords"
+  name       String   // e.g., "clicks", "impressions"
+  value      Float
+  dimension  String?
+  timestamp  DateTime @default(now())
+  metadata   Json?
+  
+  @@index([campaignId])
+  @@index([agentId])
+  @@index([source])
+  @@index([timestamp])
+  @@index([name])
 } 

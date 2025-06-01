@@ -15,6 +15,30 @@ jest.mock('../../utils/logger', () => ({
   },
 }));
 
+// Mock Prisma Client enums
+jest.mock('@prisma/client', () => ({
+  PrismaClient: jest.fn(),
+  AgentStatus: {
+    IDLE: 'IDLE',
+    RUNNING: 'RUNNING',
+    ERROR: 'ERROR',
+    PAUSED: 'PAUSED',
+    COMPLETED: 'COMPLETED',
+  },
+  AgentType: {
+    CONTENT_CREATOR: 'CONTENT_CREATOR',
+    TREND_ANALYZER: 'TREND_ANALYZER',
+    OUTREACH_MANAGER: 'OUTREACH_MANAGER',
+    PERFORMANCE_OPTIMIZER: 'PERFORMANCE_OPTIMIZER',
+    AUDIENCE_RESEARCHER: 'AUDIENCE_RESEARCHER',
+    COPYWRITER: 'COPYWRITER',
+    SOCIAL_MEDIA_MANAGER: 'SOCIAL_MEDIA_MANAGER',
+    EMAIL_MARKETER: 'EMAIL_MARKETER',
+    SEO_SPECIALIST: 'SEO_SPECIALIST',
+    CUSTOMER_SUPPORT: 'CUSTOMER_SUPPORT',
+  },
+}));
+
 describe('AgentScheduler', () => {
   let mockPrisma: DeepMockProxy<PrismaClient>;
   let mockAgentManager: jest.Mocked<AgentManager>;
@@ -230,6 +254,7 @@ describe('AgentScheduler', () => {
         runningAgentsCount: 0,
         queuedTasksCount: 0,
         maxConcurrentAgents: 2,
+        pausedJobsCount: 0,
       });
     });
   });
@@ -417,6 +442,244 @@ describe('AgentScheduler', () => {
       expect(mockAgentManager.startAgent).toHaveBeenCalledWith(missedAgent.id);
 
       schedulerWithMissedJobs.stop();
+    });
+  });
+
+  describe('singleton pattern', () => {
+    it('should create and return the same instance', () => {
+      const instance1 = AgentScheduler.getInstance(mockPrisma, mockAgentManager);
+      const instance2 = AgentScheduler.getInstance();
+
+      expect(instance1).toBe(instance2);
+    });
+
+    it('should throw error if trying to get instance without initial params', () => {
+      // Reset the static instance
+      (AgentScheduler as any).instance = null;
+
+      expect(() => AgentScheduler.getInstance()).toThrow(
+        'Prisma client and AgentManager must be provided when creating the first instance',
+      );
+    });
+  });
+
+  describe('pause/resume functionality', () => {
+    beforeEach(async () => {
+      mockPrisma.aIAgent.findMany.mockResolvedValue([mockAgent]);
+      await scheduler.start();
+    });
+
+    describe('pauseJob', () => {
+      it('should pause a scheduled job successfully', async () => {
+        mockPrisma.aIAgent.update.mockResolvedValue({
+          ...mockAgent,
+          status: 'IDLE' as any,
+          configuration: { isPaused: true, pausedAt: expect.any(String) },
+        });
+
+        await scheduler.pauseJob('test-agent-id');
+
+        expect(mockPrisma.aIAgent.update).toHaveBeenCalledWith({
+          where: { id: 'test-agent-id' },
+          data: {
+            status: 'IDLE',
+            configuration: {
+              priority: 'normal',
+              isPaused: true,
+              pausedAt: expect.any(String),
+            },
+          },
+        });
+
+        const details = scheduler.getTaskDetails();
+        const task = details.find((d) => d.agentId === 'test-agent-id');
+        expect(task?.isPaused).toBe(true);
+      });
+
+      it('should pause with custom jobId', async () => {
+        mockPrisma.aIAgent.update.mockResolvedValue({
+          ...mockAgent,
+          status: 'IDLE' as any,
+        });
+
+        await scheduler.pauseJob('test-agent-id', 'custom-job-id');
+
+        const details = scheduler.getTaskDetails();
+        const task = details.find((d) => d.agentId === 'test-agent-id');
+        expect(task?.jobId).toBe('custom-job-id');
+      });
+
+      it('should throw error if no scheduled task found', async () => {
+        await expect(scheduler.pauseJob('non-existent-agent')).rejects.toThrow(
+          'No scheduled task found for agent non-existent-agent',
+        );
+      });
+
+      it('should throw error if agent is currently running', async () => {
+        // Manually add agent to running set to simulate running state
+        (scheduler as any).runningAgents.add('test-agent-id');
+
+        await expect(scheduler.pauseJob('test-agent-id')).rejects.toThrow(
+          'Cannot pause agent test-agent-id while it is running',
+        );
+      });
+    });
+
+    describe('resumeJob', () => {
+      beforeEach(async () => {
+        // First pause the job
+        mockPrisma.aIAgent.update.mockResolvedValue({
+          ...mockAgent,
+          status: 'IDLE' as any,
+          configuration: { isPaused: true },
+        });
+        await scheduler.pauseJob('test-agent-id');
+      });
+
+      it('should resume a paused job successfully', async () => {
+        mockPrisma.aIAgent.update.mockResolvedValue({
+          ...mockAgent,
+          status: 'IDLE' as any,
+          configuration: { isPaused: false, resumedAt: expect.any(String) },
+        });
+
+        await scheduler.resumeJob('test-agent-id');
+
+        expect(mockPrisma.aIAgent.update).toHaveBeenLastCalledWith({
+          where: { id: 'test-agent-id' },
+          data: {
+            status: 'IDLE',
+            configuration: {
+              priority: 'normal',
+              isPaused: false,
+              resumedAt: expect.any(String),
+            },
+          },
+        });
+
+        const details = scheduler.getTaskDetails();
+        const task = details.find((d) => d.agentId === 'test-agent-id');
+        expect(task?.isPaused).toBe(false);
+      });
+
+      it('should recalculate next run time if it is in the past', async () => {
+        // Set the task's next run time to the past
+        const task = (scheduler as any).scheduledTasks.get('test-agent-id');
+        task.nextRunTime = new Date(Date.now() - 60000); // 1 minute ago
+
+        mockPrisma.aIAgent.update.mockResolvedValue({
+          ...mockAgent,
+          status: 'SCHEDULED' as any,
+        });
+
+        await scheduler.resumeJob('test-agent-id');
+
+        // Should have called update twice: once for status, once for nextRunAt
+        const updateCalls = mockPrisma.aIAgent.update.mock.calls;
+        const nextRunAtUpdate = updateCalls.find(
+          (call) => call[0].data && call[0].data.nextRunAt,
+        );
+
+        expect(nextRunAtUpdate).toBeDefined();
+        if (nextRunAtUpdate) {
+          expect(nextRunAtUpdate[0].data.nextRunAt).toBeInstanceOf(Date);
+          expect(
+            (nextRunAtUpdate[0].data.nextRunAt as Date).getTime(),
+          ).toBeGreaterThan(Date.now());
+        }
+      });
+
+      it('should throw error if job is not paused', async () => {
+        // Reset the paused state
+        const task = (scheduler as any).scheduledTasks.get('test-agent-id');
+        task.isPaused = false;
+        (scheduler as any).pausedJobs.clear();
+
+        await expect(scheduler.resumeJob('test-agent-id')).rejects.toThrow(
+          'Job test-agent-id for agent test-agent-id is not paused',
+        );
+      });
+
+      it('should throw error if no scheduled task found', async () => {
+        await expect(
+          scheduler.resumeJob('non-existent-agent'),
+        ).rejects.toThrow(
+          'No scheduled task found for agent non-existent-agent',
+        );
+      });
+    });
+
+    describe('getPausedJobs', () => {
+      it('should return empty array when no jobs are paused', () => {
+        const pausedJobs = scheduler.getPausedJobs();
+        expect(pausedJobs).toEqual([]);
+      });
+
+      it('should return paused jobs list', async () => {
+        mockPrisma.aIAgent.update.mockResolvedValue({
+          ...mockAgent,
+          status: 'IDLE' as any,
+        });
+
+        await scheduler.pauseJob('test-agent-id', 'job-123');
+
+        const pausedJobs = scheduler.getPausedJobs();
+        expect(pausedJobs).toEqual([
+          { agentId: 'test-agent-id', jobId: 'job-123' },
+        ]);
+      });
+    });
+
+    describe('processScheduledTasks with paused jobs', () => {
+      it('should skip paused tasks during processing', async () => {
+        // Pause the job
+        mockPrisma.aIAgent.update.mockResolvedValue({
+          ...mockAgent,
+          status: 'IDLE' as any,
+        });
+        await scheduler.pauseJob('test-agent-id');
+
+        // Set the task to be ready to run
+        const task = (scheduler as any).scheduledTasks.get('test-agent-id');
+        task.nextRunTime = new Date(Date.now() - 1000); // 1 second ago
+
+        // Wait for processing
+        await new Promise((resolve) => setTimeout(resolve, 1100));
+
+        // Agent should not have been started
+        expect(mockAgentManager.startAgent).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('loading paused state from database', () => {
+      it('should restore paused state when loading scheduled agents', async () => {
+        const pausedAgent = {
+          ...mockAgent,
+          id: 'paused-agent',
+          configuration: { isPaused: true, priority: 'normal' },
+        };
+
+        mockPrisma.aIAgent.findMany.mockResolvedValue([pausedAgent]);
+
+        const newScheduler = new AgentScheduler(
+          mockPrisma,
+          mockAgentManager,
+          { autoStart: false },
+        );
+        await newScheduler.start();
+
+        const details = newScheduler.getTaskDetails();
+        const task = details.find((d) => d.agentId === 'paused-agent');
+        expect(task?.isPaused).toBe(true);
+
+        const pausedJobs = newScheduler.getPausedJobs();
+        expect(pausedJobs).toContainEqual({
+          agentId: 'paused-agent',
+          jobId: 'paused-agent',
+        });
+
+        newScheduler.stop();
+      });
     });
   });
 });

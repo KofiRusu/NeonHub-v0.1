@@ -1,172 +1,114 @@
 # NeonHub Orchestration System
 
-This system coordinates between three agents to take NeonHub from its current state to a full launch within 18 hours.
+The NeonHub Orchestration System provides an autonomous development workflow that helps coordinate multiple agents and automate deployment when certain conditions are met.
 
-## Components
+## System Components
 
-1. **Orchestrator Service** - A Node.js service that monitors agent events and triggers deployments
-   - Located in `services/orchestrator/`
-   - Exposes HTTP endpoints for communication
-   - Polls for completion signals
+1. **Orchestrator**: A TypeScript Express server that:
+   - Coordinates events via an API
+   - Monitors agent progress
+   - Triggers deployment when conditions are met
+   - Provides health and metrics endpoints
 
-2. **Project Agent** - Audits the codebase and reports on feature implementation
-   - Located in `scripts/project-agent.js`
-   - Reports project status and completion
+2. **Agent Scripts**:
+   - `project-agent.js`: Analyzes the codebase, reports features and project status
+   - `ci-agent.js`: Runs (or simulates) CI checks such as linting, tests, and coverage
 
-3. **CI Agent** - Runs tests, linting, and type checking
-   - Located in `scripts/ci-agent.js`
-   - Reports CI status and completion
+3. **Mock Deployment**: Simulates a Vercel deployment for testing purposes
 
-## How It Works
+## Getting Started
 
-1. The orchestrator service maintains a log file (`logs/coordination-events.log`) that all agents write to
-2. Agents communicate by posting events to the orchestrator's HTTP API
-3. The orchestrator polls the log file every minute to check for completion signals
-4. When both the Project and CI agents report completion, the orchestrator triggers smoke tests and deployment
-5. **One-time deployment guard** ensures deployment only happens once
-6. After successful deployment, log files are archived with timestamps
+### Prerequisites
 
-## Configuration
+- Node.js 14+
+- npm
 
-The orchestrator can be configured using environment variables or the `config.js` file:
+### Quick Start
 
-| Setting | Description | Default |
-|---------|-------------|---------|
-| `PORT` | HTTP server port | `3040` |
-| `POLL_INTERVAL_MS` | Polling interval in milliseconds | `60000` (1 minute) |
-| `DEPLOY_COMMAND` | Command to run for deployment | `npx vercel --prod` |
-| `LOG_DIR` | Directory for log files | `../../logs` |
-| `LOG_FILE` | Name of coordination log file | `coordination-events.log` |
-
-### Configuration Methods
-
-1. **Environment Variables**
+1. Start the orchestration system:
    ```bash
-   export PORT=3050
-   export DEPLOY_COMMAND="custom-deploy-script.sh"
-   ./start-simple-orchestrator.sh
+   ./start-orchestrator.sh
    ```
 
-2. **Edit `config.js`**
-   ```js
-   module.exports = {
-     PORT: process.env.PORT || 3040,
-     POLL_INTERVAL_MS: process.env.POLL_INTERVAL_MS || 60000,
-     // ...other settings
-   };
-   ```
-
-## Message Format
-
-All messages follow this format:
-```
-[TIMESTAMP] [SOURCE] [TYPE] MESSAGE
-```
-
-For example:
-```
-[2025-05-26T23:55:40.267Z] [CI] [CI_UPDATE] All CI checks complete - Tests passed, Coverage: 94%, No linting errors
-```
-
-## How to Use
-
-1. **Start the Orchestrator**
-
+2. In separate terminals, run the agent scripts:
    ```bash
-   npm ci && npm run build --prefix services/orchestrator
-   ./start-simple-orchestrator.sh
+   # Run the project agent
+   ORCH_URL=http://localhost:3030/events node AutoOpt/scripts/project-agent.js
+   
+   # Run the CI agent
+   ORCH_URL=http://localhost:3030/events node AutoOpt/scripts/ci-agent.js
    ```
 
-2. **Run the Agents**
-
-   ```bash
-   node scripts/project-agent.js
-   node scripts/ci-agent.js
-   ```
-
-3. **Monitor Progress**
-
+3. Monitor events:
    ```bash
    tail -f logs/coordination-events.log
    ```
 
-## Docker Compose
+## Configuration
 
-The system can also be run using Docker Compose:
+The system can be configured using environment variables:
 
-```bash
-docker-compose up -d
-```
-
-This will start:
-- PostgreSQL database
-- Redis instance
-- Orchestrator service
+- `PORT`: Orchestrator server port (default: 3030)
+- `POLL_INTERVAL_MS`: How often to check for deployment conditions (default: 60000ms)
+- `LOG_DIR`: Directory for log files (default: "logs")
+- `LOG_FILE`: Name of the events log file (default: "coordination-events.log")
+- `DEPLOY_COMMAND`: Command to run when deployment is triggered (default: mock-vercel.js)
 
 ## API Endpoints
 
-- `GET /events` - Retrieve recent events
-- `POST /events` - Add a new event
-- `GET /health` - Check orchestrator health status and uptime
-- `GET /metrics` - Get metrics about event counts and deployment readiness
+The orchestrator provides several HTTP endpoints:
 
-### Examples
+- `POST /events`: Submit a new event
+  ```bash
+  curl -X POST -H 'Content-Type: application/json' \
+       -d '{"source":"CI","type":"CI_UPDATE","message":"All tests passed"}' \
+       http://localhost:3030/events
+  ```
 
-#### Get Health Status
-```bash
-curl http://localhost:3040/health
-```
-Response:
-```json
-{
-  "status": "ok",
-  "service": "orchestrator",
-  "uptime": 120.5,
-  "hasDeployed": false
-}
-```
+- `GET /events`: Retrieve recent events
+  ```bash
+  curl http://localhost:3030/events
+  ```
 
-#### Get Metrics
-```bash
-curl http://localhost:3040/metrics
-```
-Response:
-```json
-{
-  "total_events": 11,
-  "project_events": 3,
-  "ci_events": 7,
-  "orchestrator_events": 1,
-  "ready_for_deployment": true
-}
-```
+- `GET /health`: Check orchestrator health
+  ```bash
+  curl http://localhost:3030/health
+  ```
 
-#### Post an Event
-```bash
-curl -X POST -H "Content-Type: application/json" \
-  -d '{"source":"CI","type":"CI_UPDATE","message":"All tests passed"}' \
-  http://localhost:3040/events
+- `GET /metrics`: Get metrics about events and deployment status
+  ```bash
+  curl http://localhost:3030/metrics
+  ```
+
+## Deployment Conditions
+
+The system will trigger deployment automatically when:
+
+1. The project agent reports completion (`[PROJECT] [PROJECT_UPDATE].*complete`)
+2. The CI agent reports successful tests (`[CI] [CI_UPDATE].*passed`)
+
+## Event Log Format
+
+Events in the coordination log follow this format:
+```
+[TIMESTAMP] [SOURCE] [TYPE] MESSAGE
 ```
 
-## Completion Detection
+Example:
+```
+[2023-06-15T12:34:56.789Z] [CI] [CI_UPDATE] All tests passed
+```
 
-The orchestrator automatically detects when all tasks are complete by looking for:
-1. A project update containing "complete"
-2. A CI update containing "passed"
+## Extending the System
 
-When both are found, it triggers the deployment sequence **once**. After deployment:
-1. The `hasDeployed` flag prevents additional deployments
-2. The log file is archived with a timestamp
-3. Status is available via the `/health` and `/metrics` endpoints
+To add new agents:
+1. Create a new script in the `AutoOpt/scripts/` directory
+2. Use the provided axios-based API to send events to the orchestrator
+3. Ensure your completion message matches the patterns in `config.js`
 
-## Cleanup
+## Troubleshooting
 
-After a successful deployment, the orchestrator:
-1. Archives the log file with a timestamp
-2. Logs the successful deployment
-3. Continues running to provide status via HTTP endpoints
-
-To shut down the orchestrator after deployment:
-```bash
-pkill -f "node services/orchestrator/dist/index.js"
-``` 
+- Check the orchestrator output log: `logs/orchestrator-output.log`
+- Verify the coordination log: `logs/coordination-events.log`
+- Ensure the orchestrator is running: `ps aux | grep node`
+- Check API health: `curl http://localhost:3030/health` 

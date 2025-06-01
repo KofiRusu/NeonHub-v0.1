@@ -1,0 +1,19 @@
+FROM node:16-alpine
+
+WORKDIR /app
+
+# Copy package files and install dependencies
+COPY package*.json ./
+RUN npm install axios
+
+# Copy agent scripts
+COPY AutoOpt/scripts/ ./AutoOpt/scripts/
+
+# Set working directory for easier command execution
+ENV NODE_PATH=/app
+
+# Set default environment variables
+ENV ORCH_URL=http://orchestrator:3030/events
+
+# Keep container running
+CMD ["tail", "-f", "/dev/null"] 

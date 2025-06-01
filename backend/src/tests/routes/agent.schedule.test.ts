@@ -51,6 +51,9 @@ describe('Agent Schedule Routes', () => {
         queueLength: 3,
         isRunning: true,
       })),
+      pauseJob: jest.fn(),
+      resumeJob: jest.fn(),
+      getPausedJobs: jest.fn(() => []),
     };
     (getScheduler as jest.Mock).mockReturnValue(mockScheduler);
 
@@ -351,6 +354,245 @@ describe('Agent Schedule Routes', () => {
 
       // Act
       const handler = scheduleRouter.stack[3].route.stack[1].handle;
+      await handler(mockRequest as Request, mockResponse as Response, mockNext);
+
+      // Assert
+      expect(mockNext).toHaveBeenCalledWith(expect.any(Error));
+    });
+  });
+
+  describe('PATCH /api/agents/:agentId/schedule/:jobId/pause', () => {
+    beforeEach(() => {
+      mockRequest.params = { agentId: 'test-agent-123', jobId: 'job-456' };
+    });
+
+    it('should pause a scheduled job', async () => {
+      // Arrange
+      const mockAgent = {
+        id: 'test-agent-123',
+        name: 'Test Agent',
+      };
+      (mockPrismaClient.aIAgent.findUnique as jest.Mock).mockResolvedValue(
+        mockAgent,
+      );
+      mockScheduler.pauseJob.mockResolvedValue(undefined);
+
+      // Act
+      const handler = scheduleRouter.stack[4].route.stack[1].handle;
+      await handler(mockRequest as Request, mockResponse as Response, mockNext);
+
+      // Assert
+      expect(mockPrismaClient.aIAgent.findUnique).toHaveBeenCalledWith({
+        where: { id: 'test-agent-123' },
+      });
+      expect(mockScheduler.pauseJob).toHaveBeenCalledWith(
+        'test-agent-123',
+        'job-456',
+      );
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        success: true,
+        message: 'Job job-456 paused successfully',
+        data: {
+          agentId: 'test-agent-123',
+          jobId: 'job-456',
+          status: 'paused',
+        },
+      });
+    });
+
+    it('should return 404 if agent not found', async () => {
+      // Arrange
+      (mockPrismaClient.aIAgent.findUnique as jest.Mock).mockResolvedValue(
+        null,
+      );
+
+      // Act
+      const handler = scheduleRouter.stack[4].route.stack[1].handle;
+      await handler(mockRequest as Request, mockResponse as Response, mockNext);
+
+      // Assert
+      expect(mockResponse.status).toHaveBeenCalledWith(404);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Agent not found',
+      });
+    });
+
+    it('should return 404 if no scheduled task found', async () => {
+      // Arrange
+      const mockAgent = { id: 'test-agent-123', name: 'Test Agent' };
+      (mockPrismaClient.aIAgent.findUnique as jest.Mock).mockResolvedValue(
+        mockAgent,
+      );
+      mockScheduler.pauseJob.mockRejectedValue(
+        new Error('No scheduled task found for agent test-agent-123'),
+      );
+
+      // Act
+      const handler = scheduleRouter.stack[4].route.stack[1].handle;
+      await handler(mockRequest as Request, mockResponse as Response, mockNext);
+
+      // Assert
+      expect(mockResponse.status).toHaveBeenCalledWith(404);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'No scheduled task found for agent test-agent-123',
+      });
+    });
+
+    it('should return 409 if agent is running', async () => {
+      // Arrange
+      const mockAgent = { id: 'test-agent-123', name: 'Test Agent' };
+      (mockPrismaClient.aIAgent.findUnique as jest.Mock).mockResolvedValue(
+        mockAgent,
+      );
+      mockScheduler.pauseJob.mockRejectedValue(
+        new Error('Cannot pause agent test-agent-123 while it is running'),
+      );
+
+      // Act
+      const handler = scheduleRouter.stack[4].route.stack[1].handle;
+      await handler(mockRequest as Request, mockResponse as Response, mockNext);
+
+      // Assert
+      expect(mockResponse.status).toHaveBeenCalledWith(409);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Cannot pause agent test-agent-123 while it is running',
+      });
+    });
+  });
+
+  describe('PATCH /api/agents/:agentId/schedule/:jobId/resume', () => {
+    beforeEach(() => {
+      mockRequest.params = { agentId: 'test-agent-123', jobId: 'job-456' };
+    });
+
+    it('should resume a paused job', async () => {
+      // Arrange
+      const mockAgent = {
+        id: 'test-agent-123',
+        name: 'Test Agent',
+      };
+      const updatedAgent = {
+        id: 'test-agent-123',
+        name: 'Test Agent',
+        scheduleExpression: '0 */6 * * *',
+        scheduleEnabled: true,
+        nextRunAt: new Date('2025-06-01T00:00:00Z'),
+        status: 'SCHEDULED',
+      };
+      (mockPrismaClient.aIAgent.findUnique as jest.Mock)
+        .mockResolvedValueOnce(mockAgent)
+        .mockResolvedValueOnce(updatedAgent);
+      mockScheduler.resumeJob.mockResolvedValue(undefined);
+
+      // Act
+      const handler = scheduleRouter.stack[5].route.stack[1].handle;
+      await handler(mockRequest as Request, mockResponse as Response, mockNext);
+
+      // Assert
+      expect(mockScheduler.resumeJob).toHaveBeenCalledWith(
+        'test-agent-123',
+        'job-456',
+      );
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        success: true,
+        message: 'Job job-456 resumed successfully',
+        data: {
+          agentId: 'test-agent-123',
+          jobId: 'job-456',
+          status: 'resumed',
+          nextRunAt: new Date('2025-06-01T00:00:00Z'),
+        },
+      });
+    });
+
+    it('should return 404 if agent not found', async () => {
+      // Arrange
+      (mockPrismaClient.aIAgent.findUnique as jest.Mock).mockResolvedValue(
+        null,
+      );
+
+      // Act
+      const handler = scheduleRouter.stack[5].route.stack[1].handle;
+      await handler(mockRequest as Request, mockResponse as Response, mockNext);
+
+      // Assert
+      expect(mockResponse.status).toHaveBeenCalledWith(404);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Agent not found',
+      });
+    });
+
+    it('should return 400 if job is not paused', async () => {
+      // Arrange
+      const mockAgent = { id: 'test-agent-123', name: 'Test Agent' };
+      (mockPrismaClient.aIAgent.findUnique as jest.Mock).mockResolvedValue(
+        mockAgent,
+      );
+      mockScheduler.resumeJob.mockRejectedValue(
+        new Error('Job job-456 for agent test-agent-123 is not paused'),
+      );
+
+      // Act
+      const handler = scheduleRouter.stack[5].route.stack[1].handle;
+      await handler(mockRequest as Request, mockResponse as Response, mockNext);
+
+      // Assert
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Job job-456 for agent test-agent-123 is not paused',
+      });
+    });
+  });
+
+  describe('GET /api/agents/:agentId/schedule/paused', () => {
+    it('should get list of paused jobs', async () => {
+      // Arrange
+      const pausedJobs = [
+        { agentId: 'agent-1', jobId: 'job-1' },
+        { agentId: 'agent-2', jobId: 'job-2' },
+      ];
+      mockScheduler.getPausedJobs.mockReturnValue(pausedJobs);
+
+      // Act
+      const handler = scheduleRouter.stack[6].route.stack[1].handle;
+      await handler(mockRequest as Request, mockResponse as Response, mockNext);
+
+      // Assert
+      expect(mockScheduler.getPausedJobs).toHaveBeenCalled();
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        success: true,
+        data: pausedJobs,
+      });
+    });
+
+    it('should handle empty paused jobs list', async () => {
+      // Arrange
+      mockScheduler.getPausedJobs.mockReturnValue([]);
+
+      // Act
+      const handler = scheduleRouter.stack[6].route.stack[1].handle;
+      await handler(mockRequest as Request, mockResponse as Response, mockNext);
+
+      // Assert
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        success: true,
+        data: [],
+      });
+    });
+
+    it('should handle errors', async () => {
+      // Arrange
+      mockScheduler.getPausedJobs.mockImplementation(() => {
+        throw new Error('Scheduler error');
+      });
+
+      // Act
+      const handler = scheduleRouter.stack[6].route.stack[1].handle;
       await handler(mockRequest as Request, mockResponse as Response, mockNext);
 
       // Assert

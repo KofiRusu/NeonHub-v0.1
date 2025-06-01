@@ -3,13 +3,13 @@
  */
 module.exports = {
   // Server settings
-  PORT: process.env.PORT || 3040,
+  PORT: process.env.PORT || 3030,
   
   // Polling interval in milliseconds
   POLL_INTERVAL_MS: process.env.POLL_INTERVAL_MS || 60000, // Default: 1 minute
   
   // Deployment command
-  DEPLOY_COMMAND: process.env.DEPLOY_COMMAND || 'npx vercel --prod',
+  DEPLOY_COMMAND: process.env.DEPLOY_COMMAND || 'node ./orchestrator/mock-vercel.js',
   
   // Log file location
   LOG_DIR: process.env.LOG_DIR || '../../logs',

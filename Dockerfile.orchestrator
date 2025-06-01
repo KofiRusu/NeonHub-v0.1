@@ -1,0 +1,28 @@
+FROM node:16-alpine
+
+WORKDIR /app
+
+# Copy package files and install dependencies
+COPY AutoOpt/orchestrator/package*.json ./AutoOpt/orchestrator/
+RUN cd AutoOpt/orchestrator && npm install
+
+# Copy source code
+COPY AutoOpt/orchestrator/ ./AutoOpt/orchestrator/
+
+# Build TypeScript code
+RUN cd AutoOpt/orchestrator && npm run build
+
+# Create logs directory
+RUN mkdir -p /app/logs
+
+# Set environment variables
+ENV PORT=3030
+ENV POLL_INTERVAL_MS=60000
+ENV LOG_DIR=/app/logs
+ENV LOG_FILE=coordination-events.log
+
+# Expose port
+EXPOSE 3030
+
+# Command to run the application
+CMD ["node", "AutoOpt/orchestrator/dist/index.js"] 

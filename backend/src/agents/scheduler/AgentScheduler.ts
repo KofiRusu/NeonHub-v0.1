@@ -25,6 +25,8 @@ interface ScheduledTask {
   lastError?: string;
   backoffUntil?: Date;
   isManualRun?: boolean;
+  isPaused?: boolean;
+  jobId?: string;
 }
 
 /**
@@ -72,6 +74,7 @@ interface SchedulerOptions {
  * Handles scheduling and automatic execution of agents
  */
 export class AgentScheduler {
+  private static instance: AgentScheduler | null = null;
   private prisma: PrismaClient;
   private agentManager: AgentManager;
   private isRunning = false;
@@ -80,6 +83,30 @@ export class AgentScheduler {
   private scheduledTasks: Map<string, ScheduledTask> = new Map();
   private runningAgents: Set<string> = new Set();
   private taskQueue: ScheduledTask[] = [];
+  private pausedJobs: Map<string, boolean> = new Map();
+
+  /**
+   * Get singleton instance of AgentScheduler
+   * @param prisma Prisma client instance
+   * @param agentManager Agent manager instance
+   * @param options Scheduler options
+   * @returns AgentScheduler instance
+   */
+  static getInstance(
+    prisma?: PrismaClient,
+    agentManager?: AgentManager,
+    options?: SchedulerOptions,
+  ): AgentScheduler {
+    if (!AgentScheduler.instance) {
+      if (!prisma || !agentManager) {
+        throw new Error(
+          'Prisma client and AgentManager must be provided when creating the first instance',
+        );
+      }
+      AgentScheduler.instance = new AgentScheduler(prisma, agentManager, options);
+    }
+    return AgentScheduler.instance;
+  }
 
   /**
    * Create a new agent scheduler
@@ -247,16 +274,23 @@ export class AgentScheduler {
               agent.nextRunAt ||
               this.calculateNextRunTime(agent.scheduleExpression);
 
+            const config = agent.configuration as any || {};
             const task: ScheduledTask = {
               agentId: agent.id,
               agent,
               nextRunTime,
               priority: this.getAgentPriority(agent),
               retryCount: 0,
+              isPaused: config.isPaused || false,
             };
 
             this.scheduledTasks.set(agent.id, task);
             this.addToQueue(task);
+            
+            // Restore paused state
+            if (task.isPaused) {
+              this.pausedJobs.set(agent.id, true);
+            }
           } catch (error) {
             logger.error(`Error loading scheduled agent ${agent.id}:`, error);
           }
@@ -291,7 +325,8 @@ export class AgentScheduler {
         return (
           task.nextRunTime <= now &&
           (!task.backoffUntil || task.backoffUntil <= now) &&
-          !this.runningAgents.has(task.agentId)
+          !this.runningAgents.has(task.agentId) &&
+          !task.isPaused // Skip paused tasks
         );
       });
 
@@ -519,6 +554,7 @@ export class AgentScheduler {
     runningAgentsCount: number;
     queuedTasksCount: number;
     maxConcurrentAgents: number;
+    pausedJobsCount: number;
   } {
     return {
       isRunning: this.isRunning,
@@ -526,6 +562,7 @@ export class AgentScheduler {
       runningAgentsCount: this.runningAgents.size,
       queuedTasksCount: this.taskQueue.length,
       maxConcurrentAgents: this.options.maxConcurrentAgents,
+      pausedJobsCount: this.pausedJobs.size,
     };
   }
 
@@ -541,6 +578,8 @@ export class AgentScheduler {
     lastError?: string;
     backoffUntil?: Date;
     isRunning: boolean;
+    isPaused: boolean;
+    jobId?: string;
   }> {
     return Array.from(this.scheduledTasks.values()).map((task) => ({
       agentId: task.agentId,
@@ -551,6 +590,8 @@ export class AgentScheduler {
       lastError: task.lastError,
       backoffUntil: task.backoffUntil,
       isRunning: this.runningAgents.has(task.agentId),
+      isPaused: task.isPaused || false,
+      jobId: task.jobId || task.agentId,
     }));
   }
 
@@ -593,5 +634,104 @@ export class AgentScheduler {
       logger.error(`Error running agent ${agentId} immediately:`, error);
       throw error;
     }
+  }
+
+  /**
+   * Pause a scheduled job
+   * @param agentId Agent ID
+   * @param jobId Job ID (optional, defaults to agentId)
+   */
+  async pauseJob(agentId: string, jobId?: string): Promise<void> {
+    const effectiveJobId = jobId || agentId;
+    const task = this.scheduledTasks.get(agentId);
+    
+    if (!task) {
+      throw new Error(`No scheduled task found for agent ${agentId}`);
+    }
+
+    // Check if already running
+    if (this.runningAgents.has(agentId)) {
+      throw new Error(`Cannot pause agent ${agentId} while it is running`);
+    }
+
+    // Mark as paused
+    task.isPaused = true;
+    task.jobId = effectiveJobId;
+    this.pausedJobs.set(effectiveJobId, true);
+    
+    // Update database to reflect paused state
+    await this.prisma.aIAgent.update({
+      where: { id: agentId },
+      data: { 
+        status: AgentStatus.IDLE,
+        // Store pause state in configuration
+        configuration: {
+          ...(task.agent.configuration as any || {}),
+          isPaused: true,
+          pausedAt: new Date().toISOString(),
+        },
+      },
+    });
+
+    logger.info(`Paused job ${effectiveJobId} for agent ${agentId}`);
+  }
+
+  /**
+   * Resume a paused job
+   * @param agentId Agent ID  
+   * @param jobId Job ID (optional, defaults to agentId)
+   */
+  async resumeJob(agentId: string, jobId?: string): Promise<void> {
+    const effectiveJobId = jobId || agentId;
+    const task = this.scheduledTasks.get(agentId);
+    
+    if (!task) {
+      throw new Error(`No scheduled task found for agent ${agentId}`);
+    }
+
+    if (!task.isPaused && !this.pausedJobs.has(effectiveJobId)) {
+      throw new Error(`Job ${effectiveJobId} for agent ${agentId} is not paused`);
+    }
+
+    // Remove paused state
+    task.isPaused = false;
+    this.pausedJobs.delete(effectiveJobId);
+    
+    // Update database
+    await this.prisma.aIAgent.update({
+      where: { id: agentId },
+      data: { 
+        status: AgentStatus.IDLE,
+        // Remove pause state from configuration
+        configuration: {
+          ...(task.agent.configuration as any || {}),
+          isPaused: false,
+          resumedAt: new Date().toISOString(),
+        },
+      },
+    });
+
+    // Recalculate next run time if it's in the past
+    if (task.nextRunTime < new Date() && task.agent.scheduleExpression) {
+      task.nextRunTime = this.calculateNextRunTime(task.agent.scheduleExpression);
+      await this.prisma.aIAgent.update({
+        where: { id: agentId },
+        data: { nextRunAt: task.nextRunTime },
+      });
+    }
+
+    logger.info(`Resumed job ${effectiveJobId} for agent ${agentId}`);
+  }
+
+  /**
+   * Get paused jobs
+   */
+  getPausedJobs(): Array<{ agentId: string; jobId: string }> {
+    return Array.from(this.scheduledTasks.entries())
+      .filter(([_, task]) => task.isPaused)
+      .map(([agentId, task]) => ({
+        agentId,
+        jobId: task.jobId || agentId,
+      }));
   }
 }

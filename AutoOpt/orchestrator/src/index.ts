@@ -12,6 +12,12 @@ const LOG_FILE = path.join(LOG_DIR, config.LOG_FILE);
 const PORT = Number(process.env.PORT || config.PORT);
 const POLL_INTERVAL_MS = Number(process.env.POLL_INTERVAL_MS || config.POLL_INTERVAL_MS);
 
+// Debug output
+console.log('Debug: Configuration loaded from config.js');
+console.log(`Debug: PORT=${PORT}, config.PORT=${config.PORT}, process.env.PORT=${process.env.PORT}`);
+console.log(`Debug: LOG_DIR=${LOG_DIR}`);
+console.log(`Debug: LOG_FILE=${LOG_FILE}`);
+
 // One-time deploy guard
 let hasDeployed = false;
 
@@ -129,7 +135,7 @@ setInterval(() => {
 }, POLL_INTERVAL_MS);
 
 // Start server
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Orchestrator listening on port ${PORT}`);
   logEvent('ORCHESTRATOR', 'START', `Started on port ${PORT}`);
 });
