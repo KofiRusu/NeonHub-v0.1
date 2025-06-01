@@ -9,6 +9,12 @@ jest.mock('../middleware/auth.middleware', () => ({
     req.user = { id: 'test-user-id' };
     next();
   },
+  authorize: () => (req: any, res: any, next: any) => {
+    next();
+  },
+  requireAdmin: (req: any, res: any, next: any) => {
+    next();
+  },
 }));
 
 describe('Campaign API Routes', () => {

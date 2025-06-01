@@ -30,6 +30,12 @@ jest.mock('../../middleware/auth.middleware', () => ({
     };
     next();
   },
+  authorize: () => (req, res, next) => {
+    next();
+  },
+  requireAdmin: (req, res, next) => {
+    next();
+  },
 }));
 
 describe('Campaign Controller', () => {
