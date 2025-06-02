@@ -38,7 +38,7 @@ import {
 import { Badge } from '../../../components/ui/badge';
 import {
   Loader2,
-  Trending,
+  TrendingUp,
   ArrowUpRight,
   Search,
   RefreshCw,
@@ -460,7 +460,7 @@ export default function TrendAnalysis() {
                       {format(parseISO(trend.createdAt), 'MMM d, yyyy')}
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="icon">
+                      <Button variant="ghost" size="sm">
                         <ArrowUpRight className="h-4 w-4" />
                       </Button>
                     </TableCell>
@@ -470,7 +470,7 @@ export default function TrendAnalysis() {
             </Table>
           ) : (
             <div className="flex flex-col items-center justify-center py-20">
-              <Trending className="h-12 w-12 text-muted-foreground mb-4" />
+              <TrendingUp className="h-12 w-12 text-muted-foreground mb-4" />
               <p className="text-lg font-medium mb-1">No trends found</p>
               <p className="text-muted-foreground text-center max-w-md">
                 No trends match your current filters. Try adjusting your search
@@ -485,7 +485,7 @@ export default function TrendAnalysis() {
       {selectedTrend && (
         <Dialog
           open={!!selectedTrend}
-          onOpenChange={(open) => !open && setSelectedTrend(null)}
+          onOpenChange={(open: boolean) => !open && setSelectedTrend(null)}
         >
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>

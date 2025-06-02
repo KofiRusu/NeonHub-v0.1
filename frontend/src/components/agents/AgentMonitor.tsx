@@ -36,9 +36,16 @@ interface AgentMonitorProps {
   canControl?: boolean;
 }
 
-export function AgentMonitor({ agentId, agentName, jobId, canControl = false }: AgentMonitorProps) {
+export function AgentMonitor({
+  agentId,
+  agentName,
+  jobId,
+  canControl = false,
+}: AgentMonitorProps) {
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [status, setStatus] = useState<'idle' | 'running' | 'paused' | 'completed' | 'failed'>('idle');
+  const [status, setStatus] = useState<
+    'idle' | 'running' | 'paused' | 'completed' | 'failed'
+  >('idle');
   const [progress, setProgress] = useState(0);
   const [progressMessage, setProgressMessage] = useState<string>('');
   const [error, setError] = useState<string>('');
@@ -48,7 +55,9 @@ export function AgentMonitor({ agentId, agentName, jobId, canControl = false }: 
 
   useEffect(() => {
     // Connect to WebSocket
-    const socketInstance = io(process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000');
+    const socketInstance = io(
+      process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000',
+    );
     setSocket(socketInstance);
 
     // Subscribe to agent updates
@@ -122,7 +131,7 @@ export function AgentMonitor({ agentId, agentName, jobId, canControl = false }: 
             'Content-Type': 'application/json',
             Authorization: `Bearer ${localStorage.getItem('token')}`,
           },
-        }
+        },
       );
 
       if (!response.ok) {
@@ -137,7 +146,6 @@ export function AgentMonitor({ agentId, agentName, jobId, canControl = false }: 
       toast({
         title: 'Error',
         description: 'Failed to pause agent. Please try again.',
-        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -155,7 +163,7 @@ export function AgentMonitor({ agentId, agentName, jobId, canControl = false }: 
             'Content-Type': 'application/json',
             Authorization: `Bearer ${localStorage.getItem('token')}`,
           },
-        }
+        },
       );
 
       if (!response.ok) {
@@ -170,7 +178,6 @@ export function AgentMonitor({ agentId, agentName, jobId, canControl = false }: 
       toast({
         title: 'Error',
         description: 'Failed to resume agent. Please try again.',
-        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -250,7 +257,9 @@ export function AgentMonitor({ agentId, agentName, jobId, canControl = false }: 
               </div>
               <Progress value={progress} className="h-2" />
               {progressMessage && (
-                <p className="text-sm text-muted-foreground">{progressMessage}</p>
+                <p className="text-sm text-muted-foreground">
+                  {progressMessage}
+                </p>
               )}
             </div>
           )}
@@ -285,4 +294,4 @@ export function AgentMonitor({ agentId, agentName, jobId, canControl = false }: 
       </CardContent>
     </Card>
   );
-} 
+}

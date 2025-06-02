@@ -12,10 +12,20 @@
     "cypress:headless": "cypress run"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.0.1",
+    "@radix-ui/react-accordion": "^1.2.11",
+    "@radix-ui/react-dialog": "^1.1.14",
+    "@radix-ui/react-label": "^2.1.7",
+    "@radix-ui/react-progress": "^1.1.7",
+    "@radix-ui/react-select": "^2.2.5",
+    "@radix-ui/react-separator": "^1.1.7",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-tabs": "^1.1.12",
     "@tremor/react": "^3.18.7",
     "axios": "^1.6.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
+    "date-fns": "^3.6.0",
     "lucide-react": "^0.511.0",
     "next": "14.0.3",
     "react": "^18.2.0",
@@ -26,6 +36,7 @@
     "recharts": "^2.15.3",
     "socket.io-client": "^4.7.2",
     "tailwind-merge": "^2.1.0",
+    "zod": "^3.25.46",
     "zustand": "^4.4.6"
   },
   "devDependencies": {

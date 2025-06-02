@@ -288,7 +288,9 @@ export default function AgentRunPage() {
                 <h3 className="text-sm font-medium mb-2">Context (JSON)</h3>
                 <Textarea
                   value={context}
-                  onChange={(e) => setContext(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                    setContext(e.target.value)
+                  }
                   className={`h-60 font-mono text-sm ${!isValidJson ? 'border-red-500' : ''}`}
                   placeholder='{\n  "key": "value"\n}'
                 />
