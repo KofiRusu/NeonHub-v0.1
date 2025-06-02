@@ -19,15 +19,29 @@ import {
   BarChart,
   LineChart,
   CheckCircle,
-  Trending,
+  TrendingUp,
   MessageSquare,
   FileText,
   AlertCircle,
 } from 'lucide-react';
 
+interface Campaign {
+  id: string;
+  name: string;
+  type: string;
+  status: 'ACTIVE' | 'DRAFT' | 'COMPLETED' | 'PAUSED';
+}
+
+interface Trend {
+  id: string;
+  title: string;
+  source: string;
+  impact: 'HIGH' | 'MEDIUM' | 'LOW';
+}
+
 export default function MarketingDashboard() {
-  const [campaigns, setCampaigns] = useState([]);
-  const [trends, setTrends] = useState([]);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [trends, setTrends] = useState<Trend[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -188,7 +202,7 @@ export default function MarketingDashboard() {
                   <p>Loading trends...</p>
                 ) : trends.length === 0 ? (
                   <div className="flex flex-col items-center justify-center p-6">
-                    <Trending className="h-10 w-10 text-muted-foreground mb-2" />
+                    <TrendingUp className="h-10 w-10 text-muted-foreground mb-2" />
                     <p className="text-muted-foreground text-center">
                       No trend signals detected yet. Configure your trend
                       detection agent to get started.
