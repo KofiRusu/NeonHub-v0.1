@@ -1,4 +1,5 @@
-import { PrismaClient, AIAgent, AgentType } from '@prisma/client';
+import { PrismaClient, AIAgent } from '@prisma/client';
+import { AgentType } from '@prisma/client';
 import { BaseAgent } from '../base/BaseAgent';
 import { AgentPlugin, pluginRegistry } from '../factory/AgentFactory';
 
@@ -14,7 +15,7 @@ import { EngineeringConversationAgent } from './EngineeringConversationAgent';
 
 // Define plugins for each agent type
 const contentCreatorPlugin: AgentPlugin = {
-  type: AgentType.CONTENT_CREATOR,
+  type: 'CONTENT_CREATOR' as AgentType,
   name: 'Content Creator Agent',
   description: 'Creates engaging content for various platforms and formats',
   version: '1.0.0',
@@ -39,7 +40,7 @@ const contentCreatorPlugin: AgentPlugin = {
 };
 
 const trendAnalyzerPlugin: AgentPlugin = {
-  type: AgentType.TREND_ANALYZER,
+  type: 'TREND_ANALYZER' as AgentType,
   name: 'Trend Analyzer Agent',
   description: 'Analyzes market trends and identifies opportunities',
   version: '1.0.0',
@@ -62,7 +63,7 @@ const trendAnalyzerPlugin: AgentPlugin = {
 };
 
 const outreachManagerPlugin: AgentPlugin = {
-  type: AgentType.OUTREACH_MANAGER,
+  type: 'OUTREACH_MANAGER' as AgentType,
   name: 'Outreach Manager Agent',
   description: 'Manages outreach campaigns and lead generation',
   version: '1.0.0',
@@ -88,7 +89,7 @@ const outreachManagerPlugin: AgentPlugin = {
 };
 
 const performanceOptimizerPlugin: AgentPlugin = {
-  type: AgentType.PERFORMANCE_OPTIMIZER,
+  type: 'PERFORMANCE_OPTIMIZER' as AgentType,
   name: 'Performance Optimizer Agent',
   description: 'Optimizes campaign performance and ad spend',
   version: '1.0.0',
@@ -163,7 +164,7 @@ const seoPlugin: AgentPlugin = {
 };
 
 const customerSupportPlugin: AgentPlugin = {
-  type: AgentType.CUSTOMER_SUPPORT,
+  type: 'CUSTOMER_SUPPORT' as AgentType,
   name: 'Customer Support Agent',
   description: 'Provides automated customer support and assistance',
   version: '1.0.0',

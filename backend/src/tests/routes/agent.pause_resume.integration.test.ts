@@ -2,7 +2,7 @@ import request from 'supertest';
 import { PrismaClient } from '@prisma/client';
 import { Server } from 'socket.io';
 import { io as ioClient, Socket } from 'socket.io-client';
-import app from '../../app';
+import { app } from '../../app';
 import { AgentScheduler } from '../../agents/scheduler/AgentScheduler';
 import { AgentManager } from '../../agents/manager/AgentManager';
 import { schedulerSingleton } from '../../services/schedulerSingleton';
@@ -20,20 +20,18 @@ describe('Agent Pause/Resume Integration Tests', () => {
   beforeAll(async () => {
     // Initialize Prisma
     prisma = new PrismaClient();
-    
+
     // Clear test data
     await prisma.aIAgent.deleteMany({});
     await prisma.user.deleteMany({});
     await prisma.project.deleteMany({});
 
     // Create test user and get auth token
-    const userResponse = await request(app)
-      .post('/api/auth/register')
-      .send({
-        email: 'test@example.com',
-        password: 'password123',
-        name: 'Test User',
-      });
+    const userResponse = await request(app).post('/api/auth/register').send({
+      email: 'test@example.com',
+      password: 'password123',
+      name: 'Test User',
+    });
 
     authToken = userResponse.body.token;
 
@@ -119,7 +117,7 @@ describe('Agent Pause/Resume Integration Tests', () => {
 
       // Set up event listener for pause event
       const pauseEventPromise = new Promise((resolve) => {
-        socketClient.once('agent:paused', (data) => {
+        socketClient.once('agent:paused', (data: any) => {
           resolve(data);
         });
       });
@@ -146,14 +144,14 @@ describe('Agent Pause/Resume Integration Tests', () => {
 
       // Verify task details show paused state
       const taskDetails = scheduler.getTaskDetails();
-      const agentTask = taskDetails.find(t => t.agentId === testAgent.id);
+      const agentTask = taskDetails.find((t) => t.agentId === testAgent.id);
       expect(agentTask?.isPaused).toBe(true);
     });
 
     it('should resume a paused agent', async () => {
       // Set up event listener for resume event
       const resumeEventPromise = new Promise((resolve) => {
-        socketClient.once('agent:resumed', (data) => {
+        socketClient.once('agent:resumed', (data: any) => {
           resolve(data);
         });
       });
@@ -176,7 +174,7 @@ describe('Agent Pause/Resume Integration Tests', () => {
 
       // Verify scheduler state
       const taskDetails = scheduler.getTaskDetails();
-      const agentTask = taskDetails.find(t => t.agentId === testAgent.id);
+      const agentTask = taskDetails.find((t) => t.agentId === testAgent.id);
       expect(agentTask?.isPaused).toBe(false);
     });
 
@@ -258,12 +256,12 @@ describe('Agent Pause/Resume Integration Tests', () => {
       expect(pausedJobsResponse.status).toBe(200);
       expect(pausedJobsResponse.body.success).toBe(true);
       expect(pausedJobsResponse.body.data).toBeInstanceOf(Array);
-      
+
       const pausedJob = pausedJobsResponse.body.data.find(
-        (job: any) => job.agentId === testAgent.id
+        (job: any) => job.agentId === testAgent.id,
       );
       expect(pausedJob).toBeDefined();
       expect(pausedJob.jobId).toBe('test-job-123');
     });
   });
-}); 
+});

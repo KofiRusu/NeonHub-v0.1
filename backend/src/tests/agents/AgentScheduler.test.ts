@@ -276,6 +276,7 @@ describe('AgentScheduler', () => {
         scheduleExpression: '*/5 * * * *',
         scheduleEnabled: true,
         nextRunAt: new Date(Date.now() + 60000),
+        configuration: {}, // Empty configuration to use agent type default
       };
 
       const contentCreatorAgent = {
@@ -285,6 +286,7 @@ describe('AgentScheduler', () => {
         scheduleExpression: '*/5 * * * *',
         scheduleEnabled: true,
         nextRunAt: new Date(Date.now() + 60000),
+        configuration: {}, // Empty configuration to use agent type default
       };
 
       mockPrisma.aIAgent.findMany.mockResolvedValue([
@@ -388,25 +390,35 @@ describe('AgentScheduler', () => {
       );
       mockPrisma.aIAgent.update.mockResolvedValue(failingAgent);
 
-      await scheduler.start();
+      // Use scheduler with shorter intervals for faster test
+      const testScheduler = new AgentScheduler(mockPrisma, mockAgentManager, {
+        checkInterval: 100,
+        maxRetries: 2,
+        baseBackoffDelay: 50,
+        maxBackoffDelay: 100,
+        autoStart: false,
+      });
 
-      // Wait for initial execution and retries
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await testScheduler.start();
+
+      // Wait for initial execution and all retries
+      // Initial failure + 2 retries + final failure = 3 attempts
+      // Plus processing time, we need to wait for all attempts to complete
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Should update agent status to ERROR after max retries
-      // Note: There may be multiple update calls (for status changes and nextRunAt updates)
       const updateCalls = mockPrisma.aIAgent.update.mock.calls;
       const errorStatusUpdate = updateCalls.find(
         (call) => call[0].data && call[0].data.status === 'ERROR',
       );
 
       expect(errorStatusUpdate).toBeDefined();
-      if (errorStatusUpdate) {
-        expect(errorStatusUpdate[0]).toEqual({
-          where: { id: mockAgent.id },
-          data: { status: 'ERROR' },
-        });
-      }
+      expect(errorStatusUpdate?.[0]).toEqual({
+        where: { id: mockAgent.id },
+        data: { status: 'ERROR' },
+      });
+
+      testScheduler.stop();
     });
   });
 
@@ -447,7 +459,10 @@ describe('AgentScheduler', () => {
 
   describe('singleton pattern', () => {
     it('should create and return the same instance', () => {
-      const instance1 = AgentScheduler.getInstance(mockPrisma, mockAgentManager);
+      const instance1 = AgentScheduler.getInstance(
+        mockPrisma,
+        mockAgentManager,
+      );
       const instance2 = AgentScheduler.getInstance();
 
       expect(instance1).toBe(instance2);
@@ -601,9 +616,7 @@ describe('AgentScheduler', () => {
       });
 
       it('should throw error if no scheduled task found', async () => {
-        await expect(
-          scheduler.resumeJob('non-existent-agent'),
-        ).rejects.toThrow(
+        await expect(scheduler.resumeJob('non-existent-agent')).rejects.toThrow(
           'No scheduled task found for agent non-existent-agent',
         );
       });
@@ -661,11 +674,9 @@ describe('AgentScheduler', () => {
 
         mockPrisma.aIAgent.findMany.mockResolvedValue([pausedAgent]);
 
-        const newScheduler = new AgentScheduler(
-          mockPrisma,
-          mockAgentManager,
-          { autoStart: false },
-        );
+        const newScheduler = new AgentScheduler(mockPrisma, mockAgentManager, {
+          autoStart: false,
+        });
         await newScheduler.start();
 
         const details = newScheduler.getTaskDetails();
