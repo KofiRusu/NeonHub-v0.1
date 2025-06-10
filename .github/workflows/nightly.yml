@@ -86,7 +86,7 @@ jobs:
 
       - name: 📊 Upload E2E results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: e2e-results-${{ matrix.browser }}
           path: |
@@ -163,7 +163,7 @@ jobs:
 
       - name: 📊 Upload Lighthouse results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: lighthouse-results
           path: .lighthouseci/
@@ -205,18 +205,18 @@ jobs:
 
       - name: 📊 Upload OWASP results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: owasp-results
           path: reports/
 
       - name: 🔐 CodeQL Analysis
-        uses: github/codeql-action/init@v2
+        uses: github/codeql-action/init@v3
         with:
           languages: javascript
 
       - name: 🔍 Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
+        uses: github/codeql-action/analyze@v3
 
   # ============================================================================
   # DEPENDENCY UPDATES
@@ -261,7 +261,7 @@ jobs:
           echo "\`\`\`" >> dependency-report.md
 
       - name: 📊 Upload dependency report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dependency-report
           path: |

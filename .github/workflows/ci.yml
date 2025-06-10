@@ -89,7 +89,7 @@ jobs:
 
       - name: 📊 Upload Snyk results
         if: always()
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: snyk.sarif
 
@@ -165,7 +165,7 @@ jobs:
 
       - name: 📊 Upload test results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ matrix.test-type }}
           path: |
@@ -319,7 +319,7 @@ jobs:
 
       - name: 📊 Upload E2E results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: e2e-results
           path: |
@@ -343,7 +343,7 @@ jobs:
           fetch-depth: 0
 
       - name: 📊 Download coverage artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: test-results-unit
           path: coverage/
