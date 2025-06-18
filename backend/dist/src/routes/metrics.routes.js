@@ -1,9 +1,9 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = require("express");
-const metric_controller_1 = require("../controllers/metric.controller");
-const auth_middleware_1 = require("../middleware/auth.middleware");
-const metrics_1 = require("../middleware/metrics");
+'use strict';
+Object.defineProperty(exports, '__esModule', { value: true });
+const express_1 = require('express');
+const metric_controller_1 = require('../controllers/metric.controller');
+const auth_middleware_1 = require('../middleware/auth.middleware');
+const metrics_1 = require('../middleware/metrics');
 const router = (0, express_1.Router)();
 /**
  * @route GET /api/metrics
@@ -16,7 +16,11 @@ router.get('/', auth_middleware_1.protect, metric_controller_1.getMetrics);
  * @desc Get metrics summary with aggregations
  * @access Private
  */
-router.get('/summary', auth_middleware_1.protect, metric_controller_1.getMetricsSummary);
+router.get(
+  '/summary',
+  auth_middleware_1.protect,
+  metric_controller_1.getMetricsSummary,
+);
 /**
  * @route GET /api/metrics/:id
  * @desc Get single metric by ID
@@ -40,7 +44,11 @@ router.put('/:id', auth_middleware_1.protect, metric_controller_1.updateMetric);
  * @desc Delete a metric
  * @access Private
  */
-router.delete('/:id', auth_middleware_1.protect, metric_controller_1.deleteMetric);
+router.delete(
+  '/:id',
+  auth_middleware_1.protect,
+  metric_controller_1.deleteMetric,
+);
 /**
  * @route   GET /api/metrics
  * @desc    Get Prometheus metrics
@@ -48,4 +56,3 @@ router.delete('/:id', auth_middleware_1.protect, metric_controller_1.deleteMetri
  */
 router.get('/prometheus', metrics_1.metricsHandler);
 exports.default = router;
-//# sourceMappingURL=metrics.routes.js.map

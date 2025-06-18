@@ -1,257 +1,256 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = require("express");
-const client_1 = require("@prisma/client");
-const zod_1 = require("zod");
-const validation_1 = require("../middleware/validation");
+'use strict';
+Object.defineProperty(exports, '__esModule', { value: true });
+const express_1 = require('express');
+const client_1 = require('@prisma/client');
+const zod_1 = require('zod');
+const validation_1 = require('../middleware/validation');
+const routeAuth_1 = require('../middleware/routeAuth');
+const CampaignService_1 = require('../services/campaigns/CampaignService');
 const router = (0, express_1.Router)();
 const prisma = new client_1.PrismaClient();
+const campaignService = new CampaignService_1.CampaignService(prisma);
 // Schema for campaign creation
 const createCampaignSchema = zod_1.z.object({
-    name: zod_1.z.string().min(2, 'Campaign name must be at least 2 characters'),
-    description: zod_1.z.string().min(10, 'Description must be at least 10 characters'),
-    type: zod_1.z.enum([
-        'CONTENT_MARKETING',
-        'EMAIL_CAMPAIGN',
-        'SOCIAL_MEDIA',
-        'SEO_OPTIMIZATION',
-        'AD_CAMPAIGN',
-        'PRODUCT_LAUNCH',
-        'EVENT_PROMOTION',
-        'BRAND_AWARENESS',
-    ]),
-    target: zod_1.z.string().min(5, 'Target audience must be at least 5 characters'),
-    budget: zod_1.z.string().optional(),
-    goals: zod_1.z.string().min(5, 'Campaign goals must be at least 5 characters'),
-    startDate: zod_1.z.string().optional(),
-    endDate: zod_1.z.string().optional(),
+  name: zod_1.z.string().min(3, 'Campaign name must be at least 3 characters'),
+  description: zod_1.z.string().optional(),
+  campaignType: zod_1.z.enum([
+    'SOCIAL_MEDIA',
+    'EMAIL',
+    'CONTENT_MARKETING',
+    'SEO',
+    'PPC',
+    'INFLUENCER',
+    'AFFILIATE',
+    'EVENT',
+    'PR',
+    'INTEGRATED',
+  ]),
+  targeting: zod_1.z.string().optional(),
+  budget: zod_1.z.string().optional().nullable(),
+  goals: zod_1.z.record(zod_1.z.any()).optional(),
+  startDate: zod_1.z.string().optional().nullable(),
+  endDate: zod_1.z.string().optional().nullable(),
+  projectId: zod_1.z.string(),
+  agentIds: zod_1.z.array(zod_1.z.string()).optional(),
 });
 // Schema for campaign update
-const updateCampaignSchema = createCampaignSchema.partial().extend({
-    status: zod_1.z
-        .enum(['DRAFT', 'ACTIVE', 'PAUSED', 'COMPLETED', 'CANCELLED'])
-        .optional(),
+const updateCampaignSchema = zod_1.z.object({
+  name: zod_1.z
+    .string()
+    .min(3, 'Campaign name must be at least 3 characters')
+    .optional(),
+  description: zod_1.z.string().optional(),
+  campaignType: zod_1.z
+    .enum([
+      'SOCIAL_MEDIA',
+      'EMAIL',
+      'CONTENT_MARKETING',
+      'SEO',
+      'PPC',
+      'INFLUENCER',
+      'AFFILIATE',
+      'EVENT',
+      'PR',
+      'INTEGRATED',
+    ])
+    .optional(),
+  targeting: zod_1.z.string().optional(),
+  budget: zod_1.z.string().optional().nullable(),
+  goals: zod_1.z.record(zod_1.z.any()).optional(),
+  startDate: zod_1.z.string().optional().nullable(),
+  endDate: zod_1.z.string().optional().nullable(),
+  status: zod_1.z
+    .enum(['DRAFT', 'ACTIVE', 'PAUSED', 'COMPLETED', 'ARCHIVED'])
+    .optional(),
+  agentIds: zod_1.z.array(zod_1.z.string()).optional(),
 });
 // Get all campaigns
-router.get('/', async (req, res) => {
+router.get(
+  '/',
+  (0, routeAuth_1.requireAuth)(async (req, res) => {
     try {
-        const userId = req.user.id;
-        const campaigns = await prisma.campaign.findMany({
-            where: {
-                userId,
-            },
-            orderBy: {
-                createdAt: 'desc',
-            },
-            include: {
-                owner: {
-                    select: {
-                        name: true,
-                    },
-                },
-                generatedContent: true,
-                outreachTasks: {
-                    select: {
-                        id: true,
-                        title: true,
-                        status: true,
-                    },
-                    take: 3,
-                },
-                _count: {
-                    select: {
-                        generatedContent: true,
-                        outreachTasks: true,
-                    },
-                },
-            },
-        });
-        return res.json(campaigns);
+      const userId = req.user.id;
+      const { projectId } = req.query;
+      // Get campaigns with related entities if needed
+      const campaigns = await campaignService.getCampaigns(
+        userId,
+        projectId,
+        true,
+      );
+      return res.json(campaigns);
+    } catch (error) {
+      console.error('Error fetching campaigns:', error);
+      return res.status(500).json({ message: 'Failed to fetch campaigns' });
     }
-    catch (error) {
-        console.error('Error fetching campaigns:', error);
-        return res.status(500).json({ message: 'Failed to fetch campaigns' });
-    }
-});
+  }),
+);
 // Get campaign by ID
-router.get('/:id', async (req, res) => {
+router.get(
+  '/:id',
+  (0, routeAuth_1.requireAuth)(async (req, res) => {
     try {
-        const { id } = req.params;
-        const userId = req.user.id;
-        const campaign = await prisma.campaign.findFirst({
-            where: {
-                id,
-                userId,
-            },
-            include: {
-                owner: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                    },
-                },
-                generatedContent: {
-                    select: {
-                        id: true,
-                        title: true,
-                        contentType: true,
-                        platform: true,
-                        status: true,
-                        createdAt: true,
-                    },
-                    orderBy: {
-                        createdAt: 'desc',
-                    },
-                    take: 5,
-                },
-                outreachTasks: {
-                    orderBy: {
-                        createdAt: 'desc',
-                    },
-                },
-                metrics: {
-                    orderBy: {
-                        timestamp: 'desc',
-                    },
-                },
-            },
-        });
-        if (!campaign) {
-            return res.status(404).json({ message: 'Campaign not found' });
-        }
-        return res.json(campaign);
-    }
-    catch (error) {
-        console.error('Error fetching campaign:', error);
-        return res.status(500).json({ message: 'Failed to fetch campaign' });
-    }
-});
-// Create new campaign
-router.post('/', (0, validation_1.validateRequest)(createCampaignSchema), async (req, res) => {
-    try {
-        const { name, description, type, target, budget, goals, startDate, endDate, } = req.body;
-        const userId = req.user.id;
-        const campaign = await prisma.campaign.create({
-            data: {
-                name,
-                description,
-                campaignType: type,
-                targeting: target,
-                budget: budget ? parseFloat(budget) : null,
-                goals,
-                startDate: startDate ? new Date(startDate) : null,
-                endDate: endDate ? new Date(endDate) : null,
-                status: 'DRAFT',
-                userId,
-            },
-        });
-        return res.status(201).json(campaign);
-    }
-    catch (error) {
-        console.error('Error creating campaign:', error);
-        return res.status(500).json({ message: 'Failed to create campaign' });
-    }
-});
-// Update campaign
-router.put('/:id', (0, validation_1.validateRequest)(updateCampaignSchema), async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { name, description, type, target, budget, goals, startDate, endDate, status, } = req.body;
-        const userId = req.user.id;
-        // Check if campaign exists and belongs to user
-        const existingCampaign = await prisma.campaign.findFirst({
-            where: {
-                id,
-                userId,
-            },
-        });
-        if (!existingCampaign) {
-            return res.status(404).json({ message: 'Campaign not found' });
-        }
-        // Update campaign
-        const campaign = await prisma.campaign.update({
-            where: {
-                id,
-            },
-            data: {
-                name,
-                description,
-                campaignType: type,
-                targeting: target,
-                budget,
-                goals,
-                startDate: startDate ? new Date(startDate) : undefined,
-                endDate: endDate ? new Date(endDate) : undefined,
-                status,
-            },
-        });
-        return res.json(campaign);
-    }
-    catch (error) {
-        console.error('Error updating campaign:', error);
-        return res.status(500).json({ message: 'Failed to update campaign' });
-    }
-});
-// Delete campaign
-router.delete('/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const userId = req.user.id;
-        // Check if campaign exists and belongs to user
-        const existingCampaign = await prisma.campaign.findFirst({
-            where: {
-                id,
-                userId,
-            },
-        });
-        if (!existingCampaign) {
-            return res.status(404).json({ message: 'Campaign not found' });
-        }
-        // Delete campaign
-        await prisma.campaign.delete({
-            where: {
-                id,
-            },
-        });
-        return res.status(204).send();
-    }
-    catch (error) {
-        console.error('Error deleting campaign:', error);
-        return res.status(500).json({ message: 'Failed to delete campaign' });
-    }
-});
-// Get campaign performance metrics
-router.get('/:id/metrics', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const userId = req.user.id;
-        // Check if campaign exists and belongs to user
-        const existingCampaign = await prisma.campaign.findFirst({
-            where: {
-                id,
-                userId,
-            },
-        });
-        if (!existingCampaign) {
-            return res.status(404).json({ message: 'Campaign not found' });
-        }
-        const metrics = await prisma.metric.findMany({
-            where: {
-                campaignId: id,
-            },
-            orderBy: {
-                timestamp: 'desc',
-            },
-        });
-        return res.json(metrics);
-    }
-    catch (error) {
-        console.error('Error fetching campaign metrics:', error);
+      const { id } = req.params;
+      const userId = req.user.id;
+      // Get campaign with related entities
+      const campaign = await campaignService.getCampaign(id, true);
+      if (!campaign) {
+        return res.status(404).json({ message: 'Campaign not found' });
+      }
+      // Check if user has access to this campaign
+      if (campaign.ownerId !== userId) {
         return res
-            .status(500)
-            .json({ message: 'Failed to fetch campaign metrics' });
+          .status(403)
+          .json({ message: 'Not authorized to access this campaign' });
+      }
+      return res.json(campaign);
+    } catch (error) {
+      console.error('Error fetching campaign:', error);
+      return res.status(500).json({ message: 'Failed to fetch campaign' });
     }
-});
+  }),
+);
+// Create new campaign
+router.post(
+  '/',
+  (0, validation_1.validateRequest)(createCampaignSchema),
+  (0, routeAuth_1.requireAuth)(async (req, res) => {
+    try {
+      const {
+        name,
+        description,
+        campaignType,
+        targeting,
+        budget,
+        goals,
+        startDate,
+        endDate,
+        projectId,
+        agentIds,
+      } = req.body;
+      // Check if user has access to the project
+      const project = await prisma.project.findFirst({
+        where: {
+          id: projectId,
+          OR: [
+            { ownerId: req.user.id },
+            { members: { some: { id: req.user.id } } },
+          ],
+        },
+      });
+      if (!project) {
+        return res
+          .status(403)
+          .json({
+            message: 'Not authorized to create campaigns for this project',
+          });
+      }
+      // Create campaign
+      const campaign = await campaignService.createCampaign({
+        name,
+        description: description || '',
+        campaignType,
+        targeting: targeting || '',
+        budget,
+        goals,
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null,
+        ownerId: req.user.id,
+        projectId,
+        agentIds,
+      });
+      return res.status(201).json(campaign);
+    } catch (error) {
+      console.error('Error creating campaign:', error);
+      return res.status(500).json({ message: 'Failed to create campaign' });
+    }
+  }),
+);
+// Update campaign
+router.put(
+  '/:id',
+  (0, validation_1.validateRequest)(updateCampaignSchema),
+  (0, routeAuth_1.requireAuth)(async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.id;
+      // Check if campaign exists and belongs to user
+      const existingCampaign = await campaignService.getCampaign(id);
+      if (!existingCampaign) {
+        return res.status(404).json({ message: 'Campaign not found' });
+      }
+      if (existingCampaign.ownerId !== userId) {
+        return res
+          .status(403)
+          .json({ message: 'Not authorized to update this campaign' });
+      }
+      // Update campaign
+      const updatedData = {
+        ...req.body,
+        startDate: req.body.startDate
+          ? new Date(req.body.startDate)
+          : undefined,
+        endDate: req.body.endDate ? new Date(req.body.endDate) : undefined,
+      };
+      const campaign = await campaignService.updateCampaign(id, updatedData);
+      return res.json(campaign);
+    } catch (error) {
+      console.error('Error updating campaign:', error);
+      return res.status(500).json({ message: 'Failed to update campaign' });
+    }
+  }),
+);
+// Delete campaign
+router.delete(
+  '/:id',
+  (0, routeAuth_1.requireAuth)(async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.id;
+      // Check if campaign exists and belongs to user
+      const existingCampaign = await campaignService.getCampaign(id);
+      if (!existingCampaign) {
+        return res.status(404).json({ message: 'Campaign not found' });
+      }
+      if (existingCampaign.ownerId !== userId) {
+        return res
+          .status(403)
+          .json({ message: 'Not authorized to delete this campaign' });
+      }
+      // Delete campaign
+      await campaignService.deleteCampaign(id);
+      return res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting campaign:', error);
+      return res.status(500).json({ message: 'Failed to delete campaign' });
+    }
+  }),
+);
+// Get campaign metrics
+router.get(
+  '/:id/metrics',
+  (0, routeAuth_1.requireAuth)(async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.id;
+      // Check if campaign exists and belongs to user
+      const existingCampaign = await campaignService.getCampaign(id);
+      if (!existingCampaign) {
+        return res.status(404).json({ message: 'Campaign not found' });
+      }
+      if (existingCampaign.ownerId !== userId) {
+        return res
+          .status(403)
+          .json({ message: 'Not authorized to access this campaign' });
+      }
+      // Get campaign metrics
+      const metrics = await campaignService.getCampaignAnalytics(id);
+      return res.json(metrics);
+    } catch (error) {
+      console.error('Error fetching campaign metrics:', error);
+      return res
+        .status(500)
+        .json({ message: 'Failed to fetch campaign metrics' });
+    }
+  }),
+);
 exports.default = router;
-//# sourceMappingURL=campaign.routes.js.map

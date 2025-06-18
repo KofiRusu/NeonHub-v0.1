@@ -1,8 +1,8 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = require("express");
-const message_controller_1 = require("../controllers/message.controller");
-const auth_middleware_1 = require("../middleware/auth.middleware");
+'use strict';
+Object.defineProperty(exports, '__esModule', { value: true });
+const express_1 = require('express');
+const message_controller_1 = require('../controllers/message.controller');
+const auth_middleware_1 = require('../middleware/auth.middleware');
 const router = (0, express_1.Router)();
 /**
  * @route GET /api/messages?projectId=:projectId
@@ -21,6 +21,9 @@ router.post('/', auth_middleware_1.protect, message_controller_1.createMessage);
  * @desc Delete a message
  * @access Private
  */
-router.delete('/:id', auth_middleware_1.protect, message_controller_1.deleteMessage);
+router.delete(
+  '/:id',
+  auth_middleware_1.protect,
+  message_controller_1.deleteMessage,
+);
 exports.default = router;
-//# sourceMappingURL=message.routes.js.map

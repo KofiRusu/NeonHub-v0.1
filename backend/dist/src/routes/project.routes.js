@@ -1,8 +1,8 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = require("express");
-const project_controller_1 = require("../controllers/project.controller");
-const auth_middleware_1 = require("../middleware/auth.middleware");
+'use strict';
+Object.defineProperty(exports, '__esModule', { value: true });
+const express_1 = require('express');
+const project_controller_1 = require('../controllers/project.controller');
+const auth_middleware_1 = require('../middleware/auth.middleware');
 const router = (0, express_1.Router)();
 /**
  * @route GET /api/projects
@@ -27,24 +27,39 @@ router.post('/', auth_middleware_1.protect, project_controller_1.createProject);
  * @desc Update a project
  * @access Private
  */
-router.put('/:id', auth_middleware_1.protect, project_controller_1.updateProject);
+router.put(
+  '/:id',
+  auth_middleware_1.protect,
+  project_controller_1.updateProject,
+);
 /**
  * @route DELETE /api/projects/:id
  * @desc Delete a project
  * @access Private
  */
-router.delete('/:id', auth_middleware_1.protect, project_controller_1.deleteProject);
+router.delete(
+  '/:id',
+  auth_middleware_1.protect,
+  project_controller_1.deleteProject,
+);
 /**
  * @route POST /api/projects/:id/members
  * @desc Add a member to a project
  * @access Private
  */
-router.post('/:id/members', auth_middleware_1.protect, project_controller_1.addMember);
+router.post(
+  '/:id/members',
+  auth_middleware_1.protect,
+  project_controller_1.addMember,
+);
 /**
  * @route DELETE /api/projects/:id/members/:userId
  * @desc Remove a member from a project
  * @access Private
  */
-router.delete('/:id/members/:userId', auth_middleware_1.protect, project_controller_1.removeMember);
+router.delete(
+  '/:id/members/:userId',
+  auth_middleware_1.protect,
+  project_controller_1.removeMember,
+);
 exports.default = router;
-//# sourceMappingURL=project.routes.js.map
